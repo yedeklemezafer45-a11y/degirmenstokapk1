@@ -261,6 +261,54 @@ export default function PersonelYetkileriPage() {
               {isSaving ? "Kaydediliyor..." : "Personel Ekle"}
             </button>
           </form>
+
+          {/* ROL BAZLI MENÜ ERİŞİM BİLGİSİ */}
+          <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {/* Admin */}
+            <div className={`rounded-2xl border p-4 transition-all ${newRole === "admin" ? "border-red-500/50 bg-red-500/5" : "border-[var(--border)] bg-[var(--background)]"}`}>
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-6 h-6 rounded-lg bg-red-500/20 flex items-center justify-center">
+                  <Shield className="w-3.5 h-3.5 text-red-400" />
+                </div>
+                <span className="text-xs font-extrabold text-red-400 uppercase">Ana Sorumlu (Admin)</span>
+              </div>
+              <div className="space-y-1">
+                {["✅ Tüm Sayfalar", "✅ Stok Kontrol (Ekle+Sil)", "✅ Ayarlar", "✅ Personel Yönetimi", "✅ Duyuru Yönetimi", "✅ Aylık Stok Takibi"].map(m => (
+                  <div key={m} className="text-[10px] text-zinc-400 font-medium">{m}</div>
+                ))}
+              </div>
+            </div>
+
+            {/* Yönetici */}
+            <div className={`rounded-2xl border p-4 transition-all ${newRole === "yonetici" ? "border-amber-500/50 bg-amber-500/5" : "border-[var(--border)] bg-[var(--background)]"}`}>
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-6 h-6 rounded-lg bg-amber-500/20 flex items-center justify-center">
+                  <UserCheck className="w-3.5 h-3.5 text-amber-400" />
+                </div>
+                <span className="text-xs font-extrabold text-amber-400 uppercase">Bölge Sorumlusu</span>
+              </div>
+              <div className="space-y-1">
+                {["✅ Dashboard", "✅ Stok Görüntüle", "✅ Stok Sayım", "✅ Reçeteler", "✅ Stok Kontrol (Sadece Ekle)", "✅ Aylık Stok Takibi", "❌ Ayarlar / Personel"].map(m => (
+                  <div key={m} className={`text-[10px] font-medium ${m.startsWith("❌") ? "text-zinc-600" : "text-zinc-400"}`}>{m}</div>
+                ))}
+              </div>
+            </div>
+
+            {/* Barista */}
+            <div className={`rounded-2xl border p-4 transition-all ${newRole === "waiter" ? "border-blue-500/50 bg-blue-500/5" : "border-[var(--border)] bg-[var(--background)]"}`}>
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-6 h-6 rounded-lg bg-blue-500/20 flex items-center justify-center">
+                  <User className="w-3.5 h-3.5 text-blue-400" />
+                </div>
+                <span className="text-xs font-extrabold text-blue-400 uppercase">Bar Personeli (Barista)</span>
+              </div>
+              <div className="space-y-1">
+                {["✅ Dashboard", "✅ Stok Görüntüle", "✅ Stok Sayım", "✅ Reçeteler", "❌ Stok Kontrol", "❌ Aylık Stok Takibi", "❌ Ayarlar"].map(m => (
+                  <div key={m} className={`text-[10px] font-medium ${m.startsWith("❌") ? "text-zinc-600" : "text-zinc-400"}`}>{m}</div>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* MEVCUT PERSONEL LİSTESİ */}

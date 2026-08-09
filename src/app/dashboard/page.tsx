@@ -85,12 +85,13 @@ export default function DashboardPage() {
     { label: "Reçeteler", active: true, path: "/dashboard/receteler" },
   ];
 
-  // Aylık Stok Takibi yetkisini admin veya yoneticiye verelim
+  // Aylık Stok Takibi + Stok Listesi yetkisini admin veya yoneticiye verelim
   if (userRole === "admin" || userRole === "yonetici") {
     modules.push({ label: "Aylık Stok Takibi", active: true, path: "/dashboard/aylik-stok-takibi" });
+    modules.push({ label: "Stok Kontrol Listesi", active: true, path: "/dashboard/ayarlar/stok-kontrolu" });
   }
 
-  // Eğer giriş yapan kullanıcı admin ise "Ayarlar" modülünü de listeye enjekte et
+  // Ayarlar sadece admin
   if (userRole === "admin") {
     modules.push({ label: "Ayarlar", active: true, path: "/dashboard/ayarlar" });
   }

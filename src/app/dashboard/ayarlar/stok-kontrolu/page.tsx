@@ -65,7 +65,7 @@ export default function StokKontroluPage() {
     if (activeUser) {
       const parsed = JSON.parse(activeUser);
       setUserRole(parsed.role || "waiter");
-      if (parsed.role !== "admin") {
+      if (parsed.role !== "admin" && parsed.role !== "yonetici") {
         window.location.href = "/dashboard";
         return;
       }
@@ -586,6 +586,7 @@ export default function StokKontroluPage() {
                         </td>
 
                         <td className="py-4 px-4 text-right">
+                          {userRole === "admin" && (
                           <button
                             onClick={() => handleDeleteItem(item.id, item.name)}
                             disabled={isSaving}
@@ -594,6 +595,7 @@ export default function StokKontroluPage() {
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
+                          )}
                         </td>
                       </tr>
                     );
