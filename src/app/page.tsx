@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { Eye, EyeOff, Moon, Sun, X, Mail, CheckCircle2, AlertCircle, Info } from "lucide-react";
 import { getUserByUsername, getAllUsers } from "@/lib/userService";
+import { logUserAction } from "@/lib/auditLogService";
 
 // Toast Bildirim Tipi
 interface Toast {
@@ -77,6 +78,13 @@ export default function LoginPage() {
           role: user.role,
           fullName: user.name
         }));
+        
+        await logUserAction(
+          "Sisteme Giriş Yapıldı",
+          "GIRIS",
+          `@${user.username} (${user.name}) kullanıcı adıyla sisteme başarıyla giriş yapıldı.`
+        );
+
         showToast(`Hoşgeldiniz, ${user.name}! Giriş Başarılı.`, "success");
         setTimeout(() => {
           window.location.href = "/dashboard";

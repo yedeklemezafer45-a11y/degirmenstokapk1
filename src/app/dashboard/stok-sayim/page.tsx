@@ -19,6 +19,7 @@ import {
 import { StockItem } from "@/lib/stockStore";
 import { getAllStocks, saveAllStocks } from "@/lib/stockService";
 import { saveReport, MonthlyReportArchive } from "@/lib/reportService";
+import { logUserAction } from "@/lib/auditLogService";
 
 export default function StokSayimPage() {
   const [theme, setTheme] = useState<"light" | "dark">("dark");
@@ -32,7 +33,7 @@ export default function StokSayimPage() {
 
   // Sayılan Adet Girişleri (Draft State)
   const [sayilanValues, setSayilanValues] = useState<Record<string, string>>({});
-  // Açıkta olan Gramaj Girişleri (Draft State - Gram cinsinden örn: 250, 500)
+  // Açıkta olan Gramaj / Miktar Girişleri (Draft State)
   const [aciktaValues, setAciktaValues] = useState<Record<string, string>>({});
   
   // Yetkili Karşılaştırma Raporu (Sadece admin/yonetici görecek)
@@ -55,14 +56,12 @@ export default function StokSayimPage() {
       document.documentElement.className = savedTheme;
     }
 
-    // Giriş yapan aktif kullanıcı ve rolü
     const activeUser = localStorage.getItem("activeUser");
     if (activeUser) {
       const parsed = JSON.parse(activeUser);
       setUserRole(parsed.role || "waiter");
     }
 
-    // Firestore'dan Stok verilerini yükle
     loadData();
   }, []);
 
@@ -72,7 +71,6 @@ export default function StokSayimPage() {
       const fetchedStocks = await getAllStocks();
       setStockList(fetchedStocks);
 
-      // Kayıtlı olan sayılan adet ve açıkta gramajları yükle
       const initialSayilan: Record<string, string> = {};
       const initialAcikta: Record<string, string> = {};
 
@@ -98,7 +96,18 @@ export default function StokSayimPage() {
     document.documentElement.className = newTheme;
   };
 
-  // Paket / Ürün ağırlığını sayısal olarak ayrıştırma (Örn: "0.970 kg" -> 0.97, "2.500 kg" -> 2.5)
+  // Ürünün Litrelik veya Sıvı Olup Olmadığını Kontrol Etme
+  const isLiquidItem = (item: StockItem) => {
+    return (
+      item.category === "Litrelik Ürünler" || 
+      item.unit?.toLowerCase() === "litre" || 
+      item.unit?.toLowerCase() === "lt" || 
+      item.weightInfo?.toLowerCase().includes("lt") ||
+      item.weightInfo?.toLowerCase().includes("litre")
+    );
+  };
+
+  // Paket / Ürün ağırlığını sayısal olarak ayrıştırma
   const extractWeightAndUnit = (item: StockItem) => {
     if (item.weightInfo) {
       const match = item.weightInfo.match(/([0-9.,]+)/);
@@ -107,7 +116,7 @@ export default function StokSayimPage() {
         if (!isNaN(val)) return { parsedWeight: val, displayWeight: item.weightInfo };
       }
     }
-    return { parsedWeight: 1.0, displayWeight: "1.000 kg" };
+    return { parsedWeight: 1.0, displayWeight: isLiquidItem(item) ? "1.000 lt" : "1.000 kg" };
   };
 
   // Kategoriler
@@ -120,7 +129,6 @@ export default function StokSayimPage() {
     return matchesCategory && matchesSearch;
   });
 
-  // Sayılan Adet Değişikliği
   const handleSayilanChange = (id: string, value: string) => {
     setSayilanValues(prev => ({
       ...prev,
@@ -129,7 +137,6 @@ export default function StokSayimPage() {
     setIsDirty(true);
   };
 
-  // Açıkta Olan Gram Değişikliği
   const handleAciktaChange = (id: string, value: string) => {
     setAciktaValues(prev => ({
       ...prev,
@@ -138,14 +145,14 @@ export default function StokSayimPage() {
     setIsDirty(true);
   };
 
-  // Toplu Değişiklikleri Firebase Firestore'a Kaydet
+  // Toplu Değişiklikleri Firebase Firestore'a Kaydet + Log Ekle
   const handleSaveChanges = async () => {
     setIsSaving(true);
     try {
       const updatedStock = stockList.map(item => {
         const countedQty = parseFloat(sayilanValues[item.id]) || 0;
-        const openGrams = parseFloat(aciktaValues[item.id]) || 0;
-        const openQty = openGrams / 1000;
+        const openUnits = parseFloat(aciktaValues[item.id]) || 0;
+        const openQty = openUnits / 1000;
         const totalQty = Number((countedQty + openQty).toFixed(3));
 
         return {
@@ -157,7 +164,15 @@ export default function StokSayimPage() {
       await saveAllStocks(updatedStock);
       setStockList(updatedStock);
       setIsDirty(false);
-      triggerToast("✅ Sayım sonuçları bulut veritabanına başarıyla kaydedildi!");
+
+      // Audit Log kaydı oluştur
+      await logUserAction(
+        "Fiziki Stok Sayımı Yapıldı",
+        "STOK",
+        `${stockList.length} kalemin fiziki sayım verileri güncellendi ve Firestore veritabanına işlendi.`
+      );
+
+      triggerToast("✅ Sayım sonuçları bulut veritabanına kaydedildi!");
     } catch (err) {
       console.error("Stok kaydetme hatası:", err);
       triggerToast("Kaydedilirken hata oluştu!");
@@ -166,7 +181,7 @@ export default function StokSayimPage() {
     }
   };
 
-  // Ay Sonu Sayımını Kapat, Raporu Arşivle ve Stokları Sıfırla (Depoda Bulunan ve Alınanları 0 yap)
+  // Ay Sonu Sayımını Kapat, Raporu Arşivle ve Stokları Sıfırla
   const handleFinalizeMonthAndReset = async () => {
     if (!window.confirm("DİKKAT: Aylık dönemi kapatmak üzeresiniz. Bu işlem mevcut girdi-çıktı farklarını kalıcı olarak Firestore arşive kaydedecek ve yeni ay için Depoda Bulunan ile Düşülen miktarları SIFIRLAYACAKTIR. Emin misiniz?")) {
       return;
@@ -232,11 +247,17 @@ export default function StokSayimPage() {
         };
       });
 
-      // Firebase Firestore'da stokları güncelle
       await saveAllStocks(resetStock);
-
       setStockList(resetStock);
       setIsDirty(false);
+
+      // Log kaydı oluştur
+      await logUserAction(
+        "Aylık Stok Takip Dönemi Kapatıldı ve Sıfırlandı",
+        "RAPOR",
+        `${monthName} stok raporu arşive alındı. Depo girdi/çıktı değerleri sıfırlandı.`
+      );
+
       triggerToast("✅ Aylık Stok Takip Raporu arşive kaydedildi ve stoklar sıfırlandı!");
     } catch (err) {
       console.error("Dönem kapatma hatası:", err);
@@ -270,8 +291,8 @@ export default function StokSayimPage() {
             <img src="/logo.png" alt="Değirmen Cafe Logo" className="w-full h-full object-contain" />
           </div>
           <div>
-            <h1 className="font-bold text-lg tracking-tight">Fiziki Stok Sayımı & Gramaj Hesabı</h1>
-            <p className="text-xs text-zinc-500">Bulut Tabanlı Senkronizasyon · Canlı Veri</p>
+            <h1 className="font-bold text-lg tracking-tight">Fiziki Stok Sayımı & Gramaj / Litre Hesabı</h1>
+            <p className="text-xs text-zinc-500">Bulut Tabanlı Senkronizasyon · Canlı İşlem Loglama</p>
           </div>
         </div>
 
@@ -293,15 +314,14 @@ export default function StokSayimPage() {
           <div className="space-y-1">
             <h2 className="text-base font-bold flex items-center gap-2">
               <Scale className="w-5 h-5 text-orange-500" />
-              Bar & Depo Fiziki Ürün Sayımı
+              Bar & Depo Fiziki Ürün Sayımı (Gramaj / Litre)
             </h2>
             <p className="text-xs text-zinc-500 leading-relaxed max-w-2xl">
-              Depodaki tam kapalı ambalaj sayısını <b>"Sayılan Kapalı Adet"</b> sütununa giriniz. Açıkta (şişede, kutuda) kalan gramajı ise <b>"Açıkta Olan (Gram)"</b> sütununa giriniz. Sistem gramaj karşılığını otomatik olarak hesaplayıp stok miktarına ekleyecektir.
+              Depodaki tam ambalaj sayısını <b>"Sayılan Kapalı Adet"</b> sütununa giriniz. Açıkta kalan miktarları ise Gramaj ürünlerinde <b>(gr)</b>, Litrelik sıvı ürünlerde ise <b>(ml/lt)</b> olarak giriniz. Sistem Litrelik ürünlerde sonucu otomatik olarak <b>Litre (lt)</b> bazında hesaplar.
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
-            {/* Karşılaştırma Raporu Butonu (Sadece Yetkili Personel) */}
             {(userRole === "admin" || userRole === "yonetici") && (
               <button
                 onClick={() => setShowReport(!showReport)}
@@ -316,7 +336,6 @@ export default function StokSayimPage() {
               </button>
             )}
 
-            {/* Kaydet Butonu */}
             <button
               onClick={handleSaveChanges}
               disabled={isSaving}
@@ -372,7 +391,7 @@ export default function StokSayimPage() {
                   Depo Girdi / Çıktı & Fiziki Sayım Fark Analizi
                 </h3>
                 <p className="text-xs text-zinc-500 mt-1">
-                  Sistemdeki teorik stok (Depoda Bulunan - Depodan Alınan) ile sizin sahada fiziken saydığınız gramajların farkı.
+                  Sistemdeki teorik stok ile fiziken saydığınız miktar/litre farkları.
                 </p>
               </div>
 
@@ -391,24 +410,28 @@ export default function StokSayimPage() {
                 <thead>
                   <tr className="border-b border-[var(--border)] text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
                     <th className="py-3 px-3">Ürün Adı</th>
-                    <th className="py-3 px-3">Paket Gramajı</th>
+                    <th className="py-3 px-3">Paket Hacim / Gramaj</th>
                     <th className="py-3 px-3 text-center">Depoda Bulunan</th>
                     <th className="py-3 px-3 text-center">Depodan Alınan</th>
                     <th className="py-3 px-3 text-center">Teorik Sistem Kalan</th>
                     <th className="py-3 px-3 text-center">Fiziki Sayılan Adet</th>
-                    <th className="py-3 px-3 text-center">Açıkta Gramaj</th>
-                    <th className="py-3 px-3 text-center text-amber-500">Fiili Toplam Gramaj</th>
-                    <th className="py-3 px-3 text-right">Gramaj Farkı</th>
+                    <th className="py-3 px-3 text-center">Açıkta Miktar</th>
+                    <th className="py-3 px-3 text-center text-amber-500">Fiili Toplam</th>
+                    <th className="py-3 px-3 text-right">Fark</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[var(--border)]/40 text-xs">
                   {stockList.map(item => {
                     const { parsedWeight, displayWeight } = extractWeightAndUnit(item);
+                    const isLiquid = isLiquidItem(item);
+                    const unitLabel = isLiquid ? "lt" : (item.unit === "kg" || item.unit === "Adet" ? "kg" : item.unit);
+                    const openLabel = isLiquid ? "ml" : "gr";
+
                     const countedQty = parseFloat(sayilanValues[item.id]) || 0;
-                    const openGrams = parseFloat(aciktaValues[item.id]) || 0;
+                    const openUnits = parseFloat(aciktaValues[item.id]) || 0;
                     
                     const sysTotalGram = item.quantity * parsedWeight;
-                    const countedTotalGram = (countedQty * parsedWeight) + (openGrams / 1000);
+                    const countedTotalGram = (countedQty * parsedWeight) + (openUnits / 1000);
                     const diffGram = sysTotalGram - countedTotalGram;
 
                     return (
@@ -420,22 +443,22 @@ export default function StokSayimPage() {
                           {displayWeight}
                         </td>
                         <td className="py-3 px-3 text-center font-mono text-emerald-500 font-bold">
-                          {item.depodaBulunan} {item.unit}
+                          {item.depodaBulunan} {unitLabel}
                         </td>
                         <td className="py-3 px-3 text-center font-mono text-red-400 font-bold">
-                          {item.depodanAlinan} {item.unit}
+                          {item.depodanAlinan} {unitLabel}
                         </td>
                         <td className="py-3 px-3 text-center font-mono font-bold text-zinc-300">
-                          {item.quantity} {item.unit}
+                          {item.quantity} {unitLabel}
                         </td>
                         <td className="py-3 px-3 text-center font-mono font-bold text-orange-400">
                           {countedQty} {item.unit}
                         </td>
                         <td className="py-3 px-3 text-center font-mono text-zinc-400">
-                          {openGrams} gr
+                          {openUnits} {openLabel}
                         </td>
                         <td className="py-3 px-3 text-center font-mono font-extrabold text-amber-500">
-                          {countedTotalGram.toFixed(3)} kg
+                          {countedTotalGram.toFixed(3)} {unitLabel}
                         </td>
                         <td className={`py-3 px-3 text-right font-mono font-bold ${
                           Math.abs(diffGram) < 0.001 
@@ -444,7 +467,7 @@ export default function StokSayimPage() {
                             ? "text-red-400" 
                             : "text-emerald-400"
                         }`}>
-                          {diffGram > 0 ? `-${diffGram.toFixed(3)} kg (Eksik)` : diffGram < 0 ? `+${Math.abs(diffGram).toFixed(3)} kg (Fazla)` : "Tam Eşit"}
+                          {diffGram > 0 ? `-${diffGram.toFixed(3)} ${unitLabel} (Eksik)` : diffGram < 0 ? `+${Math.abs(diffGram).toFixed(3)} ${unitLabel} (Fazla)` : "Tam Eşit"}
                         </td>
                       </tr>
                     );
@@ -469,18 +492,22 @@ export default function StokSayimPage() {
                   <tr className="border-b border-[var(--border)] text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
                     <th className="py-3 px-4">Ürün Adı</th>
                     <th className="py-3 px-4">Kategori</th>
-                    <th className="py-3 px-4 text-center">Birim / Paket Ağırlığı</th>
+                    <th className="py-3 px-4 text-center">Birim / Paket Hacmi</th>
                     <th className="py-3 px-4 text-center w-40">Sayılan Kapalı Adet</th>
-                    <th className="py-3 px-4 text-center w-44">Açıkta Olan (Gram)</th>
+                    <th className="py-3 px-4 text-center w-44">Açıkta Olan Miktar</th>
                     <th className="py-3 px-4 text-right">Toplam Miktar Karşılığı</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[var(--border)]/40 text-xs">
                   {filteredStocks.map((item) => {
-                    const { parsedWeight, displayWeight } = extractWeightAndUnit(item);
+                    const { displayWeight } = extractWeightAndUnit(item);
+                    const isLiquid = isLiquidItem(item);
+                    const unitLabel = isLiquid ? "lt" : (item.unit === "kg" || item.unit === "Adet" ? "kg" : item.unit);
+                    const openLabel = isLiquid ? "ml" : "gr";
+
                     const countedQty = parseFloat(sayilanValues[item.id]) || 0;
-                    const openGrams = parseFloat(aciktaValues[item.id]) || 0;
-                    const totalCalculated = Number((countedQty + (openGrams / 1000)).toFixed(3));
+                    const openUnits = parseFloat(aciktaValues[item.id]) || 0;
+                    const totalCalculated = Number((countedQty + (openUnits / 1000)).toFixed(3));
 
                     return (
                       <tr key={item.id} className="hover:bg-[var(--background)]/35 transition-colors">
@@ -488,7 +515,11 @@ export default function StokSayimPage() {
                           {item.name}
                         </td>
                         <td className="py-4 px-4">
-                          <span className="bg-[var(--background)] border border-[var(--border)] px-2.5 py-1 rounded-xl text-[10px] text-zinc-400 font-bold">
+                          <span className={`px-2.5 py-1 rounded-xl text-[10px] font-bold border ${
+                            isLiquid 
+                              ? "bg-blue-500/10 text-blue-400 border-blue-500/20" 
+                              : "bg-[var(--background)] border-[var(--border)] text-zinc-400"
+                          }`}>
                             {item.category}
                           </span>
                         </td>
@@ -508,7 +539,7 @@ export default function StokSayimPage() {
                           />
                         </td>
 
-                        {/* Açıkta Gramaj Input */}
+                        {/* Açıkta Miktar (Gram / ML) Input */}
                         <td className="py-4 px-4 text-center">
                           <div className="relative inline-block w-28">
                             <input
@@ -520,13 +551,15 @@ export default function StokSayimPage() {
                               onChange={(e) => handleAciktaChange(item.id, e.target.value)}
                               className="w-full bg-[var(--background)] border border-[var(--border)] rounded-xl px-3 py-1.5 text-center font-mono text-zinc-300 focus:outline-none focus:ring-1 focus:ring-orange-500"
                             />
-                            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-zinc-500 font-bold pointer-events-none">gr</span>
+                            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-zinc-500 font-bold pointer-events-none">
+                              {openLabel}
+                            </span>
                           </div>
                         </td>
 
-                        {/* Toplam Gramaj/Miktar Karşılığı */}
+                        {/* Toplam Karşılığı (KG / Litre) */}
                         <td className="py-4 px-4 text-right font-mono font-bold text-emerald-400 text-sm">
-                          {totalCalculated.toFixed(3)} {item.unit === "kg" || item.unit === "Adet" ? "kg/lt" : item.unit}
+                          {totalCalculated.toFixed(3)} {unitLabel}
                         </td>
                       </tr>
                     );
@@ -544,7 +577,7 @@ export default function StokSayimPage() {
         <span>© 2026 Değirmen Cafe. Tüm hakları saklıdır.</span>
         <span className="flex items-center gap-1.5 text-emerald-500 font-semibold">
           <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
-          Bulut Veritabanı Senkronize
+          Bulut Veritabanı Senkronize & Loglu
         </span>
       </footer>
 

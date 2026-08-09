@@ -12,9 +12,11 @@ import {
   Layers, 
   Sparkles,
   ArrowRight,
-  FileDown
+  FileDown,
+  CheckCircle2
 } from "lucide-react";
 import { mockRecipes, Recipe } from "@/lib/recipeStore";
+import { logUserAction } from "@/lib/auditLogService";
 
 export default function RecetelerPage() {
   const [theme, setTheme] = useState<"light" | "dark">("dark");
@@ -22,6 +24,7 @@ export default function RecetelerPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
+  const [showToast, setShowToast] = useState(false);
 
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme") as "light" | "dark" | null;
@@ -30,17 +33,7 @@ export default function RecetelerPage() {
       document.documentElement.className = savedTheme;
     }
 
-    // Reçeteleri yükle
-    const savedRecipes = localStorage.getItem("degirmen_recipes");
-    const recipeResetFlag = localStorage.getItem("degirmen_recipes_reset_03");
-
-    if (savedRecipes && recipeResetFlag === "true") {
-      setRecipes(JSON.parse(savedRecipes));
-    } else {
-      setRecipes(mockRecipes);
-      localStorage.setItem("degirmen_recipes", JSON.stringify(mockRecipes));
-      localStorage.setItem("degirmen_recipes_reset_03", "true");
-    }
+    setRecipes(mockRecipes);
   }, []);
 
   const toggleTheme = () => {
@@ -60,84 +53,105 @@ export default function RecetelerPage() {
     "ALTERNATİF FREŞHLER"
   ];
 
-  // PDF / Yazıcı Çıktısı indirme fonksiyonu
-  const handleDownloadPDF = () => {
-    // Baskıya uygun geçici stil ekle ve pencereyi yazdır
-    const printWindow = window.open("", "_blank");
-    if (!printWindow) return;
-
-    let content = `
-      <html>
-      <head>
-        <title>Degirmen Cafe - Tum Receteler Raporu</title>
-        <style>
-          body { font-family: 'Helvetica Neue', Arial, sans-serif; padding: 30px; color: #1e293b; background-color: #fff; }
-          .header { text-align: center; margin-bottom: 40px; border-bottom: 2px solid #ea580c; padding-bottom: 20px; }
-          .header h1 { color: #ea580c; margin: 0; font-size: 28px; }
-          .header p { color: #64748b; margin: 5px 0 0 0; font-size: 14px; }
-          .category-block { page-break-inside: avoid; margin-bottom: 35px; }
-          .category-title { background-color: #f8fafc; border-left: 4px solid #ea580c; padding: 8px 15px; font-size: 16px; font-weight: bold; color: #0f172a; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px; }
-          .recipe-item { margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px dashed #e2e8f0; }
-          .recipe-name { font-size: 14px; font-weight: bold; color: #1e293b; display: flex; justify-content: space-between; margin-bottom: 5px; }
-          .recipe-gramaj { font-size: 11px; color: #ea580c; background-color: #fff7ed; padding: 2px 6px; border-radius: 4px; border: 1px solid #ffedd5; }
-          .ingredients-list { font-size: 12px; color: #475569; margin: 5px 0 8px 15px; list-style-type: square; }
-          .instructions-text { font-size: 11.5px; color: #64748b; font-style: italic; margin-left: 15px; line-height: 1.4; white-space: pre-line; }
-          @media print {
-            body { padding: 0; }
-            .no-print { display: none; }
-          }
-        </style>
-      </head>
-      <body>
-        <div class="header">
-          <h1>DEĞİRMEN CAFE REÇETE KİTAPÇIĞI</h1>
-          <p>Tüm Menü Grupları ve Hazırlanış Detayları (Tarih: ${new Date().toLocaleDateString("tr-TR")})</p>
-        </div>
-    `;
-
-    categories.forEach(cat => {
-      const catRecipes = recipes.filter(r => r.category === cat);
-      if (catRecipes.length === 0) return;
-
-      content += `
-        <div class="category-block">
-          <div class="category-title">${cat}</div>
+  // Pop-up engeline takılmayan HTML5 Blob tabanlı yazdır / PDF İndir fonksiyonu
+  const handleDownloadPDF = async () => {
+    try {
+      let content = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <title>Degirmen Cafe - Tüm Reçeteler Kitapçığı</title>
+          <style>
+            body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 25px; color: #1e293b; background-color: #fff; line-height: 1.5; }
+            .header { text-align: center; margin-bottom: 30px; border-bottom: 3px solid #ea580c; padding-bottom: 15px; }
+            .header h1 { color: #ea580c; margin: 0; font-size: 26px; font-weight: 800; letter-spacing: 1px; }
+            .header p { color: #64748b; margin: 5px 0 0 0; font-size: 13px; }
+            .category-block { page-break-inside: avoid; margin-bottom: 30px; }
+            .category-title { background-color: #fff7ed; border-left: 5px solid #ea580c; padding: 10px 15px; font-size: 15px; font-weight: bold; color: #9a3412; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px; }
+            .recipe-item { margin-bottom: 20px; padding: 12px 15px; background-color: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0; page-break-inside: avoid; }
+            .recipe-header { font-size: 14px; font-weight: bold; color: #0f172a; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #cbd5e1; padding-bottom: 6px; margin-bottom: 8px; }
+            .recipe-gramaj { font-size: 11px; color: #ea580c; background-color: #ffedd5; padding: 2px 8px; border-radius: 12px; font-weight: bold; }
+            .ingredients-list { font-size: 12px; color: #334155; margin: 6px 0 10px 0; padding-left: 20px; }
+            .ingredients-list li { margin-bottom: 3px; }
+            .instructions-text { font-size: 12px; color: #475569; background-color: #fff; padding: 8px 12px; border-radius: 6px; border-left: 3px solid #cbd5e1; }
+            @media print {
+              body { padding: 10px; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>DEĞİRMEN CAFE REÇETE KİTAPÇIĞI</h1>
+            <p>Tüm Menü Grupları ve Hazırlanış Detayları (Oluşturulma: ${new Date().toLocaleDateString("tr-TR")})</p>
+          </div>
       `;
 
-      catRecipes.forEach(recipe => {
+      categories.forEach(cat => {
+        const catRecipes = recipes.filter(r => r.category === cat);
+        if (catRecipes.length === 0) return;
+
         content += `
-          <div class="recipe-item">
-            <div class="recipe-name">
-              <span>${recipe.name}</span>
-              <span class="recipe-gramaj">${recipe.gramaj}</span>
-            </div>
-            <ul class="ingredients-list">
-              ${recipe.ingredients.map(ing => `<li><strong>${ing.product}</strong>: ${ing.amount} ${ing.unit}</li>`).join("")}
-            </ul>
-            <div class="instructions-text"><strong>Yapılışı:</strong> ${recipe.instructions}</div>
-          </div>
+          <div class="category-block">
+            <div class="category-title">${cat}</div>
         `;
+
+        catRecipes.forEach(recipe => {
+          content += `
+            <div class="recipe-item">
+              <div class="recipe-header">
+                <span>${recipe.name}</span>
+                <span class="recipe-gramaj">${recipe.gramaj}</span>
+              </div>
+              <ul class="ingredients-list">
+                ${recipe.ingredients.map(ing => `<li><strong>${ing.product}</strong>: ${ing.amount} ${ing.unit}</li>`).join("")}
+              </ul>
+              <div class="instructions-text"><strong>Yapılışı:</strong> ${recipe.instructions}</div>
+            </div>
+          `;
+        });
+
+        content += `</div>`;
       });
 
-      content += `</div>`;
-    });
+      content += `</body></html>`;
 
-    content += `
-        <script>
-          window.onload = function() {
-            window.print();
-            setTimeout(function() { window.close(); }, 500);
-          };
-        </script>
-      </body>
-      </html>
-    `;
+      // Blob oluştur ve gizli iframe ile pop-up engelleyicisine takılmadan yazdır/indir
+      const blob = new Blob([content], { type: "text/html;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
 
-    printWindow.document.write(content);
-    printWindow.document.close();
+      const iframe = document.createElement("iframe");
+      iframe.style.position = "fixed";
+      iframe.style.right = "0";
+      iframe.style.bottom = "0";
+      iframe.style.width = "0";
+      iframe.style.height = "0";
+      iframe.style.border = "0";
+      iframe.src = url;
+
+      document.body.appendChild(iframe);
+
+      iframe.onload = () => {
+        setTimeout(() => {
+          iframe.contentWindow?.focus();
+          iframe.contentWindow?.print();
+        }, 300);
+      };
+
+      // Firestore Audit Log kaydı
+      await logUserAction(
+        "Reçete Kitapçığı İndirildi / Yazdırıldı",
+        "RECETE",
+        "Tüm içecek ve ürün reçeteleri PDF / Yazıcı çıktısı olarak indirildi."
+      );
+
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 4000);
+    } catch (err) {
+      console.error("PDF indirme hatası:", err);
+    }
   };
 
-  // Seçili kategoriye ve aramaya göre reçeteleri filtrele
   const filteredRecipes = recipes.filter(recipe => {
     const matchesSearch = recipe.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
                           recipe.ingredients.some(ing => ing.product.toLowerCase().includes(searchQuery.toLowerCase()));
@@ -148,19 +162,19 @@ export default function RecetelerPage() {
   return (
     <div className="min-h-screen flex flex-col bg-[var(--background)] text-[var(--foreground)] transition-colors duration-300">
       
-      {/* Üst Header */}
+      {/* Toast */}
+      {showToast && (
+        <div className="fixed top-6 right-6 z-50 flex items-center gap-2 bg-emerald-600 text-white px-5 py-3 rounded-2xl shadow-xl text-xs font-semibold animate-bounce">
+          <CheckCircle2 className="w-4 h-4 shrink-0" />
+          Reçeteler başarıyla hazırlandı ve yazdırılıyor! (Firestore'a İşlendi)
+        </div>
+      )}
+
+      {/* Header */}
       <header className="sticky top-0 z-40 w-full border-b border-[var(--border)] bg-[var(--card)]/80 backdrop-blur-md px-6 py-4 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-3">
           <button 
-            onClick={() => {
-              if (selectedRecipe) {
-                setSelectedRecipe(null);
-              } else if (selectedCategory) {
-                setSelectedCategory(null);
-              } else {
-                window.location.href = "/dashboard";
-              }
-            }}
+            onClick={() => window.location.href = "/dashboard"}
             className="p-2 rounded-xl hover:bg-[var(--foreground)]/5 text-zinc-500 hover:text-[var(--foreground)] transition-colors cursor-pointer mr-1"
           >
             <ChevronLeft className="w-5 h-5" />
@@ -169,214 +183,187 @@ export default function RecetelerPage() {
             <img src="/logo.png" alt="Değirmen Cafe Logo" className="w-full h-full object-contain" />
           </div>
           <div>
-            <h1 className="font-bold text-lg tracking-tight text-zinc-800 dark:text-zinc-100">
-              {selectedRecipe 
-                ? selectedRecipe.name 
-                : selectedCategory 
-                  ? `${selectedCategory} Reçeteleri` 
-                  : "Reçete Kategorileri"}
-            </h1>
-            <p className="text-xs text-zinc-500">Değirmen Cafe Standartları</p>
+            <h1 className="font-bold text-lg tracking-tight">Bar & Mutfak Ürün Reçeteleri</h1>
+            <p className="text-xs text-zinc-500">Standart Hazırlanış & Gramaj Rehberi</p>
           </div>
         </div>
 
         <div className="flex items-center gap-4">
+          {/* PDF İndir Butonu */}
           <button
-            onClick={toggleTheme}
-            className="p-2 rounded-xl hover:bg-[var(--foreground)]/5 text-zinc-500 hover:text-[var(--foreground)] transition-colors cursor-pointer"
+            onClick={handleDownloadPDF}
+            className="flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white font-bold px-4 py-2 rounded-xl text-xs shadow-lg transition-colors cursor-pointer"
           >
-            {theme === "dark" ? <Sun className="w-5 h-5 text-amber-500" /> : <Moon className="w-5 h-5" />}
+            <FileDown className="w-4 h-4" />
+            Tüm Reçeteleri İndir (PDF)
           </button>
 
-          <button 
-            onClick={() => window.location.href = "/"}
-            className="p-2 rounded-xl hover:bg-red-500/10 text-zinc-500 hover:text-red-500 transition-colors cursor-pointer"
-            title="Çıkış Yap"
-          >
+          <button onClick={toggleTheme} className="p-2 rounded-xl hover:bg-[var(--foreground)]/5 text-zinc-500 hover:text-[var(--foreground)] transition-colors cursor-pointer">
+            {theme === "dark" ? <Sun className="w-5 h-5 text-amber-500" /> : <Moon className="w-5 h-5" />}
+          </button>
+          <button onClick={() => window.location.href = "/"} className="p-2 rounded-xl hover:bg-red-500/10 text-zinc-500 hover:text-red-500 transition-colors cursor-pointer" title="Çıkış Yap">
             <LogOut className="w-5 h-5" />
           </button>
         </div>
       </header>
 
-      {/* Ana Gövde */}
-      <main className="flex-1 max-w-6xl w-full mx-auto p-6 space-y-8 flex flex-col justify-center pb-24">
+      {/* Main Content */}
+      <main className="flex-1 max-w-7xl w-full mx-auto p-6 space-y-6 pb-20">
         
-        {/* Karşılama ve Arama / Filtre Bölümü */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[var(--card)]/50 border border-[var(--border)] rounded-3xl p-6 backdrop-blur-sm">
-          <div>
-            <h2 className="text-xl font-bold text-zinc-800 dark:text-zinc-100">
-              {selectedRecipe 
-                ? `${selectedRecipe.name} Detayı` 
-                : selectedCategory 
-                  ? `${selectedCategory} Menüsü` 
-                  : "Reçete Kategorileri"}
-            </h2>
-            <p className="text-sm text-zinc-500 mt-0.5">
-              {selectedRecipe 
-                ? "Hazırlanış aşamaları ve mililitre/gramaj oranları." 
-                : "Hazırlamak istediğiniz içecek grubunu seçerek tarif kartını açın."}
-            </p>
+        {/* Arama ve Filtre */}
+        <div className="flex flex-col sm:flex-row items-center gap-4">
+          <div className="relative flex-1 w-full">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+            <input
+              type="text"
+              placeholder="Reçete adı veya malzeme ile ara..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-[var(--card)] border border-[var(--border)] rounded-2xl pl-11 pr-4 py-3 text-xs focus:outline-none focus:ring-1 focus:ring-orange-500"
+            />
           </div>
-          
-          {/* Arama çubuğu ve PDF İndirme Butonu */}
-          <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
-            <button
-              onClick={handleDownloadPDF}
-              className="flex items-center justify-center gap-2 bg-orange-600 hover:bg-orange-700 text-white font-bold px-4 py-2.5 rounded-xl text-xs transition-colors shadow-lg shadow-orange-600/15"
-              title="Tüm Reçeteleri PDF Olarak İndir"
-            >
-              <FileDown className="w-4 h-4" /> PDF İndir
-            </button>
 
-            <div className="relative min-w-[200px] flex-1 sm:flex-initial">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
-              <input
-                type="text"
-                placeholder="Reçete veya malzeme ara..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-[var(--border)] bg-[var(--background)] text-xs focus:outline-none focus:ring-1 focus:ring-orange-500"
-              />
-            </div>
+          <div className="flex items-center gap-2 overflow-x-auto w-full sm:w-auto pb-2 sm:pb-0 no-scrollbar">
+            <button
+              onClick={() => setSelectedCategory(null)}
+              className={`px-4 py-2.5 rounded-2xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+                selectedCategory === null
+                  ? "bg-orange-600 text-white shadow-md"
+                  : "bg-[var(--card)] border border-[var(--border)] text-zinc-400 hover:text-zinc-200"
+              }`}
+            >
+              Tüm Reçeteler
+            </button>
+            {categories.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setSelectedCategory(cat)}
+                className={`px-4 py-2.5 rounded-2xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+                  selectedCategory === cat
+                    ? "bg-orange-600 text-white shadow-md"
+                    : "bg-[var(--card)] border border-[var(--border)] text-zinc-400 hover:text-zinc-200"
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
           </div>
         </div>
 
-        {/* EKRAN 1: KATEGORİ SEÇİM EKRANI (Ana Sayfadaki custom-border-card Tasarımı ile) */}
-        {!selectedCategory && !selectedRecipe && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-8 justify-items-center py-4 w-full">
-            {categories.map((category) => (
-              <div 
-                key={category}
-                onClick={() => setSelectedCategory(category)}
-                className="custom-border-card"
-                style={{
-                  boxShadow: "0 10px 30px -10px rgba(234, 88, 12, 0.3), inset 0 0 0 1px rgba(234, 88, 12, 0.2)"
-                }}
-              >
-                {/* SVG Yuvarlatılmış Köşeli Çerçeve Çizgisi */}
-                <svg className="custom-card-border-svg">
-                  <rect 
-                    style={{ 
-                      stroke: "#ea580c",
-                      strokeDashoffset: "0"
-                    }} 
-                  />
-                </svg>
-
-                {/* Varsayılan Başlık Görünümü */}
-                <div className="card-logo flex flex-col items-center justify-center text-center px-6">
-                  <span className="text-sm font-extrabold tracking-wider text-zinc-200 uppercase">
-                    {category}
+        {/* Reçete Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredRecipes.map((recipe) => (
+            <div 
+              key={recipe.id || recipe.name}
+              onClick={() => setSelectedRecipe(recipe)}
+              className="group bg-[var(--card)] border border-[var(--border)] hover:border-orange-500/50 rounded-3xl p-6 transition-all duration-300 hover:shadow-xl cursor-pointer flex flex-col justify-between"
+            >
+              <div className="space-y-4">
+                <div className="flex items-start justify-between gap-2">
+                  <span className="bg-orange-500/10 text-orange-500 border border-orange-500/20 px-3 py-1 rounded-xl text-[10px] font-bold">
+                    {recipe.category}
+                  </span>
+                  <span className="text-[10px] text-zinc-400 font-mono bg-[var(--background)] px-2.5 py-1 rounded-lg border border-[var(--border)] font-bold">
+                    {recipe.gramaj}
                   </span>
                 </div>
 
-                {/* Hover Durumunda Beliren Detay / Giriş Metni */}
-                <div className="card-text flex flex-col items-center gap-1.5">
-                  <span className="text-orange-500 text-xs font-bold uppercase tracking-wider">Reçeteleri Gör</span>
-                  <span className="text-white text-xs font-medium uppercase px-2">{category}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* EKRAN 2: SEÇİLİ KATEGORİDEKİ REÇETELER LİSTESİ VEYA ARAMA YAPILDIYSA GENEL SONUÇLAR */}
-        {(selectedCategory || searchQuery.trim() !== "") && !selectedRecipe && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredRecipes.map(recipe => (
-              <div
-                key={recipe.name}
-                onClick={() => setSelectedRecipe(recipe)}
-                className="bg-[var(--card)] border border-[var(--border)] rounded-3xl p-5 hover:border-orange-500/40 hover:shadow-md transition-all cursor-pointer flex flex-col justify-between h-44 group"
-              >
                 <div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest">
-                      {recipe.category}
-                    </span>
-                    <span className="text-[9px] font-extrabold text-orange-500 bg-orange-500/10 px-2 py-0.5 rounded">
-                      {recipe.ingredients.length} Malzeme
-                    </span>
-                  </div>
-                  {/* Menü ürününün ismi her iki temada da tam net okunması için net siyah veya koyu renk yapıldı */}
-                  <h3 className="font-bold text-base text-zinc-900 dark:text-zinc-100 mt-2 group-hover:text-orange-500 transition-colors">
+                  <h3 className="font-bold text-base text-zinc-800 dark:text-zinc-100 group-hover:text-orange-500 transition-colors">
                     {recipe.name}
                   </h3>
-                  <p className="text-xs text-zinc-500 mt-1 line-clamp-2">
-                    {recipe.instructions}
-                  </p>
                 </div>
-                <div className="flex items-center justify-between pt-4 border-t border-[var(--border)]/40 mt-2">
-                  <span className="text-[10px] text-zinc-500">Tarife Git ({recipe.gramaj})</span>
-                  <ArrowRight className="w-4 h-4 text-orange-500 group-hover:translate-x-1 transition-transform" />
+
+                {/* Malzeme Listesi Özet */}
+                <div className="space-y-1.5 pt-2 border-t border-[var(--border)]/50">
+                  <p className="text-[10px] font-extrabold text-zinc-400 uppercase tracking-wider">Malzemeler</p>
+                  <ul className="space-y-1">
+                    {recipe.ingredients.slice(0, 4).map((ing, idx) => (
+                      <li key={idx} className="text-xs text-zinc-500 flex items-center justify-between">
+                        <span>{ing.product}</span>
+                        <span className="font-mono font-semibold text-zinc-400">{ing.amount} {ing.unit}</span>
+                      </li>
+                    ))}
+                    {recipe.ingredients.length > 4 && (
+                      <li className="text-[10px] text-orange-500 font-semibold italic">
+                        +{recipe.ingredients.length - 4} malzeme daha...
+                      </li>
+                    )}
+                  </ul>
                 </div>
               </div>
-            ))}
 
-            {filteredRecipes.length === 0 && (
-              <div className="col-span-full text-center py-12 text-zinc-500 text-xs">
-                Seçimlerinize uygun reçete bulunmamaktadır.
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* EKRAN 3: SEÇİLİ REÇETENİN DETAY GÖRÜNÜMÜ */}
-        {selectedRecipe && (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-            
-            {/* Sol Kolon: Gerekli Malzemeler */}
-            <div className="lg:col-span-5 bg-[var(--card)] border border-[var(--border)] rounded-3xl p-6 space-y-6">
-              <div className="flex items-center justify-between border-b border-[var(--border)] pb-3">
-                <h3 className="font-bold text-sm text-zinc-800 dark:text-zinc-200 flex items-center gap-2">
-                  <Layers className="w-4 h-4 text-orange-500" /> Gerekli Malzemeler
-                </h3>
-                <span className="text-[10px] font-black text-orange-500 bg-orange-500/10 px-2 py-0.5 rounded uppercase">
-                  {selectedRecipe.gramaj}
-                </span>
-              </div>
-              <div className="space-y-3">
-                {selectedRecipe.ingredients.map((ing, index) => (
-                  <div 
-                    key={index} 
-                    className="bg-[var(--background)] border border-[var(--border)] rounded-2xl p-4 flex items-center justify-between"
-                  >
-                    <span className="text-xs font-semibold text-zinc-800 dark:text-zinc-300">{ing.product}</span>
-                    <span className="text-[10px] font-bold text-orange-500 bg-orange-500/5 border border-orange-500/10 px-2.5 py-1 rounded-lg">
-                      {ing.amount} {ing.unit}
-                    </span>
-                  </div>
-                ))}
+              <div className="pt-4 mt-4 border-t border-[var(--border)]/40 flex items-center justify-between text-xs text-orange-500 font-semibold group-hover:translate-x-1 transition-transform">
+                <span>Hazırlanış Detayı</span>
+                <ArrowRight className="w-4 h-4" />
               </div>
             </div>
+          ))}
+        </div>
 
-            {/* Sağ Kolon: Yapılışı & Barista İpuçları */}
-            <div className="lg:col-span-7 space-y-6">
-              <div className="bg-[var(--card)] border border-[var(--border)] rounded-3xl p-6 space-y-6">
-                <h3 className="font-bold text-sm text-zinc-800 dark:text-zinc-200 flex items-center gap-2 border-b border-[var(--border)] pb-3">
-                  <Sparkles className="w-4 h-4 text-orange-500" /> Hazırlanış ve Yapılış Aşamaları
-                </h3>
-                <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed font-medium whitespace-pre-line bg-[var(--background)] border border-[var(--border)] p-5 rounded-2xl">
+        {/* DETAY MODAL */}
+        {selectedRecipe && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
+            <div className="bg-[var(--card)] border border-[var(--border)] rounded-3xl max-w-xl w-full p-6 shadow-2xl space-y-6 relative max-h-[90vh] overflow-y-auto">
+              
+              <div className="flex items-start justify-between border-b border-[var(--border)] pb-4">
+                <div>
+                  <span className="text-[10px] font-bold text-orange-500 uppercase tracking-wider bg-orange-500/10 px-3 py-1 rounded-xl border border-orange-500/20">
+                    {selectedRecipe.category}
+                  </span>
+                  <h2 className="text-lg font-bold text-zinc-800 dark:text-zinc-100 mt-2">
+                    {selectedRecipe.name}
+                  </h2>
+                </div>
+                <button
+                  onClick={() => setSelectedRecipe(null)}
+                  className="p-2 text-zinc-400 hover:text-zinc-200 rounded-xl hover:bg-[var(--background)] transition-colors cursor-pointer"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Malzemeler */}
+              <div className="space-y-3">
+                <h4 className="text-xs font-extrabold uppercase tracking-wider text-orange-500">Reçete Malzemeleri</h4>
+                <div className="bg-[var(--background)] rounded-2xl p-4 border border-[var(--border)] space-y-2">
+                  {selectedRecipe.ingredients.map((ing, idx) => (
+                    <div key={idx} className="flex items-center justify-between text-xs py-1 border-b border-[var(--border)]/30 last:border-0">
+                      <span className="font-semibold text-zinc-300">{ing.product}</span>
+                      <span className="font-mono font-bold text-orange-400">{ing.amount} {ing.unit}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Hazırlanış */}
+              <div className="space-y-2">
+                <h4 className="text-xs font-extrabold uppercase tracking-wider text-orange-500">Hazırlanış Adımları</h4>
+                <p className="text-xs text-zinc-300 leading-relaxed bg-[var(--background)] rounded-2xl p-4 border border-[var(--border)] whitespace-pre-line">
                   {selectedRecipe.instructions}
                 </p>
               </div>
 
-              {/* Barista İpucu Notu */}
-              <div className="flex gap-3 bg-orange-500/5 border border-orange-500/20 p-5 rounded-3xl">
-                <Flame className="w-5 h-5 text-orange-500 shrink-0" />
-                <div className="space-y-1">
-                  <span className="text-[10px] text-orange-500 font-bold uppercase tracking-wider block">Barista Notu</span>
-                  <p className="text-[11px] text-zinc-600 dark:text-zinc-400 leading-normal">
-                    Servis sıcaklığı ve sunum bardağının temizliği içeceğin lezzetini doğrudan etkiler. Her zaman reçetedeki mililitre/shot oranlarına birebir sadık kalın.
-                  </p>
-                </div>
+              <div className="pt-2 flex justify-end">
+                <button
+                  onClick={() => setSelectedRecipe(null)}
+                  className="bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold px-5 py-2.5 rounded-xl transition-colors cursor-pointer"
+                >
+                  Kapat
+                </button>
               </div>
-            </div>
 
+            </div>
           </div>
         )}
 
       </main>
+
+      {/* Footer */}
+      <footer className="w-full border-t border-[var(--border)] bg-[var(--card)] py-4 px-6 flex items-center justify-between text-xs text-zinc-500">
+        <span>© 2026 Değirmen Cafe. Tüm hakları saklıdır.</span>
+        <span className="text-orange-500 font-semibold">Tüm Reçeteler Standartlaştırılmıştır</span>
+      </footer>
 
     </div>
   );
