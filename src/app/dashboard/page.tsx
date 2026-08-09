@@ -15,11 +15,10 @@ import {
 } from "lucide-react";
 import { mockStockItems } from "@/lib/stockStore";
 
-import UserProfileWidget from "@/components/UserProfileWidget";
-
 export default function DashboardPage() {
   const [theme, setTheme] = useState<"light" | "dark">("dark");
-  const [userRole, setUserRole] = useState<string>("waiter"); // Varsayılan personel rolü
+  const [userRole, setUserRole] = useState<string>("waiter");
+  const [userFullName, setUserFullName] = useState<string>("Personel");
 
   const [criticalCount, setCriticalCount] = useState(0);
   const [sktWarnings, setSktWarnings] = useState<{ id: string; name: string; category: string; daysLeft: number }[]>([]);
@@ -31,11 +30,12 @@ export default function DashboardPage() {
       document.documentElement.className = savedTheme;
     }
 
-    // Giriş yapan kullanıcının rolünü al
+    // Giriş yapan kullanıcının bilgilerini al
     const activeUser = localStorage.getItem("activeUser");
     if (activeUser) {
       const parsed = JSON.parse(activeUser);
       setUserRole(parsed.role || "waiter");
+      setUserFullName(parsed.fullName || parsed.name || parsed.username || "Personel");
     }
 
     // Stok verilerini localStorage'dan çekip Kritik Limit ve SKT Analizlerini yapalım
@@ -114,8 +114,6 @@ export default function DashboardPage() {
         </div>
 
         <div className="flex items-center gap-4">
-          <UserProfileWidget />
-          
           <button className="p-2 rounded-xl hover:bg-[var(--foreground)]/5 text-zinc-500 hover:text-[var(--foreground)] transition-colors relative cursor-pointer">
             <Bell className="w-5 h-5" />
             {criticalCount > 0 && (
@@ -133,12 +131,14 @@ export default function DashboardPage() {
           <div className="h-6 w-[1px] bg-[var(--border)]"></div>
 
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-orange-600/10 border border-orange-500/20 flex items-center justify-center font-bold text-orange-500 text-sm">
-              {userRole === "admin" ? "AD" : "PR"}
+            <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-orange-600 to-amber-500 border border-orange-500/30 flex items-center justify-center font-extrabold text-white text-sm shadow-md">
+              {userFullName.charAt(0).toUpperCase()}
             </div>
             <div className="hidden md:block text-left">
-              <p className="text-sm font-semibold leading-none">{userRole === "admin" ? "Yönetici" : "Personel"}</p>
-              <span className="text-[10px] text-zinc-500 uppercase tracking-wider">{userRole}</span>
+              <p className="text-sm font-bold leading-tight text-zinc-800 dark:text-zinc-100">{userFullName}</p>
+              <span className="text-[10px] font-bold text-orange-500 uppercase tracking-wider">
+                {userRole === "admin" ? "ADMİN" : userRole === "yonetici" ? "YÖNETİCİ" : "BARİSTA"}
+              </span>
             </div>
           </div>
 

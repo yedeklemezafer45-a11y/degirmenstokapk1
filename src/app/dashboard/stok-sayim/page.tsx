@@ -23,7 +23,7 @@ import { StockItem } from "@/lib/stockStore";
 import { getAllStocks, saveAllStocks } from "@/lib/stockService";
 import { saveReport, MonthlyReportArchive } from "@/lib/reportService";
 import { logUserAction } from "@/lib/auditLogService";
-import UserProfileWidget from "@/components/UserProfileWidget";
+
 
 export default function StokSayimPage() {
   const [theme, setTheme] = useState<"light" | "dark">("dark");
@@ -341,7 +341,6 @@ export default function StokSayimPage() {
         </div>
 
         <div className="flex items-center gap-4">
-          <UserProfileWidget />
           <button onClick={toggleTheme} className="p-2 rounded-xl hover:bg-[var(--foreground)]/5 text-zinc-500 hover:text-[var(--foreground)] transition-colors cursor-pointer">
             {theme === "dark" ? <Sun className="w-5 h-5 text-amber-500" /> : <Moon className="w-5 h-5" />}
           </button>
