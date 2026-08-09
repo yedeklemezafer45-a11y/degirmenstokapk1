@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
+import MusicPlayer from "@/components/MusicPlayer";
 
 export default function DashboardLayout({
   children,
@@ -43,5 +44,11 @@ export default function DashboardLayout({
     );
   }
 
-  return <>{children}</>;
+  return (
+    <>
+      {children}
+      <MusicPlayer />
+    </>
+  );
 }
+

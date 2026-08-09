@@ -17,7 +17,6 @@ import {
 } from "lucide-react";
 import { mockStockItems } from "@/lib/stockStore";
 import { getAnnouncement, Announcement } from "@/lib/announcementService";
-import MusicPlayer from "@/components/MusicPlayer";
 
 export default function DashboardPage() {
   const [theme, setTheme] = useState<"light" | "dark">("dark");
@@ -286,9 +285,6 @@ export default function DashboardPage() {
         </div>
 
       </main>
-
-      {/* MÜZİK ÇALAR */}
-      <MusicPlayer />
 
       {/* 3. ALT BÖLGE (FOOTER) */}
       <footer className="w-full border-t border-[var(--border)] bg-[var(--card)] py-4 px-6 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-zinc-500">
