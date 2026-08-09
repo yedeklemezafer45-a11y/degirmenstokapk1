@@ -163,26 +163,36 @@ export default function DashboardPage() {
 
       {/* DUYURU BANNER */}
       {announcement && !annDismissed && (() => {
-        const cfg = {
-          info:     { bar: "bg-blue-600",   bg: "bg-blue-500/10 border-blue-500/30",   text: "text-blue-300",   label: "BİLGİ" },
-          warning:  { bar: "bg-amber-500",  bg: "bg-amber-500/10 border-amber-500/30",  text: "text-amber-300",  label: "UYARI" },
-          critical: { bar: "bg-red-600",    bg: "bg-red-500/10 border-red-500/30",      text: "text-red-300",    label: "KRİTİK" },
-        }[announcement.type];
+        const styles: Record<string, { barColor: string; bgColor: string; borderColor: string; textColor: string; label: string }> = {
+          info:     { barColor: "#3b82f6", bgColor: "rgba(59,130,246,0.08)",  borderColor: "rgba(59,130,246,0.25)",  textColor: "#93c5fd", label: "BİLGİ"  },
+          warning:  { barColor: "#f59e0b", bgColor: "rgba(245,158,11,0.08)", borderColor: "rgba(245,158,11,0.25)", textColor: "#fcd34d", label: "UYARI"  },
+          critical: { barColor: "#ef4444", bgColor: "rgba(239,68,68,0.08)",  borderColor: "rgba(239,68,68,0.25)",  textColor: "#fca5a5", label: "KRİTİK" },
+        };
+        const s = styles[announcement.type] ?? styles.info;
         return (
-          <div className={`w-full border-b ${cfg.bg} relative`}>
-            <div className={`absolute left-0 top-0 bottom-0 w-1 ${cfg.bar}`} />
+          <div style={{ background: s.bgColor, borderBottom: `1px solid ${s.borderColor}`, position: "relative", width: "100%" }}>
+            <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "4px", background: s.barColor, borderRadius: "0 2px 2px 0" }} />
             <div className="max-w-7xl mx-auto px-6 py-3 flex items-center gap-3">
-              <Megaphone className={`w-4 h-4 shrink-0 ${cfg.text}`} />
-              <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md ${cfg.bg} border ${cfg.bg.split(' ')[1]} ${cfg.text}`}>{cfg.label}</span>
-              <span className={`text-sm font-bold ${cfg.text}`}>{announcement.title}</span>
-              <span className="text-sm text-zinc-400 hidden sm:block">— {announcement.message}</span>
-              <button onClick={() => setAnnDismissed(true)} className="ml-auto p-1 rounded-lg text-zinc-500 hover:text-zinc-300 transition-colors cursor-pointer shrink-0">
+              <Megaphone style={{ color: s.textColor }} className="w-4 h-4 shrink-0" />
+              <span
+                className="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md shrink-0"
+                style={{ color: s.textColor, background: s.bgColor, border: `1px solid ${s.borderColor}` }}
+              >
+                {s.label}
+              </span>
+              <span className="text-sm font-bold truncate" style={{ color: s.textColor }}>{announcement.title}</span>
+              <span className="text-sm text-zinc-400 hidden sm:block shrink-0">— {announcement.message}</span>
+              <button
+                onClick={() => setAnnDismissed(true)}
+                className="ml-auto p-1 rounded-lg text-zinc-500 hover:text-zinc-300 transition-colors cursor-pointer shrink-0"
+              >
                 <X className="w-4 h-4" />
               </button>
             </div>
           </div>
         );
       })()}
+
 
       {/* 2. ORTA BÖLGE */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-6 flex flex-col justify-center items-center space-y-12">
