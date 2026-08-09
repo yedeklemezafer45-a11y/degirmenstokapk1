@@ -51,7 +51,7 @@ export default function PersonelYetkileriPage() {
     }
 
     // Rol Kontrolü (Sadece Admin girebilir)
-    const activeUserStr = localStorage.getItem("activeUser");
+    const activeUserStr = sessionStorage.getItem("activeUser");
     if (activeUserStr) {
       const parsed = JSON.parse(activeUserStr);
       setActiveUserRole(parsed.role || "waiter");

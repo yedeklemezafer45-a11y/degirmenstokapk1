@@ -61,7 +61,7 @@ export default function StokKontroluPage() {
       document.documentElement.className = savedTheme;
     }
 
-    const activeUser = localStorage.getItem("activeUser");
+    const activeUser = sessionStorage.getItem("activeUser");
     if (activeUser) {
       const parsed = JSON.parse(activeUser);
       setUserRole(parsed.role || "waiter");

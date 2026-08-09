@@ -23,7 +23,7 @@ export default function DuyuruYonetimiPage() {
       setTheme(savedTheme);
       document.documentElement.className = savedTheme;
     }
-    const activeUser = localStorage.getItem("activeUser");
+    const activeUser = sessionStorage.getItem("activeUser");
     if (activeUser) {
       const parsed = JSON.parse(activeUser);
       setUserRole(parsed.role || "waiter");

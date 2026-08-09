@@ -36,7 +36,7 @@ export default function DashboardPage() {
     }
 
     // Giriş yapan kullanıcının bilgilerini al
-    const activeUser = localStorage.getItem("activeUser");
+    const activeUser = sessionStorage.getItem("activeUser");
     if (activeUser) {
       const parsed = JSON.parse(activeUser);
       setUserRole(parsed.role || "waiter");

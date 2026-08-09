@@ -63,7 +63,7 @@ export default function StokSayimPage() {
       document.documentElement.className = savedTheme;
     }
 
-    const activeUser = localStorage.getItem("activeUser");
+    const activeUser = sessionStorage.getItem("activeUser");
     if (activeUser) {
       const parsed = JSON.parse(activeUser);
       setUserRole(parsed.role || "waiter");
@@ -254,7 +254,7 @@ export default function StokSayimPage() {
 
     setIsSaving(true);
     try {
-      const activeUserStr = localStorage.getItem("activeUser");
+      const activeUserStr = sessionStorage.getItem("activeUser");
       const activeUserName = activeUserStr ? JSON.parse(activeUserStr).fullName : "Yönetici";
 
       const currentMonth = new Date().toISOString().substring(0, 7);

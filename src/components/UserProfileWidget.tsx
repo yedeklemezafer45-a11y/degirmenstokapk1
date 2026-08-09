@@ -13,7 +13,7 @@ export default function UserProfileWidget() {
   const [user, setUser] = useState<UserProfileInfo | null>(null);
 
   useEffect(() => {
-    const activeUserStr = localStorage.getItem("activeUser");
+    const activeUserStr = sessionStorage.getItem("activeUser");
     if (activeUserStr) {
       try {
         const parsed = JSON.parse(activeUserStr);

@@ -14,7 +14,7 @@ export default function DashboardLayout({
 
   useEffect(() => {
     // Tarayıcıdaki oturum kontrolü
-    const activeUser = localStorage.getItem("activeUser");
+    const activeUser = sessionStorage.getItem("activeUser");
     if (!activeUser) {
       // Oturum yoksa doğrudan giriş sayfasına yönlendir
       window.location.href = "/";
@@ -24,11 +24,11 @@ export default function DashboardLayout({
         if (parsed && parsed.username) {
           setIsAuthenticated(true);
         } else {
-          localStorage.removeItem("activeUser");
+          sessionStorage.removeItem("activeUser");
           window.location.href = "/";
         }
       } catch (e) {
-        localStorage.removeItem("activeUser");
+        sessionStorage.removeItem("activeUser");
         window.location.href = "/";
       }
     }

@@ -33,7 +33,7 @@ export default function IslemGecmisiPage() {
     }
 
     // Yetki kontrolü (Sadece Admin / Yönetici)
-    const activeUserStr = localStorage.getItem("activeUser");
+    const activeUserStr = sessionStorage.getItem("activeUser");
     if (activeUserStr) {
       const parsed = JSON.parse(activeUserStr);
       if (parsed.role !== "admin" && parsed.role !== "yonetici") {

@@ -28,7 +28,7 @@ export async function logUserAction(
   details: string
 ): Promise<void> {
   try {
-    const activeUserStr = localStorage.getItem("activeUser");
+    const activeUserStr = sessionStorage.getItem("activeUser");
     let username = "Sistem";
     let userRole = "Bilinmiyor";
 

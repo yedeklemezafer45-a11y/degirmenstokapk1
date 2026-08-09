@@ -72,8 +72,8 @@ export default function LoginPage() {
       const user = await getUserByUsername(username.trim().toLowerCase());
 
       if (user && user.password.trim() === password.trim()) {
-        // Oturumu localStorage'e kaydet (tema/aktif kullanıcı bilgisi)
-        localStorage.setItem("activeUser", JSON.stringify({
+        // Oturumu sessionStorage'e kaydet (tema/aktif kullanıcı bilgisi)
+        sessionStorage.setItem("activeUser", JSON.stringify({
           username: user.username,
           role: user.role,
           fullName: user.name
@@ -118,7 +118,7 @@ export default function LoginPage() {
       );
 
       if (user) {
-        localStorage.setItem("activeUser", JSON.stringify({
+        sessionStorage.setItem("activeUser", JSON.stringify({
           username: user.username,
           role: user.role,
           fullName: user.name
