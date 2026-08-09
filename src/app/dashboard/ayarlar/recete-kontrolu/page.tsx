@@ -19,7 +19,8 @@ import {
   Flame
 } from "lucide-react";
 import { mockRecipes, Recipe, RecipeIngredient } from "@/lib/recipeStore";
-import { mockStockItems, StockItem } from "@/lib/stockStore";
+import { StockItem } from "@/lib/stockStore";
+import { subscribeToStocks } from "@/lib/stockService";
 
 export default function ReceteKontroluPage() {
   const [theme, setTheme] = useState<"light" | "dark">("dark");
@@ -74,13 +75,15 @@ export default function ReceteKontroluPage() {
       window.location.href = "/";
     }
 
-    // Stok ürün seçeneklerini yükle (Reçete malzemesi seçerken kullanacağız)
-    const savedStock = localStorage.getItem("degirmen_stock");
-    if (savedStock) {
-      setStockOptions(JSON.parse(savedStock));
-    } else {
-      setStockOptions(mockStockItems);
-    }
+    // Gerçek zamanlı Firestore dinleyicisi ile stok seçeneklerini yükle
+    const unsubscribe = subscribeToStocks(
+      (items) => {
+        setStockOptions(items);
+      },
+      () => {
+        console.error("Reçete kontrolünde stok seçenekleri yüklenemedi.");
+      }
+    );
 
     // Reçeteleri yükle
     const savedRecipes = localStorage.getItem("degirmen_recipes");
@@ -91,6 +94,8 @@ export default function ReceteKontroluPage() {
       setRecipesList(mockRecipes);
       setDbRecipesList(mockRecipes);
     }
+
+    return () => unsubscribe();
   }, []);
 
   const toggleTheme = () => {

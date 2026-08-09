@@ -14,7 +14,9 @@ import {
   AlertTriangle,
   Clock
 } from "lucide-react";
-import { mockStockItems, StockItem } from "@/lib/stockStore";
+import { StockItem } from "@/lib/stockStore";
+import { subscribeToStocks, saveAllStocks } from "@/lib/stockService";
+import { logUserAction } from "@/lib/auditLogService";
 
 export default function SktKontroluPage() {
   const [theme, setTheme] = useState<"light" | "dark">("dark");
@@ -26,6 +28,8 @@ export default function SktKontroluPage() {
 
   // SKT Tarihleri Draft State (ID -> YYYY-MM-DD)
   const [sktValues, setSktValues] = useState<Record<string, string>>({});
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Toast Bildirim State
   const [showToast, setShowToast] = useState(false);
@@ -56,20 +60,25 @@ export default function SktKontroluPage() {
       window.location.href = "/";
     }
 
-    // Stok verilerini yükle
-    const savedStock = localStorage.getItem("degirmen_stock");
-    let finalStock = mockStockItems;
-    if (savedStock) {
-      finalStock = JSON.parse(savedStock);
-    }
-    setStockList(finalStock);
+    // Gerçek zamanlı Firestore dinleyicisi
+    setIsLoading(true);
+    const unsubscribe = subscribeToStocks(
+      (items) => {
+        setStockList(items);
+        const initialSkt: Record<string, string> = {};
+        items.forEach(item => {
+          initialSkt[item.id] = item.expDate || "";
+        });
+        setSktValues(initialSkt);
+        setIsLoading(false);
+      },
+      () => {
+        triggerToast("Stok verileri yüklenemedi!");
+        setIsLoading(false);
+      }
+    );
 
-    // SKT tarihlerini yükle
-    const initialSkt: Record<string, string> = {};
-    finalStock.forEach(item => {
-      initialSkt[item.id] = item.expDate || "";
-    });
-    setSktValues(initialSkt);
+    return () => unsubscribe();
   }, []);
 
   const toggleTheme = () => {
@@ -87,18 +96,23 @@ export default function SktKontroluPage() {
     setIsDirty(true);
   };
 
-  const handleSaveChanges = () => {
-    const updatedStock = stockList.map(item => ({
-      ...item,
-      expDate: sktValues[item.id] || undefined
-    }));
+  const handleSaveChanges = async () => {
+    setIsSaving(true);
+    try {
+      const updatedStock = stockList.map(item => ({
+        ...item,
+        expDate: sktValues[item.id] || undefined
+      }));
 
-    setStockList(updatedStock);
-    localStorage.setItem("degirmen_stock", JSON.stringify(updatedStock));
-    localStorage.setItem("degirmen_stock_reset_02", "true"); // Arayüzlerin tetiklenmesi için
-
-    setIsDirty(false);
-    triggerToast("SKT Son Tüketim Tarihleri başarıyla güncellendi!");
+      await saveAllStocks(updatedStock);
+      setIsDirty(false);
+      triggerToast("SKT Son Tüketim Tarihleri başarıyla güncellendi!");
+      await logUserAction("SKT Tarihleri Güncellendi", "STOK", "Ürünlerin Son Tüketim Tarihleri toplu olarak güncellendi.");
+    } catch {
+      triggerToast("Kaydedilirken hata oluştu!");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleCancelChanges = () => {
