@@ -11,9 +11,13 @@ import {
   BookOpen,
   BarChart3,
   Settings,
-  AlertTriangle
+  AlertTriangle,
+  Megaphone,
+  X
 } from "lucide-react";
 import { mockStockItems } from "@/lib/stockStore";
+import { getAnnouncement, Announcement } from "@/lib/announcementService";
+import MusicPlayer from "@/components/MusicPlayer";
 
 export default function DashboardPage() {
   const [theme, setTheme] = useState<"light" | "dark">("dark");
@@ -22,6 +26,8 @@ export default function DashboardPage() {
 
   const [criticalCount, setCriticalCount] = useState(0);
   const [sktWarnings, setSktWarnings] = useState<{ id: string; name: string; category: string; daysLeft: number }[]>([]);
+  const [announcement, setAnnouncement] = useState<Announcement | null>(null);
+  const [annDismissed, setAnnDismissed] = useState(false);
 
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme") as "light" | "dark" | null;
@@ -75,6 +81,9 @@ export default function DashboardPage() {
     // En kritik olanlar (süre olarak en az kalanlar/geçenler) en üstte görünsün
     warnings.sort((a, b) => a.daysLeft - b.daysLeft);
     setSktWarnings(warnings);
+
+    // Duyuru çek
+    getAnnouncement().then(setAnnouncement);
   }, []);
 
   const toggleTheme = () => {
@@ -151,6 +160,29 @@ export default function DashboardPage() {
           </button>
         </div>
       </header>
+
+      {/* DUYURU BANNER */}
+      {announcement && !annDismissed && (() => {
+        const cfg = {
+          info:     { bar: "bg-blue-600",   bg: "bg-blue-500/10 border-blue-500/30",   text: "text-blue-300",   label: "BİLGİ" },
+          warning:  { bar: "bg-amber-500",  bg: "bg-amber-500/10 border-amber-500/30",  text: "text-amber-300",  label: "UYARI" },
+          critical: { bar: "bg-red-600",    bg: "bg-red-500/10 border-red-500/30",      text: "text-red-300",    label: "KRİTİK" },
+        }[announcement.type];
+        return (
+          <div className={`w-full border-b ${cfg.bg} relative`}>
+            <div className={`absolute left-0 top-0 bottom-0 w-1 ${cfg.bar}`} />
+            <div className="max-w-7xl mx-auto px-6 py-3 flex items-center gap-3">
+              <Megaphone className={`w-4 h-4 shrink-0 ${cfg.text}`} />
+              <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md ${cfg.bg} border ${cfg.bg.split(' ')[1]} ${cfg.text}`}>{cfg.label}</span>
+              <span className={`text-sm font-bold ${cfg.text}`}>{announcement.title}</span>
+              <span className="text-sm text-zinc-400 hidden sm:block">— {announcement.message}</span>
+              <button onClick={() => setAnnDismissed(true)} className="ml-auto p-1 rounded-lg text-zinc-500 hover:text-zinc-300 transition-colors cursor-pointer shrink-0">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* 2. ORTA BÖLGE */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-6 flex flex-col justify-center items-center space-y-12">
@@ -244,6 +276,9 @@ export default function DashboardPage() {
         </div>
 
       </main>
+
+      {/* MÜZİK ÇALAR */}
+      <MusicPlayer />
 
       {/* 3. ALT BÖLGE (FOOTER) */}
       <footer className="w-full border-t border-[var(--border)] bg-[var(--card)] py-4 px-6 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-zinc-500">
