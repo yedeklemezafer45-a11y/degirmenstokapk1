@@ -15,6 +15,8 @@ import {
 } from "lucide-react";
 import { mockStockItems } from "@/lib/stockStore";
 
+import UserProfileWidget from "@/components/UserProfileWidget";
+
 export default function DashboardPage() {
   const [theme, setTheme] = useState<"light" | "dark">("dark");
   const [userRole, setUserRole] = useState<string>("waiter"); // Varsayılan personel rolü
@@ -112,6 +114,8 @@ export default function DashboardPage() {
         </div>
 
         <div className="flex items-center gap-4">
+          <UserProfileWidget />
+          
           <button className="p-2 rounded-xl hover:bg-[var(--foreground)]/5 text-zinc-500 hover:text-[var(--foreground)] transition-colors relative cursor-pointer">
             <Bell className="w-5 h-5" />
             {criticalCount > 0 && (
