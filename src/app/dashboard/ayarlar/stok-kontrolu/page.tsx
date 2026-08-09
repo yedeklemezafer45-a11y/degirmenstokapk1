@@ -18,7 +18,7 @@ import {
   Package
 } from "lucide-react";
 import { StockItem, StockCategory } from "@/lib/stockStore";
-import { getAllStocks, saveAllStocks, saveStockItem } from "@/lib/stockService";
+import { subscribeToStocks, saveAllStocks, saveStockItem } from "@/lib/stockService";
 import { logUserAction } from "@/lib/auditLogService";
 
 export default function StokKontroluPage() {
@@ -74,26 +74,27 @@ export default function StokKontroluPage() {
       return;
     }
 
-    loadData();
-  }, []);
-
-  const loadData = async () => {
-    setIsLoading(true);
-    try {
-      const fetched = await getAllStocks();
-      setStockList(fetched);
-
-      const savedChecked = localStorage.getItem("degirmen_kontrol_checked_ids");
-      if (savedChecked) {
-        setCheckedItemIds(JSON.parse(savedChecked));
-      }
-    } catch (err) {
-      console.error("Stok okuma hatası:", err);
-      triggerToast("Stok verileri okunamadı!");
-    } finally {
-      setIsLoading(false);
+    // Onay kutularını localStorage'dan yüklme
+    const savedChecked = localStorage.getItem("degirmen_kontrol_checked_ids");
+    if (savedChecked) {
+      setCheckedItemIds(JSON.parse(savedChecked));
     }
-  };
+
+    // Gerçek zamanlı Firestore dinleyicisi — tüm kullanıcılarda anlık güncelleme
+    setIsLoading(true);
+    const unsubscribe = subscribeToStocks(
+      (items) => {
+        setStockList(items);
+        setIsLoading(false);
+      },
+      () => {
+        triggerToast("Stok verileri okunamadı!");
+        setIsLoading(false);
+      }
+    );
+
+    return () => unsubscribe();
+  }, []);
 
   const toggleTheme = () => {
     const newTheme = theme === "dark" ? "light" : "dark";
@@ -162,29 +163,58 @@ export default function StokKontroluPage() {
     }
   };
 
-  // Ürün Güncelleme (Depoda Bulunan Miktarı Değiştirme)
-  const handleDepoChange = (id: string, value: string) => {
-    const val = parseFloat(value) || 0;
-    setStockList(prev => prev.map(item => {
-      if (item.id === id) {
-        const rem = val - item.depodanAlinan;
-        return {
-          ...item,
-          depodaBulunan: val,
-          quantity: rem < 0 ? 0 : rem
-        };
-      }
-      return item;
-    }));
+  // Depo Girişi — MEVCUT MIKTAR ÜZERİNE EKLE (değiştirme değil!)
+  const [depoInputs, setDepoInputs] = useState<Record<string, string>>({});
 
-    // Otomatik İşlem Yapıldı İle İşaretle
-    setCheckedItemIds(prev => {
-      const updated = { ...prev, [id]: true };
-      localStorage.setItem("degirmen_kontrol_checked_ids", JSON.stringify(updated));
-      return updated;
-    });
-
+  const handleDepoInputChange = (id: string, value: string) => {
+    setDepoInputs(prev => ({ ...prev, [id]: value }));
     setIsDirty(true);
+  };
+
+  const handleDepoAdd = async (id: string) => {
+    const eklenecek = parseFloat(depoInputs[id] || "0");
+    if (isNaN(eklenecek) || eklenecek <= 0) {
+      triggerToast("Geçerli bir miktar girin!");
+      return;
+    }
+
+    const item = stockList.find(i => i.id === id);
+    if (!item) return;
+
+    const yeniDepodaBulunan = item.depodaBulunan + eklenecek;
+    const yeniQuantity = Math.max(0, yeniDepodaBulunan - item.depodanAlinan);
+
+    const updatedItem: StockItem = {
+      ...item,
+      depodaBulunan: yeniDepodaBulunan,
+      quantity: yeniQuantity,
+    };
+
+    setIsSaving(true);
+    try {
+      await saveStockItem(updatedItem);
+      // onSnapshot otomatik güncelleyecek, manuel setState gerek yok
+      setDepoInputs(prev => ({ ...prev, [id]: "" }));
+
+      // İşlem yapıldı olarak işaretle
+      setCheckedItemIds(prev => {
+        const updated = { ...prev, [id]: true };
+        localStorage.setItem("degirmen_kontrol_checked_ids", JSON.stringify(updated));
+        return updated;
+      });
+
+      triggerToast(`✅ ${item.name} stoğu +${eklenecek} olarak güncellendi!`);
+
+      await logUserAction(
+        "Depo Stok Eklendi",
+        "STOK",
+        `"${item.name}" ürününe +${eklenecek} eklendi. Yeni toplam: ${yeniDepodaBulunan}`
+      );
+    } catch {
+      triggerToast("Güncellenirken hata oluştu!");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   // Ürün Sil (Tüm sistemden ve kategorilerden kaldırılır)
@@ -520,16 +550,32 @@ export default function StokKontroluPage() {
                           {item.weightInfo || "1.000 kg"}
                         </td>
 
-                        {/* Depoda Bulunan Input */}
-                        <td className="py-4 px-4 text-center">
-                          <input
-                            type="number"
-                            min="0"
-                            value={item.depodaBulunan}
-                            onChange={(e) => handleDepoChange(item.id, e.target.value)}
-                            className="w-24 bg-[var(--background)] border border-[var(--border)] rounded-xl px-3 py-1.5 text-center font-mono font-bold text-emerald-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
-                          />
-                        </td>
+                         {/* Depoda Bulunan — Üstüne Ekle */}
+                         <td className="py-4 px-4 text-center">
+                           <div className="flex items-center gap-1 justify-center">
+                             <div className="text-center">
+                               <div className="text-[10px] text-zinc-500 mb-0.5">Mevcut: <span className="font-bold text-zinc-300">{item.depodaBulunan}</span></div>
+                               <div className="flex gap-1">
+                                 <input
+                                   type="number"
+                                   min="0"
+                                   placeholder="+ekle"
+                                   value={depoInputs[item.id] || ""}
+                                   onChange={(e) => handleDepoInputChange(item.id, e.target.value)}
+                                   className="w-20 bg-[var(--background)] border border-[var(--border)] rounded-xl px-2 py-1.5 text-center font-mono font-bold text-emerald-500 focus:outline-none focus:ring-1 focus:ring-orange-500 text-xs"
+                                 />
+                                 <button
+                                   type="button"
+                                   onClick={() => handleDepoAdd(item.id)}
+                                   disabled={isSaving || !depoInputs[item.id]}
+                                   className="px-2 py-1.5 rounded-xl bg-orange-600 hover:bg-orange-700 disabled:opacity-40 text-white text-[10px] font-bold cursor-pointer transition-colors"
+                                 >
+                                   Ekle
+                                 </button>
+                               </div>
+                             </div>
+                           </div>
+                         </td>
 
                         <td className="py-4 px-4 text-center font-mono text-red-400 font-bold">
                           {item.depodanAlinan} {item.unit}

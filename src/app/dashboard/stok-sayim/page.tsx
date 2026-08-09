@@ -20,7 +20,7 @@ import {
   Check
 } from "lucide-react";
 import { StockItem } from "@/lib/stockStore";
-import { getAllStocks, saveAllStocks } from "@/lib/stockService";
+import { subscribeToStocks, saveAllStocks } from "@/lib/stockService";
 import { saveReport, MonthlyReportArchive } from "@/lib/reportService";
 import { logUserAction } from "@/lib/auditLogService";
 
@@ -69,38 +69,48 @@ export default function StokSayimPage() {
       setUserRole(parsed.role || "waiter");
     }
 
-    loadData();
-  }, []);
-
-  const loadData = async () => {
-    setIsLoading(true);
-    try {
-      const fetchedStocks = await getAllStocks();
-      setStockList(fetchedStocks);
-
-      const initialSayilan: Record<string, string> = {};
-      const initialAcikta: Record<string, string> = {};
-
-      fetchedStocks.forEach(item => {
-        initialSayilan[item.id] = String(item.quantity || 0);
-        initialAcikta[item.id] = "0";
-      });
-
-      setSayilanValues(initialSayilan);
-      setAciktaValues(initialAcikta);
-
-      // Kayıtlı olan onaylı ürün işaretlerini yükle
-      const savedChecked = localStorage.getItem("degirmen_sayim_checked_ids");
-      if (savedChecked) {
-        setCheckedItemIds(JSON.parse(savedChecked));
-      }
-    } catch (err) {
-      console.error("Stok yükleme hatası:", err);
-      triggerToast("Stoklar yüklenirken hata oluştu!");
-    } finally {
-      setIsLoading(false);
+    // Onay kutularını yükleme
+    const savedChecked = localStorage.getItem("degirmen_sayim_checked_ids");
+    if (savedChecked) {
+      setCheckedItemIds(JSON.parse(savedChecked));
     }
-  };
+
+    // Gerçek zamanlı Firestore dinleyicisi
+    setIsLoading(true);
+    const unsubscribe = subscribeToStocks(
+      (fetchedStocks) => {
+        setStockList(fetchedStocks);
+
+        setSayilanValues(prev => {
+          const updated = { ...prev };
+          fetchedStocks.forEach(item => {
+            if (!(item.id in updated)) {
+              updated[item.id] = String(item.quantity || 0);
+            }
+          });
+          return updated;
+        });
+
+        setAciktaValues(prev => {
+          const updated = { ...prev };
+          fetchedStocks.forEach(item => {
+            if (!(item.id in updated)) {
+              updated[item.id] = "0";
+            }
+          });
+          return updated;
+        });
+
+        setIsLoading(false);
+      },
+      () => {
+        triggerToast("Stoklar yüklenirken hata oluştu!");
+        setIsLoading(false);
+      }
+    );
+
+    return () => unsubscribe();
+  }, []);
 
   const toggleTheme = () => {
     const newTheme = theme === "dark" ? "light" : "dark";

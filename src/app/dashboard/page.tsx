@@ -15,8 +15,8 @@ import {
   Megaphone,
   X
 } from "lucide-react";
-import { mockStockItems } from "@/lib/stockStore";
 import { getAnnouncement, Announcement } from "@/lib/announcementService";
+import { subscribeToStocks } from "@/lib/stockService";
 
 export default function DashboardPage() {
   const [theme, setTheme] = useState<"light" | "dark">("dark");
@@ -43,46 +43,32 @@ export default function DashboardPage() {
       setUserFullName(parsed.fullName || parsed.name || parsed.username || "Personel");
     }
 
-    // Stok verilerini localStorage'dan çekip Kritik Limit ve SKT Analizlerini yapalım
-    const savedStock = localStorage.getItem("degirmen_stock");
-    let currentStock = mockStockItems;
-    if (savedStock) {
-      currentStock = JSON.parse(savedStock);
-    }
-
-    // Kritik limit hesabı
-    const critCount = currentStock.filter(item => item.quantity <= item.minLimit).length;
-    setCriticalCount(critCount);
-
-    // SKT Analizi (Tarihi yaklaşanlar - 30 günden az kalanlar veya geçenler)
-    const warnings: typeof sktWarnings = [];
-    const today = new Date();
-    today.setHours(0,0,0,0);
-
-    currentStock.forEach(item => {
-      if (item.expDate) {
-        const exp = new Date(item.expDate);
-        exp.setHours(0,0,0,0);
-        const timeDiff = exp.getTime() - today.getTime();
-        const diffDays = Math.ceil(timeDiff / (1000 * 3600 * 24));
-        
-        if (diffDays <= 30) {
-          warnings.push({
-            id: item.id,
-            name: item.name,
-            category: item.category,
-            daysLeft: diffDays
-          });
-        }
-      }
-    });
-
-    // En kritik olanlar (süre olarak en az kalanlar/geçenler) en üstte görünsün
-    warnings.sort((a, b) => a.daysLeft - b.daysLeft);
-    setSktWarnings(warnings);
-
     // Duyuru çek
     getAnnouncement().then(setAnnouncement);
+
+    // Gerçek zamanlı Firestore stok analizi (kritik limit + SKT)
+    const unsubscribe = subscribeToStocks((currentStock) => {
+      const critCount = currentStock.filter(item => item.quantity <= item.minLimit).length;
+      setCriticalCount(critCount);
+
+      const warnings: typeof sktWarnings = [];
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      currentStock.forEach(item => {
+        if (item.expDate) {
+          const exp = new Date(item.expDate);
+          exp.setHours(0, 0, 0, 0);
+          const diffDays = Math.ceil((exp.getTime() - today.getTime()) / (1000 * 3600 * 24));
+          if (diffDays <= 30) {
+            warnings.push({ id: item.id, name: item.name, category: item.category, daysLeft: diffDays });
+          }
+        }
+      });
+      warnings.sort((a, b) => a.daysLeft - b.daysLeft);
+      setSktWarnings(warnings);
+    });
+
+    return () => unsubscribe();
   }, []);
 
   const toggleTheme = () => {

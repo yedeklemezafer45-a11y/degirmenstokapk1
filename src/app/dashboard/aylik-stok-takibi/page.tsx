@@ -20,7 +20,7 @@ import {
   Trash2
 } from "lucide-react";
 import { StockItem } from "@/lib/stockStore";
-import { getAllStocks, saveAllStocks } from "@/lib/stockService";
+import { subscribeToStocks, saveAllStocks } from "@/lib/stockService";
 import { getAllReports, saveReport, removeReport, MonthlyReportArchive } from "@/lib/reportService";
 
 export default function AylikStokTakibiPage() {
@@ -63,23 +63,30 @@ export default function AylikStokTakibiPage() {
       return;
     }
 
-    loadFirestoreData();
+    loadReports();
+
+    // Gerçek zamanlı Firestore stok dinleyicisi — anlık güncelleme
+    setIsLoading(true);
+    const unsubscribe = subscribeToStocks(
+      (fetchedStocks) => {
+        setStockList(fetchedStocks);
+        setIsLoading(false);
+      },
+      () => {
+        triggerToast("Stoklar yüklenirken hata oluştu!");
+        setIsLoading(false);
+      }
+    );
+
+    return () => unsubscribe();
   }, []);
 
-  const loadFirestoreData = async () => {
-    setIsLoading(true);
+  const loadReports = async () => {
     try {
-      const [fetchedStocks, fetchedReports] = await Promise.all([
-        getAllStocks(),
-        getAllReports()
-      ]);
-      setStockList(fetchedStocks);
+      const fetchedReports = await getAllReports();
       setArchivedReports(fetchedReports);
     } catch (err) {
-      console.error("Firebase veri okuma hatası:", err);
-      triggerToast("Veriler yüklenirken hata oluştu!");
-    } finally {
-      setIsLoading(false);
+      console.error("Rapor okuma hatası:", err);
     }
   };
 
