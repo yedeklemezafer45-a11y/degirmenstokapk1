@@ -97,6 +97,16 @@ export default function AylikStokTakibiPage() {
     document.documentElement.className = newTheme;
   };
 
+  const isLiquidItem = (item: any) => {
+    return (
+      item.category === "Litrelik Ürünler" || 
+      item.unit?.toLowerCase() === "litre" || 
+      item.unit?.toLowerCase() === "lt" || 
+      item.weightInfo?.toLowerCase().includes("lt") ||
+      item.weightInfo?.toLowerCase().includes("litre")
+    );
+  };
+
   const extractWeightAndUnit = (item: StockItem) => {
     if (item.weightInfo) {
       const match = item.weightInfo.match(/([0-9.,]+)/);
@@ -105,7 +115,7 @@ export default function AylikStokTakibiPage() {
         if (!isNaN(val)) return { parsedWeight: val, displayWeight: item.weightInfo };
       }
     }
-    return { parsedWeight: 1.0, displayWeight: "1.000 kg" };
+    return { parsedWeight: 1.0, displayWeight: isLiquidItem(item) ? "1.000 lt" : "1.000 kg" };
   };
 
   const handleDeleteArchive = async (id: string) => {
@@ -313,21 +323,25 @@ export default function AylikStokTakibiPage() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-[var(--border)]/40 text-xs">
-                        {report.stockSnapshot?.map((item: any) => (
-                          <tr key={item.productId} className="hover:bg-[var(--background)]/30">
-                            <td className="py-2 px-3 font-semibold text-zinc-300">{item.productName}</td>
-                            <td className="py-2 px-3 text-center font-mono text-emerald-400">{item.depodaBulunan}</td>
-                            <td className="py-2 px-3 text-center font-mono text-red-400">{item.depodanAlinan}</td>
-                            <td className="py-2 px-3 text-center font-mono text-zinc-400">{item.sysKalan}</td>
-                            <td className="py-2 px-3 text-center font-mono font-bold text-orange-400">{item.sayilanAdet}</td>
-                            <td className="py-2 px-3 text-center font-mono font-bold text-amber-500">{item.sayilanToplamGramaj} kg</td>
-                            <td className={`py-2 px-3 text-right font-mono font-bold ${
-                              item.farkGramaj > 0 ? "text-red-400" : item.farkGramaj < 0 ? "text-emerald-400" : "text-zinc-500"
-                            }`}>
-                              {item.farkGramaj > 0 ? `-${item.farkGramaj} kg` : item.farkGramaj < 0 ? `+${Math.abs(item.farkGramaj)} kg` : "Tam"}
-                            </td>
-                          </tr>
-                        ))}
+                          {report.stockSnapshot?.map((item: any) => {
+                            const isLiquid = isLiquidItem(item);
+                            const unitSfx = isLiquid ? "lt" : "kg";
+                            return (
+                              <tr key={item.productId} className="hover:bg-[var(--background)]/30">
+                                <td className="py-2 px-3 font-semibold text-zinc-300">{item.productName}</td>
+                                <td className="py-2 px-3 text-center font-mono text-emerald-400">{item.depodaBulunan}</td>
+                                <td className="py-2 px-3 text-center font-mono text-red-400">{item.depodanAlinan}</td>
+                                <td className="py-2 px-3 text-center font-mono text-zinc-400">{item.sysKalan}</td>
+                                <td className="py-2 px-3 text-center font-mono font-bold text-orange-400">{item.sayilanAdet}</td>
+                                <td className="py-2 px-3 text-center font-mono font-bold text-amber-500">{item.sayilanToplamGramaj} {unitSfx}</td>
+                                <td className={`py-2 px-3 text-right font-mono font-bold ${
+                                  item.farkGramaj > 0 ? "text-red-400" : item.farkGramaj < 0 ? "text-emerald-400" : "text-zinc-500"
+                                }`}>
+                                  {item.farkGramaj > 0 ? `-${item.farkGramaj} {unitSfx}` : item.farkGramaj < 0 ? `+${Math.abs(item.farkGramaj)} {unitSfx}` : "Tam"}
+                                </td>
+                              </tr>
+                            );
+                          })}
                       </tbody>
                     </table>
                   </div>

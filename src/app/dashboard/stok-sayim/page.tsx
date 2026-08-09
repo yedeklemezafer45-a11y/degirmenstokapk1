@@ -141,6 +141,21 @@ export default function StokSayimPage() {
     return { parsedWeight: 1.0, displayWeight: isLiquidItem(item) ? "1.000 lt" : "1.000 kg" };
   };
 
+  const calculateTotalQuantityInUnit = (item: StockItem, countedQty: number, openUnits: number) => {
+    const { parsedWeight } = extractWeightAndUnit(item);
+    const unitLower = item.unit.toLowerCase();
+    
+    if (unitLower === "kg" || unitLower === "litre" || unitLower === "lt") {
+      // Direct mass/volume unit
+      return Number(((countedQty * parsedWeight) + (openUnits / 1000)).toFixed(3));
+    } else {
+      // Package-based unit (Adet, Şişe, Kutu, Paket)
+      const divisor = parsedWeight * 1000;
+      const openFraction = divisor > 0 ? (openUnits / divisor) : 0;
+      return Number((countedQty + openFraction).toFixed(3));
+    }
+  };
+
   const categories = ["Tümü", ...Array.from(new Set(stockList.map((i) => i.category)))];
 
   const filteredStocks = stockList.filter((item) => {
@@ -204,8 +219,7 @@ export default function StokSayimPage() {
       const updatedStock = stockList.map(item => {
         const countedQty = parseFloat(sayilanValues[item.id]) || 0;
         const openUnits = parseFloat(aciktaValues[item.id]) || 0;
-        const openQty = openUnits / 1000;
-        const totalQty = Number((countedQty + openQty).toFixed(3));
+        const totalQty = calculateTotalQuantityInUnit(item, countedQty, openUnits);
 
         return {
           ...item,
@@ -286,7 +300,7 @@ export default function StokSayimPage() {
       const resetStock = stockList.map(item => {
         const countedQty = parseFloat(sayilanValues[item.id]) || 0;
         const openGrams = parseFloat(aciktaValues[item.id]) || 0;
-        const totalQty = Number((countedQty + (openGrams / 1000)).toFixed(3));
+        const totalQty = calculateTotalQuantityInUnit(item, countedQty, openGrams);
 
         return {
           ...item,
@@ -469,7 +483,7 @@ export default function StokSayimPage() {
                     const isChecked = !!checkedItemIds[item.id];
                     const countedQty = parseFloat(sayilanValues[item.id]) || 0;
                     const openUnits = parseFloat(aciktaValues[item.id]) || 0;
-                    const totalCalculated = Number((countedQty + (openUnits / 1000)).toFixed(3));
+                    const totalCalculated = calculateTotalQuantityInUnit(item, countedQty, openUnits);
 
                     return (
                       <tr 

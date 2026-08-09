@@ -15,8 +15,9 @@ import {
   Package,
   Check
 } from "lucide-react";
-import { mockStockItems, StockItem } from "@/lib/stockStore";
-import { mockStockMovements, StockMovement } from "@/lib/reportStore";
+import { StockItem } from "@/lib/stockStore";
+import { subscribeToStocks, saveStockItem } from "@/lib/stockService";
+import { logUserAction } from "@/lib/auditLogService";
 
 export default function StokPage() {
   const [theme, setTheme] = useState<"light" | "dark">("dark");
@@ -43,17 +44,12 @@ export default function StokPage() {
       setUserName(parsed.username || "mehmet_barista");
     }
 
-    // State'e mock veriyi veya local kopyayı ata
-    const savedStock = localStorage.getItem("degirmen_stock");
-    const stockResetFlag = localStorage.getItem("degirmen_stock_reset_02");
+    // Gerçek zamanlı Firestore dinleyicisi
+    const unsubscribe = subscribeToStocks((items) => {
+      setStockList(items);
+    });
 
-    if (savedStock && stockResetFlag === "true") {
-      setStockList(JSON.parse(savedStock));
-    } else {
-      setStockList(mockStockItems);
-      localStorage.setItem("degirmen_stock", JSON.stringify(mockStockItems));
-      localStorage.setItem("degirmen_stock_reset_02", "true");
-    }
+    return () => unsubscribe();
   }, []);
 
   const toggleTheme = () => {
@@ -64,66 +60,60 @@ export default function StokPage() {
   };
 
   // Personelin depo çıkışı yapması (Stok Eksiltme)
-  const handleDecreaseQuantity = (id: string) => {
-    const updated = stockList.map(item => {
-      if (item.id === id) {
-        if (item.quantity <= 0) return item;
-        const newQty = Number((item.quantity - 1).toFixed(1));
-        const newAlinan = Number((item.depodanAlinan + 1).toFixed(1));
-        
-        // Log tablosuna depo çıkış hareketi ekle
-        const newMove: StockMovement = {
-          id: "m_" + Date.now() + "_" + Math.random().toString(36).substr(2, 5),
-          productId: item.id,
-          productName: item.name,
-          category: item.category,
-          quantity: 1,
-          unit: item.unit,
-          user: userName,
-          date: new Date().toISOString().split("T")[0],
-          month: new Date().toISOString().split("T")[0].substring(0, 7)
-        };
+  const handleDecreaseQuantity = async (id: string) => {
+    const item = stockList.find(i => i.id === id);
+    if (!item || item.quantity <= 0) return;
 
-        const currentMovements = localStorage.getItem("degirmen_movements");
-        const list: StockMovement[] = currentMovements ? JSON.parse(currentMovements) : mockStockMovements;
-        list.push(newMove);
-        localStorage.setItem("degirmen_movements", JSON.stringify(list));
+    const newQty = Number((item.quantity - 1).toFixed(3));
+    const newAlinan = Number((item.depodanAlinan + 1).toFixed(3));
 
-        return { ...item, quantity: newQty, depodanAlinan: newAlinan };
-      }
-      return item;
-    });
+    const updatedItem: StockItem = {
+      ...item,
+      quantity: newQty,
+      depodanAlinan: newAlinan
+    };
 
-    setStockList(updated);
-    localStorage.setItem("degirmen_stock", JSON.stringify(updated));
+    try {
+      await saveStockItem(updatedItem);
+      await logUserAction(
+        "Depodan Ürün Alındı",
+        "STOK",
+        `"${item.name}" envanterinden 1 adet düşüldü. Yeni kalan: ${newQty} ${item.unit}`
+      );
+    } catch (err) {
+      console.error("Düşürme hatası:", err);
+    }
   };
 
   // Yöneticinin Depoda Bulunan Toplam Adeti/Miktarı Güncellemesi (Stok Girişi)
-  const handleSaveBulkQuantity = (id: string) => {
+  const handleSaveBulkQuantity = async (id: string) => {
     const bulkValue = tempInputs[id];
     if (bulkValue === undefined || bulkValue === "") return;
 
-    const newDepodaBulunan = Number(parseFloat(bulkValue).toFixed(1));
+    const newDepodaBulunan = Number(parseFloat(bulkValue).toFixed(3));
     if (isNaN(newDepodaBulunan) || newDepodaBulunan < 0) return;
 
-    const updated = stockList.map(item => {
-      if (item.id === id) {
-        // Yeni Kalan = Yeni Depoda Bulunan - Mevcut Depodan Alınan
-        const newQty = Math.max(0, Number((newDepodaBulunan - item.depodanAlinan).toFixed(1)));
-        return { 
-          ...item, 
-          depodaBulunan: newDepodaBulunan,
-          quantity: newQty 
-        };
-      }
-      return item;
-    });
+    const item = stockList.find(i => i.id === id);
+    if (!item) return;
 
-    setStockList(updated);
-    localStorage.setItem("degirmen_stock", JSON.stringify(updated));
-    
-    // İnputu temizle
-    setTempInputs(prev => ({ ...prev, [id]: "" }));
+    const newQty = Math.max(0, Number((newDepodaBulunan - item.depodanAlinan).toFixed(3)));
+    const updatedItem: StockItem = {
+      ...item,
+      depodaBulunan: newDepodaBulunan,
+      quantity: newQty
+    };
+
+    try {
+      await saveStockItem(updatedItem);
+      setTempInputs(prev => ({ ...prev, [id]: "" }));
+      await logUserAction(
+        "Depo Toplamı Güncellendi",
+        "STOK",
+        `"${item.name}" depoda bulunan miktarı ${newDepodaBulunan} olarak güncellendi. Yeni kalan: ${newQty} ${item.unit}`
+      );
+    } catch (err) {
+      console.error("Giriş hatası:", err);
+    }
   };
 
   const filteredStock = stockList.filter(item => {
@@ -339,7 +329,7 @@ export default function StokPage() {
 
                         <div className="flex items-center gap-3">
                           {/* YÖNETİCİ GİRİŞİ: Depodaki Toplam Adeti Güncelleme */}
-                          {userRole === "admin" && (
+                          {(userRole === "admin" || userRole === "yonetici") && (
                             <div className="flex items-center gap-1.5">
                               <input
                                 type="number"
