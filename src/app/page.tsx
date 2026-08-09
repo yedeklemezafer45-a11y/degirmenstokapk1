@@ -70,7 +70,7 @@ export default function LoginPage() {
       // Firebase Firestore'dan kullanıcıyı sorgula
       const user = await getUserByUsername(username.trim().toLowerCase());
 
-      if (user && user.password === password) {
+      if (user && user.password.trim() === password.trim()) {
         // Oturumu localStorage'e kaydet (tema/aktif kullanıcı bilgisi)
         localStorage.setItem("activeUser", JSON.stringify({
           username: user.username,
