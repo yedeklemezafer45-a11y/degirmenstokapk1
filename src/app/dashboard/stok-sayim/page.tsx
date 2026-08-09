@@ -14,7 +14,10 @@ import {
   FileSpreadsheet,
   Layers,
   Scale,
-  Loader2
+  Loader2,
+  CheckSquare,
+  Square,
+  Check
 } from "lucide-react";
 import { StockItem } from "@/lib/stockStore";
 import { getAllStocks, saveAllStocks } from "@/lib/stockService";
@@ -36,6 +39,9 @@ export default function StokSayimPage() {
   // Açıkta olan Gramaj / Miktar Girişleri (Draft State)
   const [aciktaValues, setAciktaValues] = useState<Record<string, string>>({});
   
+  // İşlem Yapılan / Onaylanan Ürünlerin ID Listesi
+  const [checkedItemIds, setCheckedItemIds] = useState<Record<string, boolean>>({});
+
   // Yetkili Karşılaştırma Raporu (Sadece admin/yonetici görecek)
   const [showReport, setShowReport] = useState(false);
 
@@ -81,6 +87,12 @@ export default function StokSayimPage() {
 
       setSayilanValues(initialSayilan);
       setAciktaValues(initialAcikta);
+
+      // Kayıtlı olan onaylı ürün işaretlerini yükle
+      const savedChecked = localStorage.getItem("degirmen_sayim_checked_ids");
+      if (savedChecked) {
+        setCheckedItemIds(JSON.parse(savedChecked));
+      }
     } catch (err) {
       console.error("Stok yükleme hatası:", err);
       triggerToast("Stoklar yüklenirken hata oluştu!");
@@ -107,7 +119,6 @@ export default function StokSayimPage() {
     );
   };
 
-  // Paket / Ürün ağırlığını sayısal olarak ayrıştırma
   const extractWeightAndUnit = (item: StockItem) => {
     if (item.weightInfo) {
       const match = item.weightInfo.match(/([0-9.,]+)/);
@@ -119,33 +130,63 @@ export default function StokSayimPage() {
     return { parsedWeight: 1.0, displayWeight: isLiquidItem(item) ? "1.000 lt" : "1.000 kg" };
   };
 
-  // Kategoriler
   const categories = ["Tümü", ...Array.from(new Set(stockList.map((i) => i.category)))];
 
-  // Filtrelenmiş Stok Listesi
   const filteredStocks = stockList.filter((item) => {
     const matchesCategory = selectedCategory === "Tümü" || item.category === selectedCategory;
     const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch;
   });
 
+  // Onay Kutusu Manuel Değiştirme
+  const toggleItemCheck = (id: string) => {
+    setCheckedItemIds(prev => {
+      const updated = { ...prev, [id]: !prev[id] };
+      localStorage.setItem("degirmen_sayim_checked_ids", JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  // Sayılan Adet Değişikliği (Otomatik İşlem Yapıldı İle İşaretler)
   const handleSayilanChange = (id: string, value: string) => {
     setSayilanValues(prev => ({
       ...prev,
       [id]: value
     }));
+    // Veri girildiği an ürünü onaylandı olarak işaretle
+    setCheckedItemIds(prev => {
+      const updated = { ...prev, [id]: true };
+      localStorage.setItem("degirmen_sayim_checked_ids", JSON.stringify(updated));
+      return updated;
+    });
     setIsDirty(true);
   };
 
+  // Açıkta Olan Değişikliği (Otomatik İşlem Yapıldı İle İşaretler)
   const handleAciktaChange = (id: string, value: string) => {
     setAciktaValues(prev => ({
       ...prev,
       [id]: value
     }));
+    // Veri girildiği an ürünü onaylandı olarak işaretle
+    setCheckedItemIds(prev => {
+      const updated = { ...prev, [id]: true };
+      localStorage.setItem("degirmen_sayim_checked_ids", JSON.stringify(updated));
+      return updated;
+    });
     setIsDirty(true);
   };
 
-  // Toplu Değişiklikleri Firebase Firestore'a Kaydet + Log Ekle
+  // Sayım İşaretlerini Sıfırla
+  const handleResetCheckmarks = () => {
+    if (window.confirm("Tüm ürünlerdeki 'İşlem Yapıldı' işaretlerini kaldırmak istediğinize emin misiniz?")) {
+      setCheckedItemIds({});
+      localStorage.removeItem("degirmen_sayim_checked_ids");
+      triggerToast("Tüm işlem işaretleri temizlendi.");
+    }
+  };
+
+  // Toplu Değişiklikleri Firebase Firestore'a Kaydet
   const handleSaveChanges = async () => {
     setIsSaving(true);
     try {
@@ -165,7 +206,6 @@ export default function StokSayimPage() {
       setStockList(updatedStock);
       setIsDirty(false);
 
-      // Audit Log kaydı oluştur
       await logUserAction(
         "Fiziki Stok Sayımı Yapıldı",
         "STOK",
@@ -181,7 +221,7 @@ export default function StokSayimPage() {
     }
   };
 
-  // Ay Sonu Sayımını Kapat, Raporu Arşivle ve Stokları Sıfırla
+  // Dönemi Kapat
   const handleFinalizeMonthAndReset = async () => {
     if (!window.confirm("DİKKAT: Aylık dönemi kapatmak üzeresiniz. Bu işlem mevcut girdi-çıktı farklarını kalıcı olarak Firestore arşive kaydedecek ve yeni ay için Depoda Bulunan ile Düşülen miktarları SIFIRLAYACAKTIR. Emin misiniz?")) {
       return;
@@ -230,10 +270,8 @@ export default function StokSayimPage() {
         stockSnapshot: reportSnapshot
       };
 
-      // 1. Firebase Firestore'a Raporu Kaydet
       await saveReport(newArchiveReport);
 
-      // 2. Depo Girdi (depodaBulunan) ve Çıktı (depodanAlinan) değerlerini sıfırla
       const resetStock = stockList.map(item => {
         const countedQty = parseFloat(sayilanValues[item.id]) || 0;
         const openGrams = parseFloat(aciktaValues[item.id]) || 0;
@@ -249,9 +287,10 @@ export default function StokSayimPage() {
 
       await saveAllStocks(resetStock);
       setStockList(resetStock);
+      setCheckedItemIds({});
+      localStorage.removeItem("degirmen_sayim_checked_ids");
       setIsDirty(false);
 
-      // Log kaydı oluştur
       await logUserAction(
         "Aylık Stok Takip Dönemi Kapatıldı ve Sıfırlandı",
         "RAPOR",
@@ -266,6 +305,10 @@ export default function StokSayimPage() {
       setIsSaving(false);
     }
   };
+
+  const checkedCount = Object.values(checkedItemIds).filter(Boolean).length;
+  const totalItemsCount = stockList.length;
+  const progressPercent = totalItemsCount > 0 ? Math.round((checkedCount / totalItemsCount) * 100) : 0;
 
   return (
     <div className="min-h-screen flex flex-col bg-[var(--background)] text-[var(--foreground)] transition-colors duration-300">
@@ -292,7 +335,7 @@ export default function StokSayimPage() {
           </div>
           <div>
             <h1 className="font-bold text-lg tracking-tight">Fiziki Stok Sayımı & Gramaj / Litre Hesabı</h1>
-            <p className="text-xs text-zinc-500">Bulut Tabanlı Senkronizasyon · Canlı İşlem Loglama</p>
+            <p className="text-xs text-zinc-500">İşlem Onay Kutusu Destekli · Canlı Takip</p>
           </div>
         </div>
 
@@ -309,32 +352,35 @@ export default function StokSayimPage() {
       {/* Ana İçerik */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-6 space-y-6 pb-24">
         
-        {/* Bilgi Kutusu & Butonlar */}
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-[var(--card)] border border-[var(--border)] rounded-3xl p-6 shadow-sm">
-          <div className="space-y-1">
-            <h2 className="text-base font-bold flex items-center gap-2">
-              <Scale className="w-5 h-5 text-orange-500" />
-              Bar & Depo Fiziki Ürün Sayımı (Gramaj / Litre)
-            </h2>
-            <p className="text-xs text-zinc-500 leading-relaxed max-w-2xl">
-              Depodaki tam ambalaj sayısını <b>"Sayılan Kapalı Adet"</b> sütununa giriniz. Açıkta kalan miktarları ise Gramaj ürünlerinde <b>(gr)</b>, Litrelik sıvı ürünlerde ise <b>(ml/lt)</b> olarak giriniz. Sistem Litrelik ürünlerde sonucu otomatik olarak <b>Litre (lt)</b> bazında hesaplar.
-            </p>
+        {/* İLERLEME VE SAYIM SAYACI KARTI */}
+        <div className="bg-[var(--card)] border border-[var(--border)] rounded-3xl p-5 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-4 w-full md:w-auto">
+            <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500 font-bold text-sm shrink-0">
+              %{progressPercent}
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="font-extrabold text-sm text-zinc-200">İşlem Yapılan Ürün İlerlemesi</span>
+                <span className="text-xs font-bold px-2 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                  {checkedCount} / {totalItemsCount} Ürün Tamamlandı
+                </span>
+              </div>
+              <div className="w-full bg-[var(--background)] h-2 rounded-full mt-2 overflow-hidden border border-[var(--border)] min-w-[220px]">
+                <div 
+                  className="bg-gradient-to-r from-emerald-500 to-teal-400 h-full transition-all duration-500 rounded-full"
+                  style={{ width: `${progressPercent}%` }}
+                />
+              </div>
+            </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
-            {(userRole === "admin" || userRole === "yonetici") && (
-              <button
-                onClick={() => setShowReport(!showReport)}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
-                  showReport 
-                    ? "bg-amber-500/10 border-amber-500/30 text-amber-500" 
-                    : "bg-[var(--background)] border-[var(--border)] text-zinc-400 hover:text-zinc-200"
-                }`}
-              >
-                <FileSpreadsheet className="w-4 h-4" />
-                {showReport ? "Raporu Gizle" : "Aylık Karşılaştırma Raporu"}
-              </button>
-            )}
+          <div className="flex items-center gap-3 w-full md:w-auto justify-end">
+            <button
+              onClick={handleResetCheckmarks}
+              className="text-[11px] text-zinc-400 hover:text-red-400 font-semibold transition-colors px-3 py-1.5 rounded-xl border border-[var(--border)] hover:border-red-500/30 cursor-pointer"
+            >
+              İşaretleri Sıfırla
+            </button>
 
             <button
               onClick={handleSaveChanges}
@@ -381,103 +427,6 @@ export default function StokSayimPage() {
           </div>
         </div>
 
-        {/* YETKİLİ AY SONU KARŞILAŞTIRMA VE SIFIRLAMA RAPORU */}
-        {showReport && (userRole === "admin" || userRole === "yonetici") && (
-          <div className="bg-[var(--card)] border border-amber-500/30 rounded-3xl p-6 shadow-xl space-y-6">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-[var(--border)] pb-4">
-              <div>
-                <h3 className="font-extrabold text-sm uppercase tracking-wider text-amber-500 flex items-center gap-2">
-                  <FileSpreadsheet className="w-5 h-5" />
-                  Depo Girdi / Çıktı & Fiziki Sayım Fark Analizi
-                </h3>
-                <p className="text-xs text-zinc-500 mt-1">
-                  Sistemdeki teorik stok ile fiziken saydığınız miktar/litre farkları.
-                </p>
-              </div>
-
-              <button
-                onClick={handleFinalizeMonthAndReset}
-                disabled={isSaving}
-                className="flex items-center gap-2 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-lg transition-colors cursor-pointer"
-              >
-                {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Undo2 className="w-4 h-4" />}
-                Dönemi Kapat, Raporu Arşivle & Stokları Sıfırla
-              </button>
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="border-b border-[var(--border)] text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
-                    <th className="py-3 px-3">Ürün Adı</th>
-                    <th className="py-3 px-3">Paket Hacim / Gramaj</th>
-                    <th className="py-3 px-3 text-center">Depoda Bulunan</th>
-                    <th className="py-3 px-3 text-center">Depodan Alınan</th>
-                    <th className="py-3 px-3 text-center">Teorik Sistem Kalan</th>
-                    <th className="py-3 px-3 text-center">Fiziki Sayılan Adet</th>
-                    <th className="py-3 px-3 text-center">Açıkta Miktar</th>
-                    <th className="py-3 px-3 text-center text-amber-500">Fiili Toplam</th>
-                    <th className="py-3 px-3 text-right">Fark</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[var(--border)]/40 text-xs">
-                  {stockList.map(item => {
-                    const { parsedWeight, displayWeight } = extractWeightAndUnit(item);
-                    const isLiquid = isLiquidItem(item);
-                    const unitLabel = isLiquid ? "lt" : (item.unit === "kg" || item.unit === "Adet" ? "kg" : item.unit);
-                    const openLabel = isLiquid ? "ml" : "gr";
-
-                    const countedQty = parseFloat(sayilanValues[item.id]) || 0;
-                    const openUnits = parseFloat(aciktaValues[item.id]) || 0;
-                    
-                    const sysTotalGram = item.quantity * parsedWeight;
-                    const countedTotalGram = (countedQty * parsedWeight) + (openUnits / 1000);
-                    const diffGram = sysTotalGram - countedTotalGram;
-
-                    return (
-                      <tr key={item.id} className="hover:bg-[var(--background)]/40">
-                        <td className="py-3 px-3 font-semibold text-zinc-800 dark:text-zinc-200">
-                          {item.name}
-                        </td>
-                        <td className="py-3 px-3 font-mono text-zinc-400 text-[11px]">
-                          {displayWeight}
-                        </td>
-                        <td className="py-3 px-3 text-center font-mono text-emerald-500 font-bold">
-                          {item.depodaBulunan} {unitLabel}
-                        </td>
-                        <td className="py-3 px-3 text-center font-mono text-red-400 font-bold">
-                          {item.depodanAlinan} {unitLabel}
-                        </td>
-                        <td className="py-3 px-3 text-center font-mono font-bold text-zinc-300">
-                          {item.quantity} {unitLabel}
-                        </td>
-                        <td className="py-3 px-3 text-center font-mono font-bold text-orange-400">
-                          {countedQty} {item.unit}
-                        </td>
-                        <td className="py-3 px-3 text-center font-mono text-zinc-400">
-                          {openUnits} {openLabel}
-                        </td>
-                        <td className="py-3 px-3 text-center font-mono font-extrabold text-amber-500">
-                          {countedTotalGram.toFixed(3)} {unitLabel}
-                        </td>
-                        <td className={`py-3 px-3 text-right font-mono font-bold ${
-                          Math.abs(diffGram) < 0.001 
-                            ? "text-zinc-500" 
-                            : diffGram > 0 
-                            ? "text-red-400" 
-                            : "text-emerald-400"
-                        }`}>
-                          {diffGram > 0 ? `-${diffGram.toFixed(3)} ${unitLabel} (Eksik)` : diffGram < 0 ? `+${Math.abs(diffGram).toFixed(3)} ${unitLabel} (Fazla)` : "Tam Eşit"}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
         {/* FİZİKİ SAYIM TABLOSU */}
         <div className="bg-[var(--card)] border border-[var(--border)] rounded-3xl p-6 shadow-sm overflow-hidden">
           {isLoading ? (
@@ -490,6 +439,7 @@ export default function StokSayimPage() {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="border-b border-[var(--border)] text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
+                    <th className="py-3 px-3 w-12 text-center">Durum</th>
                     <th className="py-3 px-4">Ürün Adı</th>
                     <th className="py-3 px-4">Kategori</th>
                     <th className="py-3 px-4 text-center">Birim / Paket Hacmi</th>
@@ -505,15 +455,49 @@ export default function StokSayimPage() {
                     const unitLabel = isLiquid ? "lt" : (item.unit === "kg" || item.unit === "Adet" ? "kg" : item.unit);
                     const openLabel = isLiquid ? "ml" : "gr";
 
+                    const isChecked = !!checkedItemIds[item.id];
                     const countedQty = parseFloat(sayilanValues[item.id]) || 0;
                     const openUnits = parseFloat(aciktaValues[item.id]) || 0;
                     const totalCalculated = Number((countedQty + (openUnits / 1000)).toFixed(3));
 
                     return (
-                      <tr key={item.id} className="hover:bg-[var(--background)]/35 transition-colors">
-                        <td className="py-4 px-4 font-semibold text-zinc-800 dark:text-zinc-200">
-                          {item.name}
+                      <tr 
+                        key={item.id} 
+                        className={`transition-colors ${
+                          isChecked 
+                            ? "bg-emerald-500/5 hover:bg-emerald-500/10 border-l-4 border-l-emerald-500" 
+                            : "hover:bg-[var(--background)]/35"
+                        }`}
+                      >
+                        {/* İşlem Yapıldı Onay Kutusu */}
+                        <td className="py-4 px-3 text-center">
+                          <button
+                            type="button"
+                            onClick={() => toggleItemCheck(item.id)}
+                            className={`p-1 rounded-lg transition-transform hover:scale-110 cursor-pointer ${
+                              isChecked ? "text-emerald-500" : "text-zinc-600 hover:text-zinc-400"
+                            }`}
+                            title={isChecked ? "İşlem yapıldı olarak işaretli" : "İşlem yapıldı olarak işaretle"}
+                          >
+                            {isChecked ? (
+                              <CheckCircle2 className="w-5 h-5 fill-emerald-500 text-zinc-950" />
+                            ) : (
+                              <Square className="w-5 h-5 stroke-[1.5]" />
+                            )}
+                          </button>
                         </td>
+
+                        <td className="py-4 px-4 font-semibold text-zinc-800 dark:text-zinc-200">
+                          <div className="flex items-center gap-2">
+                            <span>{item.name}</span>
+                            {isChecked && (
+                              <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                İşlem Yapıldı
+                              </span>
+                            )}
+                          </div>
+                        </td>
+
                         <td className="py-4 px-4">
                           <span className={`px-2.5 py-1 rounded-xl text-[10px] font-bold border ${
                             isLiquid 
@@ -523,6 +507,7 @@ export default function StokSayimPage() {
                             {item.category}
                           </span>
                         </td>
+
                         <td className="py-4 px-4 text-center font-mono text-zinc-400">
                           {displayWeight}
                         </td>
@@ -539,7 +524,7 @@ export default function StokSayimPage() {
                           />
                         </td>
 
-                        {/* Açıkta Miktar (Gram / ML) Input */}
+                        {/* Açıkta Miktar Input */}
                         <td className="py-4 px-4 text-center">
                           <div className="relative inline-block w-28">
                             <input
@@ -557,7 +542,7 @@ export default function StokSayimPage() {
                           </div>
                         </td>
 
-                        {/* Toplam Karşılığı (KG / Litre) */}
+                        {/* Toplam Karşılığı */}
                         <td className="py-4 px-4 text-right font-mono font-bold text-emerald-400 text-sm">
                           {totalCalculated.toFixed(3)} {unitLabel}
                         </td>
@@ -577,7 +562,7 @@ export default function StokSayimPage() {
         <span>© 2026 Değirmen Cafe. Tüm hakları saklıdır.</span>
         <span className="flex items-center gap-1.5 text-emerald-500 font-semibold">
           <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
-          Bulut Veritabanı Senkronize & Loglu
+          İşlem Onay Kutusu Destekli
         </span>
       </footer>
 
