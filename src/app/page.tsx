@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Eye, EyeOff, Moon, Sun, X, Mail, CheckCircle2, AlertCircle, Info } from "lucide-react";
-import { mockUsers } from "@/lib/userStore";
+import { getUserByUsername, getAllUsers } from "@/lib/userService";
 
 // Toast Bildirim Tipi
 interface Toast {
@@ -57,7 +57,7 @@ export default function LoginPage() {
     document.documentElement.className = newTheme;
   };
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!username || !password) {
@@ -66,82 +66,57 @@ export default function LoginPage() {
     }
 
     setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-      
-      // Kayıtlı dinamik kullanıcıları çek
-      const savedUsersStr = localStorage.getItem("degirmen_users");
-      let allUsers = [...mockUsers];
+    try {
+      // Firebase Firestore'dan kullanıcıyı sorgula
+      const user = await getUserByUsername(username.trim().toLowerCase());
 
-      if (savedUsersStr) {
-        const parsedUsers = JSON.parse(savedUsersStr);
-        // degirmen_users içindeki kullanıcıların şifreleri degirmen_pass_[username] altında saklanmaktadır.
-        parsedUsers.forEach((u: any) => {
-          const pass = localStorage.getItem(`degirmen_pass_${u.username}`);
-          // Eğer asıl mockUsers içinde yoksa listeye enjekte et
-          if (!allUsers.some(existing => existing.username.toLowerCase() === u.username.toLowerCase())) {
-            allUsers.push({
-              id: "dyn_" + u.username,
-              username: u.username,
-              email: `${u.username}@degirmen.com`,
-              password: pass || "1234",
-              role: u.role,
-              fullName: u.name
-            });
-          }
-        });
-      }
-
-      const user = allUsers.find(
-        (u) =>
-          u.username.toLowerCase() === username.toLowerCase() &&
-          u.password === password
-      );
-
-      if (user) {
-        // Oturumu localStorage'e kaydet
+      if (user && user.password === password) {
+        // Oturumu localStorage'e kaydet (tema/aktif kullanıcı bilgisi)
         localStorage.setItem("activeUser", JSON.stringify({
           username: user.username,
           role: user.role,
-          fullName: user.fullName
+          fullName: user.name
         }));
-
-        showToast(`Hoşgeldiniz, ${user.fullName}! Giriş Başarılı.`, "success");
+        showToast(`Hoşgeldiniz, ${user.name}! Giriş Başarılı.`, "success");
         setTimeout(() => {
           window.location.href = "/dashboard";
         }, 1000);
       } else {
         showToast("Hatalı kullanıcı adı veya şifre!", "error");
       }
-    }, 1200);
+    } catch (err) {
+      console.error("Firebase login error:", err);
+      showToast("Bağlantı hatası. Lütfen tekrar deneyin.", "error");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Google ile Giriş Simülasyonu (Modern Modal)
   const [isGoogleModalOpen, setIsGoogleModalOpen] = useState(false);
   const [googleEmail, setGoogleEmail] = useState("");
 
-  const handleGoogleLoginSubmit = (e: React.FormEvent) => {
+  const handleGoogleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!googleEmail) return;
 
     setIsLoading(true);
     setIsGoogleModalOpen(false);
 
-    setTimeout(() => {
-      setIsLoading(false);
-      const user = mockUsers.find(
-        (u) => u.email.toLowerCase() === googleEmail.toLowerCase()
+    try {
+      const allUsers = await getAllUsers();
+      const user = allUsers.find(
+        (u) => u.username.toLowerCase() === googleEmail.split("@")[0].toLowerCase()
       );
 
       if (user) {
-        // Oturumu localStorage'e kaydet
         localStorage.setItem("activeUser", JSON.stringify({
           username: user.username,
           role: user.role,
-          fullName: user.fullName
+          fullName: user.name
         }));
 
-        showToast(`Google ile giriş başarılı! Hoşgeldiniz, ${user.fullName}`, "success");
+        showToast(`Google ile giriş başarılı! Hoşgeldiniz, ${user.name}`, "success");
         setGoogleEmail("");
         setTimeout(() => {
           window.location.href = "/dashboard";
@@ -149,41 +124,40 @@ export default function LoginPage() {
       } else {
         showToast("Bu Google hesabı sistemde kayıtlı değil!", "error");
       }
-    }, 1200);
+    } catch (err) {
+      showToast("Bağlantı hatası oluştu.", "error");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleForgotPassword = (e: React.FormEvent) => {
+  const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setForgotError("");
     if (!forgotInput) return;
 
     setForgotLoading(true);
-    setTimeout(() => {
-      setForgotLoading(false);
-      
-      const user = mockUsers.find(
-        (u) =>
-          u.username.toLowerCase() === forgotInput.toLowerCase() ||
-          u.email.toLowerCase() === forgotInput.toLowerCase()
-      );
+    try {
+      const user = await getUserByUsername(forgotInput.trim().toLowerCase());
 
       if (user) {
-        const [local, domain] = user.email.split("@");
-        const maskedEmail = `${local[0]}***${local[local.length - 1]}@${domain}`;
-        
-        setForgotEmailSentTo(maskedEmail);
+        setForgotEmailSentTo(`${user.username}@degirmen.com`);
         setForgotSuccess(true);
-        showToast("Geçici şifreniz e-posta adresinize gönderildi.", "success");
+        showToast("Şifreniz yöneticiniz tarafından sıfırlanabilir.", "success");
         setTimeout(() => {
           setIsForgotOpen(false);
           setForgotSuccess(false);
           setForgotInput("");
         }, 4000);
       } else {
-        setForgotError("Kullanıcı adı veya e-posta adresi bulunamadı.");
+        setForgotError("Kullanıcı adı bulunamadı.");
         showToast("Kayıt bulunamadı, bilgilerinizi kontrol edin.", "error");
       }
-    }, 1500);
+    } catch (err) {
+      setForgotError("Bağlantı hatası.");
+    } finally {
+      setForgotLoading(false);
+    }
   };
 
   return (
@@ -401,7 +375,7 @@ export default function LoginPage() {
               <X className="w-5 h-5" />
             </button>
 
-            <form onSubmit={handleGoogleLoginSubmit} className="space-y-5">
+            <form onSubmit={handleGoogleLogin} className="space-y-4">
               <div className="text-center">
                 <h2 className="text-lg font-bold text-[var(--foreground)]">Google ile Giriş Yap</h2>
                 <p className="text-xs text-zinc-500 mt-1 leading-relaxed">

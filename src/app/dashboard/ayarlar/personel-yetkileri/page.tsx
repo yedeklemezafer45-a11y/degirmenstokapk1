@@ -12,38 +12,35 @@ import {
   Undo2,
   CheckCircle2,
   User,
-  Key,
   Shield,
-  UserCheck
+  UserCheck,
+  Loader2
 } from "lucide-react";
-
-interface UserProfile {
-  username: string;
-  role: "admin" | "yonetici" | "waiter";
-  name: string;
-}
+import { getAllUsers, saveUser, removeUser, FirestoreUser } from "@/lib/userService";
 
 export default function PersonelYetkileriPage() {
   const [theme, setTheme] = useState<"light" | "dark">("dark");
-  const [users, setUsers] = useState<UserProfile[]>([]);
-  const [dbUsers, setDbUsers] = useState<UserProfile[]>([]);
+  const [users, setUsers] = useState<FirestoreUser[]>([]);
   const [activeUserRole, setActiveUserRole] = useState<string>("waiter");
-  const [isDirty, setIsDirty] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Yeni Kullanıcı State'leri
   const [newUsername, setNewUsername] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [newName, setNewName] = useState("");
-  const [newRole, setNewRole] = useState<UserProfile["role"]>("waiter");
+  const [newRole, setNewRole] = useState<FirestoreUser["role"]>("waiter");
 
-  // Modern Toast Bildirim State
+  // Toast Bildirim State
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
+  const [toastType, setToastType] = useState<"success" | "error">("success");
 
-  const triggerToast = (msg: string) => {
+  const triggerToast = (msg: string, type: "success" | "error" = "success") => {
     setToastMessage(msg);
+    setToastType(type);
     setShowToast(true);
-    setTimeout(() => setShowToast(false), 3000);
+    setTimeout(() => setShowToast(false), 3500);
   };
 
   useEffect(() => {
@@ -60,31 +57,29 @@ export default function PersonelYetkileriPage() {
       setActiveUserRole(parsed.role || "waiter");
       if (parsed.role !== "admin") {
         window.location.href = "/dashboard";
+        return;
       }
     } else {
       window.location.href = "/";
+      return;
     }
 
-    // Sistemdeki kayıtlı kullanıcıları ve şifreleri yükle
-    const savedUsers = localStorage.getItem("degirmen_users");
-    const defaultUsers: UserProfile[] = [
-      { username: "zafer", role: "admin", name: "Zafer (Admin)" },
-      { username: "barista", role: "waiter", name: "Bar Personeli" }
-    ];
-
-    if (savedUsers) {
-      setUsers(JSON.parse(savedUsers));
-      setDbUsers(JSON.parse(savedUsers));
-    } else {
-      setUsers(defaultUsers);
-      setDbUsers(defaultUsers);
-      localStorage.setItem("degirmen_users", JSON.stringify(defaultUsers));
-      
-      // Varsayılan şifreleri de mock veritabanına ekleyelim
-      localStorage.setItem("degirmen_pass_zafer", "1908");
-      localStorage.setItem("degirmen_pass_barista", "1234");
-    }
+    // Firebase'den kullanıcıları yükle
+    loadUsers();
   }, []);
+
+  const loadUsers = async () => {
+    setIsLoading(true);
+    try {
+      const firestoreUsers = await getAllUsers();
+      setUsers(firestoreUsers);
+    } catch (err) {
+      console.error("Kullanıcılar yüklenemedi:", err);
+      triggerToast("Kullanıcı listesi yüklenemedi!", "error");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const toggleTheme = () => {
     const newTheme = theme === "dark" ? "light" : "dark";
@@ -93,11 +88,11 @@ export default function PersonelYetkileriPage() {
     document.documentElement.className = newTheme;
   };
 
-  // Yeni Personel / Kullanıcı Ekleme
-  const handleAddUser = (e: React.FormEvent) => {
+  // Yeni Personel Ekle — Firebase'e Doğrudan Kaydet
+  const handleAddUser = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newUsername.trim() || !newPassword.trim() || !newName.trim()) {
-      alert("Lütfen tüm alanları (Kullanıcı Adı, Şifre, Ad Soyad) eksiksiz doldurun!");
+      triggerToast("Lütfen tüm alanları eksiksiz doldurun!", "error");
       return;
     }
 
@@ -105,61 +100,66 @@ export default function PersonelYetkileriPage() {
 
     // Çakışma Kontrolü
     if (users.some(u => u.username === cleanUsername)) {
-      alert("Bu kullanıcı adı sistemde zaten kayıtlı!");
+      triggerToast("Bu kullanıcı adı zaten kayıtlı!", "error");
       return;
     }
 
-    const newUser: UserProfile = {
+    const newUser: FirestoreUser = {
       username: cleanUsername,
+      name: newName.trim(),
       role: newRole,
-      name: newName.trim()
+      password: newPassword.trim()
     };
 
-    const updatedList = [...users, newUser];
-    setUsers(updatedList);
-    
-    // Şifreyi doğrudan localStorage'a geçici olarak yaz (Save edilince kalıcılaşacak)
-    localStorage.setItem(`degirmen_pass_${cleanUsername}`, newPassword.trim());
-
-    setNewUsername("");
-    setNewPassword("");
-    setNewName("");
-    setNewRole("waiter");
-    setIsDirty(true);
-    triggerToast(`Yeni personel (${newUser.name}) taslak listeye eklendi!`);
+    setIsSaving(true);
+    try {
+      await saveUser(newUser);
+      setUsers(prev => [...prev, newUser]);
+      setNewUsername("");
+      setNewPassword("");
+      setNewName("");
+      setNewRole("waiter");
+      triggerToast(`✅ ${newUser.name} başarıyla eklendi! Artık her cihazdan giriş yapabilir.`);
+    } catch (err) {
+      console.error("Kullanıcı eklenemedi:", err);
+      triggerToast("Kullanıcı eklenirken hata oluştu!", "error");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  // Personel Kaldırma / Silme
-  const handleDeleteUser = (usernameToDelete: string) => {
+  // Personel Sil — Firebase'den Kaldır
+  const handleDeleteUser = async (usernameToDelete: string) => {
     if (usernameToDelete === "zafer") {
-      alert("Ana admin hesabı (zafer) sistemden kaldırılamaz!");
+      triggerToast("Ana admin hesabı (zafer) silinemez!", "error");
       return;
     }
+    if (!window.confirm(`"${usernameToDelete}" kullanıcısını silmek istediğinizden emin misiniz?`)) return;
 
-    const updatedList = users.filter(u => u.username !== usernameToDelete);
-    setUsers(updatedList);
-    setIsDirty(true);
-    triggerToast(`Kullanıcı (${usernameToDelete}) silinmek üzere işaretlendi.`);
-  };
-
-  // Toplu Değişiklikleri Kaydet
-  const handleSaveChanges = () => {
-    localStorage.setItem("degirmen_users", JSON.stringify(users));
-    setDbUsers(users);
-    setIsDirty(false);
-    triggerToast("Personel & Yetki listesi başarıyla kaydedildi!");
-  };
-
-  // Değişiklikleri Geri Al
-  const handleCancelChanges = () => {
-    setUsers(dbUsers);
-    setIsDirty(false);
-    triggerToast("Değişiklikler geri alındı.");
+    setIsSaving(true);
+    try {
+      await removeUser(usernameToDelete);
+      setUsers(prev => prev.filter(u => u.username !== usernameToDelete));
+      triggerToast(`${usernameToDelete} kullanıcısı silindi.`);
+    } catch (err) {
+      console.error("Kullanıcı silinemedi:", err);
+      triggerToast("Kullanıcı silinirken hata oluştu!", "error");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
     <div className="min-h-screen flex flex-col bg-[var(--background)] text-[var(--foreground)] transition-colors duration-300">
       
+      {/* Toast Bildirimi */}
+      {showToast && (
+        <div className={`fixed top-6 right-6 z-50 flex items-center gap-2 px-5 py-3 rounded-2xl shadow-xl text-white text-xs font-semibold ${toastType === "success" ? "bg-emerald-600" : "bg-red-600"}`}>
+          <CheckCircle2 className="w-4 h-4 shrink-0" />
+          {toastMessage}
+        </div>
+      )}
+
       {/* Header */}
       <header className="sticky top-0 z-40 w-full border-b border-[var(--border)] bg-[var(--card)]/80 backdrop-blur-md px-6 py-4 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-3">
@@ -174,41 +174,33 @@ export default function PersonelYetkileriPage() {
           </div>
           <div>
             <h1 className="font-bold text-lg tracking-tight">Yetki & Personel Yönetimi</h1>
-            <p className="text-xs text-zinc-500">Sistem Personelleri, Şifreleri ve Yetki Kontrolleri</p>
+            <p className="text-xs text-zinc-500">Bulut Tabanlı · Tüm Cihazlarda Geçerli</p>
           </div>
         </div>
 
         <div className="flex items-center gap-4">
-          <button
-            onClick={toggleTheme}
-            className="p-2 rounded-xl hover:bg-[var(--foreground)]/5 text-zinc-500 hover:text-[var(--foreground)] transition-colors cursor-pointer"
-          >
+          <button onClick={toggleTheme} className="p-2 rounded-xl hover:bg-[var(--foreground)]/5 text-zinc-500 hover:text-[var(--foreground)] transition-colors cursor-pointer">
             {theme === "dark" ? <Sun className="w-5 h-5 text-amber-500" /> : <Moon className="w-5 h-5" />}
           </button>
-          <button 
-            onClick={() => window.location.href = "/"}
-            className="p-2 rounded-xl hover:bg-red-500/10 text-zinc-500 hover:text-red-500 transition-colors cursor-pointer"
-            title="Çıkış Yap"
-          >
+          <button onClick={() => window.location.href = "/"} className="p-2 rounded-xl hover:bg-red-500/10 text-zinc-500 hover:text-red-500 transition-colors cursor-pointer" title="Çıkış Yap">
             <LogOut className="w-5 h-5" />
           </button>
         </div>
       </header>
 
-      {/* Main Gövde */}
-      <main className="flex-1 max-w-6xl w-full mx-auto p-6 space-y-8 pb-32">
-        
-        {/* Toast Bildirimi */}
-        {showToast && (
-          <div className="fixed top-6 right-6 z-50 flex items-center gap-2 bg-orange-600 text-white px-5 py-3 rounded-2xl shadow-xl animate-bounce">
-            <CheckCircle2 className="w-5 h-5" />
-            <span className="text-xs font-semibold">{toastMessage}</span>
-          </div>
-        )}
+      <main className="flex-1 max-w-6xl w-full mx-auto p-6 space-y-8 pb-20">
 
-        {/* 1. YENİ KULLANICI / PERSONEL EKLEME FORMU */}
+        {/* Firebase Bilgi Kartı */}
+        <div className="flex items-center gap-3 bg-emerald-500/5 border border-emerald-500/20 rounded-2xl px-5 py-3">
+          <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse shrink-0" />
+          <p className="text-xs text-emerald-400 font-semibold">
+            Firebase Bulut Veritabanı Aktif — Eklediğiniz kullanıcılar anında tüm cihazlarda geçerli olur.
+          </p>
+        </div>
+
+        {/* YENİ KULLANICI EKLEME FORMU */}
         <div className="bg-[var(--card)] border border-[var(--border)] rounded-3xl p-6 shadow-sm">
-          <div className="flex items-center gap-2 mb-4">
+          <div className="flex items-center gap-2 mb-5">
             <UserCheck className="w-5 h-5 text-orange-500" />
             <h3 className="text-sm font-extrabold uppercase tracking-wider text-orange-500">Yeni Personel Ekle</h3>
           </div>
@@ -218,10 +210,10 @@ export default function PersonelYetkileriPage() {
               <label className="text-[10px] text-zinc-500 uppercase font-bold">Kullanıcı Adı</label>
               <input 
                 type="text" 
-                placeholder="Örn: zafer" 
+                placeholder="Örn: oğuzhan" 
                 value={newUsername} 
                 onChange={(e) => setNewUsername(e.target.value)}
-                className="w-full bg-[var(--background)] border border-[var(--border)] rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-orange-500 text-zinc-800 dark:text-zinc-100"
+                className="w-full bg-[var(--background)] border border-[var(--border)] rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-orange-500"
               />
             </div>
 
@@ -232,18 +224,18 @@ export default function PersonelYetkileriPage() {
                 placeholder="Şifre" 
                 value={newPassword} 
                 onChange={(e) => setNewPassword(e.target.value)}
-                className="w-full bg-[var(--background)] border border-[var(--border)] rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-orange-500 text-zinc-800 dark:text-zinc-100"
+                className="w-full bg-[var(--background)] border border-[var(--border)] rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-orange-500"
               />
             </div>
 
             <div className="space-y-1">
-              <label className="text-[10px] text-zinc-500 uppercase font-bold">Ad Soyad / Bar Rolü</label>
+              <label className="text-[10px] text-zinc-500 uppercase font-bold">Ad Soyad</label>
               <input 
                 type="text" 
-                placeholder="Örn: Zafer Sorumlu" 
+                placeholder="Örn: Oğuzhan Barista" 
                 value={newName} 
                 onChange={(e) => setNewName(e.target.value)}
-                className="w-full bg-[var(--background)] border border-[var(--border)] rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-orange-500 text-zinc-800 dark:text-zinc-100"
+                className="w-full bg-[var(--background)] border border-[var(--border)] rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-orange-500"
               />
             </div>
 
@@ -251,7 +243,7 @@ export default function PersonelYetkileriPage() {
               <label className="text-[10px] text-zinc-500 uppercase font-bold">Kullanıcı Yetkisi</label>
               <select 
                 value={newRole} 
-                onChange={(e) => setNewRole(e.target.value as UserProfile["role"])}
+                onChange={(e) => setNewRole(e.target.value as FirestoreUser["role"])}
                 className="w-full bg-[var(--background)] border border-[var(--border)] rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-orange-500"
               >
                 <option value="waiter">Bar Personeli (Barista)</option>
@@ -262,30 +254,51 @@ export default function PersonelYetkileriPage() {
 
             <button 
               type="submit"
-              className="flex items-center justify-center gap-2 bg-orange-600 hover:bg-orange-700 text-white font-bold py-2.5 rounded-xl text-xs transition-colors shadow-lg shadow-orange-600/10 h-10 w-full"
+              disabled={isSaving}
+              className="flex items-center justify-center gap-2 bg-orange-600 hover:bg-orange-700 disabled:opacity-50 text-white font-bold py-2.5 rounded-xl text-xs transition-colors shadow-lg h-10 w-full cursor-pointer"
             >
-              <Plus className="w-4 h-4" /> Personel Ekle
+              {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+              {isSaving ? "Kaydediliyor..." : "Personel Ekle"}
             </button>
           </form>
         </div>
 
-        {/* 2. MEVCUT PERSONEL LİSTESİ */}
+        {/* MEVCUT PERSONEL LİSTESİ */}
         <div className="bg-[var(--card)] border border-[var(--border)] rounded-3xl p-6 shadow-sm">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-[var(--border)] text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
-                  <th className="py-3 px-4">Kullanıcı Adı</th>
-                  <th className="py-3 px-4">Adı Soyadı</th>
-                  <th className="py-3 px-4">Şifre Kodu</th>
-                  <th className="py-3 px-4">Rol / Yetki Seviyesi</th>
-                  <th className="py-3 px-4 text-right">İşlem</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[var(--border)]/40 text-xs">
-                {users.map((u) => {
-                  const passVal = localStorage.getItem(`degirmen_pass_${u.username}`) || "****";
-                  return (
+          <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center gap-2">
+              <Shield className="w-5 h-5 text-orange-500" />
+              <h3 className="text-sm font-extrabold uppercase tracking-wider text-orange-500">Kayıtlı Personel Listesi</h3>
+            </div>
+            <button
+              onClick={loadUsers}
+              disabled={isLoading}
+              className="flex items-center gap-1.5 text-[10px] text-zinc-400 hover:text-zinc-200 font-semibold transition-colors cursor-pointer"
+            >
+              {isLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
+              Yenile
+            </button>
+          </div>
+
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="w-8 h-8 text-orange-500 animate-spin" />
+              <span className="ml-3 text-sm text-zinc-400">Firebase'den yükleniyor...</span>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-[var(--border)] text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
+                    <th className="py-3 px-4">Kullanıcı Adı</th>
+                    <th className="py-3 px-4">Adı Soyadı</th>
+                    <th className="py-3 px-4">Şifre</th>
+                    <th className="py-3 px-4">Rol / Yetki</th>
+                    <th className="py-3 px-4 text-right">İşlem</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[var(--border)]/40 text-xs">
+                  {users.map((u) => (
                     <tr key={u.username} className="hover:bg-[var(--background)]/35">
                       <td className="py-4 px-4 font-bold text-zinc-800 dark:text-zinc-200">
                         @{u.username}
@@ -294,7 +307,7 @@ export default function PersonelYetkileriPage() {
                         {u.name}
                       </td>
                       <td className="py-4 px-4 font-mono font-bold text-orange-500">
-                        {passVal}
+                        {"•".repeat(u.password?.length || 4)}
                       </td>
                       <td className="py-4 px-4">
                         <span className={`px-2.5 py-0.5 rounded-xl font-bold border text-[10px] ${
@@ -311,7 +324,8 @@ export default function PersonelYetkileriPage() {
                         {u.username !== "zafer" ? (
                           <button 
                             onClick={() => handleDeleteUser(u.username)}
-                            className="p-1.5 rounded-lg text-zinc-400 hover:text-red-500 hover:bg-red-500/10 transition-all cursor-pointer"
+                            disabled={isSaving}
+                            className="p-1.5 rounded-lg text-zinc-400 hover:text-red-500 hover:bg-red-500/10 transition-all cursor-pointer disabled:opacity-40"
                             title="Kullanıcıyı Sil"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -321,47 +335,29 @@ export default function PersonelYetkileriPage() {
                         )}
                       </td>
                     </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                  ))}
+                  {users.length === 0 && (
+                    <tr>
+                      <td colSpan={5} className="text-center py-10 text-zinc-500 text-xs">
+                        Henüz kayıtlı kullanıcı bulunmuyor.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
 
       </main>
 
-      {/* HAFIZADA TUTULAN DÜZENLEME DURUMU BAR */}
-      {isDirty && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-[#1e293b] border border-orange-500/30 text-white rounded-2xl px-6 py-4 flex items-center gap-6 shadow-2xl animate-slideUp">
-          <div className="flex items-center gap-2">
-            <User className="w-5 h-5 text-orange-500" />
-            <div className="flex flex-col">
-              <span className="text-xs font-bold">Kullanıcı Değişiklikleri Kaydedilmedi!</span>
-              <span className="text-[10px] text-zinc-400">Veritabanına yansıması ve giriş yapabilmeleri için kaydedin.</span>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <button 
-              onClick={handleCancelChanges}
-              className="flex items-center gap-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-bold px-4 py-2 rounded-xl text-xs transition-colors"
-            >
-              <Undo2 className="w-3.5 h-3.5" /> Geri Al
-            </button>
-            <button 
-              onClick={handleSaveChanges}
-              className="flex items-center gap-1.5 bg-orange-600 hover:bg-orange-700 text-white font-bold px-5 py-2 rounded-xl text-xs transition-colors shadow-lg shadow-orange-600/20"
-            >
-              <Save className="w-3.5 h-3.5" /> Değişiklikleri Kaydet
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* Footer */}
-      <footer className="w-full border-t border-[var(--border)] bg-[var(--card)] py-4 px-6 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-zinc-500">
-        <div>
-          <span>© 2026 Değirmen Cafe. Tüm hakları saklıdır.</span>
-        </div>
+      <footer className="w-full border-t border-[var(--border)] bg-[var(--card)] py-4 px-6 flex items-center justify-between text-xs text-zinc-500">
+        <span>© 2026 Değirmen Cafe. Tüm hakları saklıdır.</span>
+        <span className="flex items-center gap-1.5 text-emerald-500 font-semibold">
+          <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
+          Firebase Bağlı
+        </span>
       </footer>
 
     </div>
