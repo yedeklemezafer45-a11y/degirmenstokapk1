@@ -6,11 +6,17 @@ import {
   setDoc,
   writeBatch,
   onSnapshot,
-  Unsubscribe
+  Unsubscribe,
+  deleteDoc
 } from "firebase/firestore";
 import { StockItem, mockStockItems } from "./stockStore";
 
 const STOCKS_COL = "stocks";
+
+// Tekli Stok Sil
+export async function deleteStockItem(id: string): Promise<void> {
+  await deleteDoc(doc(db, STOCKS_COL, id));
+}
 
 // Varsayılan stokları Firestore'a yükle (Seeding)
 export async function seedDefaultStocks(): Promise<void> {

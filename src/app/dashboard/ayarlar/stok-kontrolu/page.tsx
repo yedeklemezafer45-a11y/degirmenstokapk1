@@ -18,7 +18,7 @@ import {
   Package
 } from "lucide-react";
 import { StockItem, StockCategory } from "@/lib/stockStore";
-import { subscribeToStocks, saveAllStocks, saveStockItem } from "@/lib/stockService";
+import { subscribeToStocks, saveAllStocks, saveStockItem, deleteStockItem } from "@/lib/stockService";
 import { logUserAction } from "@/lib/auditLogService";
 
 export default function StokKontroluPage() {
@@ -223,9 +223,9 @@ export default function StokKontroluPage() {
 
     setIsSaving(true);
     try {
-      const updatedList = stockList.filter(item => item.id !== id);
-      await saveAllStocks(updatedList);
-      setStockList(updatedList);
+      await deleteStockItem(id);
+      // local list update will be handled automatically by onSnapshot real-time sync, but let's filter it just in case
+      setStockList(prev => prev.filter(item => item.id !== id));
 
       setCheckedItemIds(prev => {
         const copy = { ...prev };
