@@ -235,20 +235,18 @@ export default function StokPage() {
                   <div 
                     key={category}
                     onClick={() => setSelectedCategory(category)}
-                    className="relative w-full max-w-[240px] h-[170px] bg-[#3F5A62] hover:bg-[#4d6b75] dark:bg-[#253645] dark:hover:bg-[#2e4354] rounded-3xl p-5 flex flex-col items-center justify-center cursor-pointer transition-all duration-300 border border-[#FE8254]/20 hover:border-[#FE8254]/80 shadow-[0_0_12px_rgba(254,130,84,0.12)] hover:shadow-[0_0_25px_rgba(254,130,84,0.45)] hover:-translate-y-1 select-none overflow-hidden group"
+                    className="relative w-full max-w-[240px] h-[170px] bg-[#3F5A62] hover:bg-[#4d6b75] dark:bg-[#253645] dark:hover:bg-[#2e4354] rounded-3xl p-5 flex flex-col items-center justify-center cursor-pointer transition-all duration-300 shadow-[0_0_12px_rgba(254,130,84,0.12)] hover:shadow-[0_0_25px_rgba(254,130,84,0.45)] hover:-translate-y-1 select-none overflow-hidden group"
                   >
                     {/* Top-Left Cutout (Concave Corner for Arrow Button) */}
                     <div className="absolute top-0 left-0 w-12 h-12 bg-[var(--background)] rounded-br-[1.5rem] transition-colors duration-300">
-                      <div className="absolute inset-0 border-r border-b border-[var(--border)] rounded-br-[1.5rem]" />
-                      <div className="absolute top-0 left-0 w-8 h-8 bg-[#3F5A62] group-hover:bg-[#4d6b75] dark:bg-[#253645] dark:group-hover:bg-[#2e4354] text-[#FE8254] flex items-center justify-center rounded-lg border border-[#FE8254]/30 shadow-sm transition-colors duration-300">
+                      <div className="absolute top-0 left-0 w-8 h-8 bg-[#3F5A62] group-hover:bg-[#4d6b75] dark:bg-[#253645] dark:group-hover:bg-[#2e4354] text-[#FE8254] flex items-center justify-center rounded-lg shadow-sm transition-colors duration-300">
                         <ArrowUpRight className="w-3.5 h-3.5 -rotate-90" />
                       </div>
                     </div>
 
                     {/* Bottom-Right Cutout (Concave Corner for Text Label) */}
                     <div className="absolute bottom-0 right-0 w-24 h-9 bg-[var(--background)] rounded-tl-[1.2rem] transition-colors duration-300">
-                      <div className="absolute inset-0 border-l border-t border-[var(--border)] rounded-tl-[1.2rem]" />
-                      <div className="absolute bottom-0 right-0 px-2 py-1 bg-[#3F5A62] group-hover:bg-[#4d6b75] dark:bg-[#253645] dark:group-hover:bg-[#2e4354] text-[8px] font-black uppercase text-[#FE8254] tracking-widest rounded-md border border-[#FE8254]/30 transition-colors duration-300">
+                      <div className="absolute bottom-0 right-0 px-2 py-1.5 bg-[#3F5A62] group-hover:bg-[#4d6b75] dark:bg-[#253645] dark:group-hover:bg-[#2e4354] text-[8px] font-black uppercase text-[#FE8254] tracking-widest rounded-md transition-colors duration-300">
                         DEĞİRMEN
                       </div>
                     </div>
@@ -266,20 +264,18 @@ export default function StokPage() {
                   <div 
                     key={category}
                     onClick={() => setSelectedCategory(category)}
-                    className="relative w-full max-w-[240px] h-[170px] bg-[#FE8254] hover:bg-[#ff956b] dark:bg-[#d46537] dark:hover:bg-[#e67545] rounded-3xl p-5 flex flex-col items-center justify-center cursor-pointer transition-all duration-300 border border-[#3F5A62]/20 hover:border-[#3F5A62]/60 shadow-[0_0_12px_rgba(254,130,84,0.12)] hover:shadow-[0_0_25px_rgba(254,130,84,0.45)] hover:-translate-y-1 select-none overflow-hidden group"
+                    className="relative w-full max-w-[240px] h-[170px] bg-[#FE8254] hover:bg-[#ff956b] dark:bg-[#d46537] dark:hover:bg-[#e67545] rounded-3xl p-5 flex flex-col items-center justify-center cursor-pointer transition-all duration-300 shadow-[0_0_12px_rgba(254,130,84,0.12)] hover:shadow-[0_0_25px_rgba(254,130,84,0.45)] hover:-translate-y-1 select-none overflow-hidden group"
                   >
                     {/* Top-Right Cutout (Concave Corner for Arrow Button) */}
                     <div className="absolute top-0 right-0 w-12 h-12 bg-[var(--background)] rounded-bl-[1.5rem] transition-colors duration-300">
-                      <div className="absolute inset-0 border-l border-b border-[var(--border)] rounded-bl-[1.5rem]" />
-                      <div className="absolute top-0 right-0 w-8 h-8 bg-[#FE8254] group-hover:bg-[#ff956b] dark:bg-[#d46537] dark:group-hover:bg-[#e67545] text-[#3F5A62] dark:text-zinc-950 flex items-center justify-center rounded-lg border border-[#3F5A62]/30 shadow-sm transition-colors duration-300">
+                      <div className="absolute top-0 right-0 w-8 h-8 bg-[#FE8254] group-hover:bg-[#ff956b] dark:bg-[#d46537] dark:group-hover:bg-[#e67545] text-[#3F5A62] dark:text-zinc-950 flex items-center justify-center rounded-lg shadow-sm transition-colors duration-300">
                         <ArrowUpRight className="w-3.5 h-3.5" />
                       </div>
                     </div>
 
                     {/* Bottom-Left Cutout (Concave Corner for Text Label) */}
                     <div className="absolute bottom-0 left-0 w-24 h-9 bg-[var(--background)] rounded-tr-[1.2rem] transition-colors duration-300">
-                      <div className="absolute inset-0 border-r border-t border-[var(--border)] rounded-tr-[1.2rem]" />
-                      <div className="absolute bottom-0 left-0 px-2 py-1 bg-[#FE8254] group-hover:bg-[#ff956b] dark:bg-[#d46537] dark:group-hover:bg-[#e67545] text-[8px] font-black uppercase text-[#3F5A62] dark:text-zinc-950 tracking-widest rounded-md border border-[#3F5A62]/30 transition-colors duration-300">
+                      <div className="absolute bottom-0 left-0 px-2 py-1 bg-[#FE8254] group-hover:bg-[#ff956b] dark:bg-[#d46537] dark:group-hover:bg-[#e67545] text-[8px] font-black uppercase text-[#3F5A62] dark:text-zinc-950 tracking-widest rounded-md transition-colors duration-300">
                         CAFE
                       </div>
                     </div>
