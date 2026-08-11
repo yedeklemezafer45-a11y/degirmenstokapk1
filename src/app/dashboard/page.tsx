@@ -27,6 +27,7 @@ export default function DashboardPage() {
   const [userFullName, setUserFullName] = useState<string>("Personel");
 
   const [criticalCount, setCriticalCount] = useState(0);
+  const [criticalItems, setCriticalItems] = useState<{ id: string; name: string; quantity: number; unit: string }[]>([]);
   const [sktWarnings, setSktWarnings] = useState<{ id: string; name: string; category: string; daysLeft: number }[]>([]);
   const [announcement, setAnnouncement] = useState<Announcement | null>(null);
   const [annDismissed, setAnnDismissed] = useState(false);
@@ -53,6 +54,11 @@ export default function DashboardPage() {
     const unsubscribe = subscribeToStocks((currentStock) => {
       const critCount = currentStock.filter(item => item.quantity <= item.minLimit).length;
       setCriticalCount(critCount);
+
+      const critItems = currentStock
+        .filter(item => item.quantity <= item.minLimit)
+        .map(item => ({ id: item.id, name: item.name, quantity: item.quantity, unit: item.unit }));
+      setCriticalItems(critItems);
 
       const warnings: typeof sktWarnings = [];
       const today = new Date();
@@ -88,6 +94,8 @@ export default function DashboardPage() {
     { label: "Reçeteler", active: true, path: "/dashboard/receteler" },
   ];
 
+  const [showNotifDropdown, setShowNotifDropdown] = useState(false);
+
   // Aylık Stok Takibi + Stok Listesi yetkisini admin veya yoneticiye verelim
   if (userRole === "admin" || userRole === "yonetici") {
     modules.push({ label: "Aylık Stok Takibi", active: true, path: "/dashboard/aylik-stok-takibi" });
@@ -99,25 +107,103 @@ export default function DashboardPage() {
     modules.push({ label: "Ayarlar", active: true, path: "/dashboard/ayarlar" });
   }
 
+  const totalWarnings = criticalCount + sktWarnings.length;
+
   return (
     <div className="min-h-screen flex flex-col bg-[var(--background)] text-[var(--foreground)] transition-colors duration-300">
       
       {/* 1. ÜST BÖLGE (HEADER) */}
       <header className="sticky top-0 z-40 w-full border-b border-[var(--border)] bg-[var(--card)]/80 backdrop-blur-md px-6 py-4 flex items-center justify-between shadow-sm">
-        <div className="flex items-center gap-3">
+        
+        {/* Sol Taraf: Marka */}
+        <div className="flex items-center gap-3 w-1/4">
           <div>
-            <h1 className="font-bold text-lg tracking-tight">Değirmen Cafe</h1>
-            <p className="text-xs text-zinc-500">Kontrol Paneli | Rol: <span className="font-bold text-orange-500 uppercase">{userRole}</span></p>
+            <h1 className="font-black text-base tracking-tight leading-none text-zinc-800 dark:text-zinc-100">Değirmen Cafe</h1>
+            <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest mt-1 block">Kontrol Paneli</span>
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
-          <button className="p-2 rounded-xl hover:bg-[var(--foreground)]/5 text-zinc-500 hover:text-[var(--foreground)] transition-colors relative cursor-pointer">
-            <Bell className="w-5 h-5" />
-            {criticalCount > 0 && (
-              <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 border-2 border-[var(--card)] rounded-full"></span>
+        {/* Orta Taraf: Zafer Yönetici (Kullanıcı Adı & Görevi) */}
+        <div className="flex items-center justify-center w-2/4 text-center">
+          <div className="flex items-center gap-2.5 px-4 py-1.5 rounded-full border border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-900/40">
+            {/* Modernized Avatar: Sleek dark rounded square from Version 1 instead of Z letter */}
+            <div className="w-5 h-5 rounded-md bg-zinc-950 dark:bg-white text-white dark:text-zinc-950 flex items-center justify-center text-[10px] font-extrabold shrink-0 shadow-sm">
+              👤
+            </div>
+            <div className="text-left flex items-center gap-2">
+              <span className="text-xs font-black tracking-tight text-zinc-800 dark:text-zinc-200">{userFullName}</span>
+              <span className="text-[8px] font-black px-1.5 py-0.5 rounded-md bg-orange-500/10 text-orange-500 border border-orange-500/20 uppercase tracking-wider">
+                {userRole === "admin" ? "ADMİN" : userRole === "yonetici" ? "YÖNETİCİ" : "BARİSTA"}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Sağ Taraf: Aksiyon Butonları & Çıkış */}
+        <div className="flex items-center justify-end gap-3 w-1/4 relative">
+          
+          {/* Bildirim Çanı */}
+          <div className="relative">
+            <button 
+              onClick={() => setShowNotifDropdown(!showNotifDropdown)}
+              className={`p-2 rounded-xl transition-all cursor-pointer ${
+                showNotifDropdown 
+                  ? "bg-zinc-800 text-white" 
+                  : "hover:bg-[var(--foreground)]/5 text-zinc-500 hover:text-[var(--foreground)]"
+              }`}
+              title="Bildirimler"
+            >
+              <Bell className="w-5 h-5" />
+              {totalWarnings > 0 && (
+                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 border border-[var(--card)] rounded-full animate-pulse"></span>
+              )}
+            </button>
+
+            {/* Bildirim Açılır Kapanır Kutusu (Dropdown) */}
+            {showNotifDropdown && (
+              <div className="absolute right-0 top-12 w-80 bg-zinc-950/95 border border-white/10 backdrop-blur-xl rounded-2xl p-4 shadow-2xl z-50 text-left animate-fadeIn">
+                <div className="flex items-center justify-between border-b border-white/10 pb-2 mb-3">
+                  <span className="text-xs font-black text-zinc-200 uppercase tracking-wider">Bildirimler ({totalWarnings})</span>
+                  <button 
+                    onClick={() => setShowNotifDropdown(false)}
+                    className="text-[10px] text-zinc-500 hover:text-white font-bold"
+                  >
+                    Kapat
+                  </button>
+                </div>
+
+                <div className="space-y-2 max-h-60 overflow-y-auto no-scrollbar">
+                  {totalWarnings === 0 ? (
+                    <p className="text-[10px] text-zinc-500 text-center py-4 font-medium">Yeni bildirim bulunmuyor.</p>
+                  ) : (
+                    <>
+                      {/* Kritik Limit Uyarıları */}
+                      {criticalItems.map(item => (
+                        <div key={`crit-${item.id}`} className="flex items-start gap-2 p-2 rounded-xl bg-red-500/10 border border-red-500/20">
+                          <AlertTriangle className="w-3.5 h-3.5 text-red-500 shrink-0 mt-0.5" />
+                          <div className="text-[10px]">
+                            <p className="font-bold text-zinc-200">{item.name}</p>
+                            <p className="text-red-400 mt-0.5">Kritik sınırda! Kalan: {item.quantity} {item.unit}</p>
+                          </div>
+                        </div>
+                      ))}
+
+                      {/* SKT Uyarıları */}
+                      {sktWarnings.map(item => (
+                        <div key={`skt-${item.id}`} className="flex items-start gap-2 p-2 rounded-xl bg-amber-500/10 border border-amber-500/20">
+                          <AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5" />
+                          <div className="text-[10px]">
+                            <p className="font-bold text-zinc-200">{item.name}</p>
+                            <p className="text-amber-400 mt-0.5">Son kullanma tarihine {item.daysLeft} gün kaldı!</p>
+                          </div>
+                        </div>
+                      ))}
+                    </>
+                  )}
+                </div>
+              </div>
             )}
-          </button>
+          </div>
           
           <button
             onClick={toggleTheme}
@@ -128,24 +214,18 @@ export default function DashboardPage() {
 
           <div className="h-6 w-[1px] bg-[var(--border)]"></div>
 
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-orange-600 to-amber-500 border border-orange-500/30 flex items-center justify-center font-extrabold text-white text-sm shadow-md">
-              {userFullName.charAt(0).toUpperCase()}
-            </div>
-            <div className="hidden md:block text-left">
-              <p className="text-sm font-bold leading-tight text-zinc-800 dark:text-zinc-100">{userFullName}</p>
-              <span className="text-[10px] font-bold text-orange-500 uppercase tracking-wider">
-                {userRole === "admin" ? "ADMİN" : userRole === "yonetici" ? "YÖNETİCİ" : "BARİSTA"}
-              </span>
-            </div>
-          </div>
-
+          {/* Çıkış Butonu (Version 1 Pill Model) */}
           <button 
             onClick={() => router.push("/")}
-            className="p-2 rounded-xl hover:bg-red-500/10 text-zinc-500 hover:text-red-500 transition-colors cursor-pointer"
+            className="flex items-center gap-2 bg-zinc-950 dark:bg-zinc-900 border border-white/10 hover:bg-zinc-800 text-white pl-1 pr-3.5 py-1 rounded-full shadow hover:scale-105 active:scale-95 transition-all duration-300 cursor-pointer"
             title="Çıkış Yap"
           >
-            <LogOut className="w-5 h-5" />
+            <div className="w-6 h-6 rounded-md bg-white text-zinc-950 flex items-center justify-center shrink-0">
+              <LogOut className="w-3.5 h-3.5 text-zinc-950" />
+            </div>
+            <span className="text-[9px] font-black uppercase tracking-wider text-zinc-200">
+              ÇIKIŞ
+            </span>
           </button>
         </div>
       </header>
