@@ -373,53 +373,84 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Dinamik Kartlar Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 w-full justify-items-center py-6 max-w-5xl">
-          {modules.map((item, idx) => (
-            <div 
-              key={idx}
-              onClick={() => {
-                if (item.path !== "#") router.push(item.path);
-              }}
-              className="custom-border-card"
-              style={{
-                boxShadow: item.active 
-                  ? "0 10px 30px -10px rgba(234, 88, 12, 0.3), inset 0 0 0 1px rgba(234, 88, 12, 0.2)" 
-                  : "0 10px 30px -10px rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.05)"
-              }}
-            >
-              {/* SVG Yuvarlatılmış Köşeli Çerçeve Çizgisi */}
-              <svg className="custom-card-border-svg">
-                <rect 
-                  style={{ 
-                    stroke: item.active ? "#ea580c" : "rgba(255, 255, 255, 0.15)",
-                    strokeDashoffset: item.active ? "0" : "1000"
-                  }} 
-                />
-              </svg>
-
-              {/* Varsayılan Başlık Görünümü */}
-              <div className="card-logo flex flex-col items-center justify-center text-center px-6">
-                <span className="text-base font-extrabold tracking-wide text-zinc-300">
-                  {item.label}
-                </span>
-              </div>
-
-              {/* Hover Durumunda Beliren Detay / Giriş Metni (Version 1 styled button) */}
-              <div className="card-text flex flex-col items-center gap-3">
-                <span className="text-white text-sm font-black truncate max-w-[180px]">{item.label}</span>
-                
-                <div className="flex items-center gap-2 bg-white text-zinc-950 pl-1.5 pr-4 py-1.5 rounded-2xl shadow-xl">
-                  <div className="w-7 h-7 rounded-lg bg-zinc-950 flex items-center justify-center text-white shrink-0">
-                    <ArrowUpRight className="w-4 h-4" />
+        {/* Dinamik Kartlar Grid (Görseldeki Asimetrik Cutout Tasarımı) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 w-full justify-items-center py-6 max-w-5xl">
+          {modules.map((item, idx) => {
+            // Alternate styles: steel (index 0, 2, 4...) and peach (index 1, 3...)
+            const isSteel = idx % 2 === 0;
+            
+            if (isSteel) {
+              // Deep Steel Blue Card layout
+              return (
+                <div 
+                  key={idx}
+                  onClick={() => {
+                    if (item.path !== "#") router.push(item.path);
+                  }}
+                  className="relative w-full max-w-[290px] h-[190px] bg-[#3F5A62] hover:bg-[#4d6b75] dark:bg-[#253645] dark:hover:bg-[#2e4354] rounded-3xl p-6 flex flex-col items-center justify-center cursor-pointer transition-all duration-300 shadow-lg hover:shadow-xl hover:-translate-y-1 select-none overflow-hidden group"
+                >
+                  {/* Top-Left Cutout (Concave Corner for Arrow Button) */}
+                  <div className="absolute top-0 left-0 w-14 h-14 bg-[var(--background)] rounded-br-[2rem] transition-colors duration-300">
+                    <div className="absolute inset-0 border-r border-b border-[var(--border)] rounded-br-[2rem]" />
+                    <div className="absolute top-0 left-0 w-9 h-9 bg-[#3F5A62] group-hover:bg-[#4d6b75] dark:bg-[#253645] dark:group-hover:bg-[#2e4354] text-[#FE8254] flex items-center justify-center rounded-xl border border-white/5 shadow-sm transition-colors duration-300">
+                      <ArrowUpRight className="w-4 h-4 -rotate-90" />
+                    </div>
                   </div>
-                  <span className="text-[10px] font-black uppercase tracking-wider text-zinc-800">
-                    Modüle Git
-                  </span>
+
+                  {/* Bottom-Right Cutout (Concave Corner for Text Label) */}
+                  <div className="absolute bottom-0 right-0 w-28 h-10 bg-[var(--background)] rounded-tl-[1.5rem] transition-colors duration-300">
+                    <div className="absolute inset-0 border-l border-t border-[var(--border)] rounded-tl-[1.5rem]" />
+                    <div className="absolute bottom-0 right-0 px-3 py-1.5 bg-[#3F5A62] group-hover:bg-[#4d6b75] dark:bg-[#253645] dark:group-hover:bg-[#2e4354] text-[9px] font-black uppercase text-[#FE8254] tracking-widest rounded-lg border border-white/5 transition-colors duration-300">
+                      DEĞİRMEN
+                    </div>
+                  </div>
+
+                  {/* Centered Large Menu Title */}
+                  <div className="text-center z-10 px-4 mt-2">
+                    <span className="text-xl sm:text-2xl font-black uppercase tracking-tighter text-[#FE8254] leading-tight block drop-shadow-sm">
+                      {item.label}
+                    </span>
+                  </div>
+
                 </div>
-              </div>
-            </div>
-          ))}
+              );
+            } else {
+              // Burnt Peach Card layout
+              return (
+                <div 
+                  key={idx}
+                  onClick={() => {
+                    if (item.path !== "#") router.push(item.path);
+                  }}
+                  className="relative w-full max-w-[290px] h-[190px] bg-[#FE8254] hover:bg-[#ff956b] dark:bg-[#d46537] dark:hover:bg-[#e67545] rounded-3xl p-6 flex flex-col items-center justify-center cursor-pointer transition-all duration-300 shadow-lg hover:shadow-xl hover:-translate-y-1 select-none overflow-hidden group"
+                >
+                  {/* Top-Right Cutout (Concave Corner for Arrow Button) */}
+                  <div className="absolute top-0 right-0 w-14 h-14 bg-[var(--background)] rounded-bl-[2rem] transition-colors duration-300">
+                    <div className="absolute inset-0 border-l border-b border-[var(--border)] rounded-bl-[2rem]" />
+                    <div className="absolute top-0 right-0 w-9 h-9 bg-[#FE8254] group-hover:bg-[#ff956b] dark:bg-[#d46537] dark:group-hover:bg-[#e67545] text-[#3F5A62] dark:text-zinc-950 flex items-center justify-center rounded-xl border border-white/5 shadow-sm transition-colors duration-300">
+                      <ArrowUpRight className="w-4 h-4" />
+                    </div>
+                  </div>
+
+                  {/* Bottom-Left Cutout (Concave Corner for Text Label) */}
+                  <div className="absolute bottom-0 left-0 w-28 h-10 bg-[var(--background)] rounded-tr-[1.5rem] transition-colors duration-300">
+                    <div className="absolute inset-0 border-r border-t border-[var(--border)] rounded-tr-[1.5rem]" />
+                    <div className="absolute bottom-0 left-0 px-3 py-1.5 bg-[#FE8254] group-hover:bg-[#ff956b] dark:bg-[#d46537] dark:group-hover:bg-[#e67545] text-[9px] font-black uppercase text-[#3F5A62] dark:text-zinc-950 tracking-widest rounded-lg border border-white/5 transition-colors duration-300">
+                      CAFE
+                    </div>
+                  </div>
+
+                  {/* Centered Large Menu Title */}
+                  <div className="text-center z-10 px-4 mt-2">
+                    <span className="text-xl sm:text-2xl font-black uppercase tracking-tighter text-[#3F5A62] dark:text-zinc-950 leading-tight block drop-shadow-sm">
+                      {item.label}
+                    </span>
+                  </div>
+
+                </div>
+              );
+            }
+          })}
         </div>
 
       </main>
