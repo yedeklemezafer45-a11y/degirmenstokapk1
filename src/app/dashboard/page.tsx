@@ -13,7 +13,8 @@ import {
   Settings,
   AlertTriangle,
   Megaphone,
-  X
+  X,
+  ArrowUpRight
 } from "lucide-react";
 import { getAnnouncement, Announcement } from "@/lib/announcementService";
 import { subscribeToStocks } from "@/lib/stockService";
@@ -218,14 +219,30 @@ export default function DashboardPage() {
         )}
 
         {/* Karşılama Alanı */}
-        <div className="text-center flex flex-col items-center gap-1 animate-fadeIn -mt-10">
-          <div className="w-96 h-96 flex items-center justify-center">
+        <div className="text-center flex flex-col items-center gap-4 animate-fadeIn -mt-10">
+          <div className="w-64 h-64 flex items-center justify-center">
             <img src="/logo.png" alt="Değirmen Cafe Logo" className="w-full h-full object-contain" />
           </div>
-          <h2 className="text-3xl font-extrabold tracking-tight sm:text-4xl text-[#ea580c] text-center max-w-xl">
+          
+          {/* Görsel 2 Karşılama Stili */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 my-2">
+            <h2 className="text-4xl sm:text-5xl font-black tracking-tighter text-zinc-900 dark:text-white leading-none">
+              Merhaba,
+            </h2>
+            <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-3xl border-2 border-dashed border-emerald-500 bg-emerald-500/5 shadow-inner">
+              <span className="w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center text-[10px] font-bold shrink-0">
+                +
+              </span>
+              <span className="text-base sm:text-lg font-bold text-emerald-500 tracking-tight leading-none">
+                {userFullName}
+              </span>
+            </div>
+          </div>
+
+          <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight text-[#ea580c] text-center max-w-xl">
             Barista Ürün Yönetim, Reçete, Stok Kontrol Paneli
           </h2>
-          <p className="text-zinc-500 max-w-md mx-auto text-sm">
+          <p className="text-zinc-500 max-w-md mx-auto text-xs">
             Erişmek istediğiniz cafe modülünü seçin. Kartların üzerine gelerek detayları görebilirsiniz.
           </p>
         </div>
@@ -262,10 +279,18 @@ export default function DashboardPage() {
                 </span>
               </div>
 
-              {/* Hover Durumunda Beliren Detay / Giriş Metni */}
-              <div className="card-text flex flex-col items-center gap-1.5">
-                <span className="text-orange-500 text-xs font-bold uppercase tracking-wider">Modüle Git</span>
-                <span className="text-white text-sm font-medium">{item.label}</span>
+              {/* Hover Durumunda Beliren Detay / Giriş Metni (Version 1 styled button) */}
+              <div className="card-text flex flex-col items-center gap-3">
+                <span className="text-white text-sm font-black truncate max-w-[180px]">{item.label}</span>
+                
+                <div className="flex items-center gap-2 bg-white text-zinc-950 pl-1.5 pr-4 py-1.5 rounded-2xl shadow-xl">
+                  <div className="w-7 h-7 rounded-lg bg-zinc-950 flex items-center justify-center text-white shrink-0">
+                    <ArrowUpRight className="w-4 h-4" />
+                  </div>
+                  <span className="text-[10px] font-black uppercase tracking-wider text-zinc-800">
+                    Modüle Git
+                  </span>
+                </div>
               </div>
             </div>
           ))}

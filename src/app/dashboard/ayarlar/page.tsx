@@ -12,7 +12,8 @@ import {
   Calendar,
   History,
   Megaphone,
-  Music
+  Music,
+  ArrowUpRight
 } from "lucide-react";
 
 export default function AyarlarPage() {
@@ -116,9 +117,16 @@ export default function AyarlarPage() {
               </span>
             </div>
 
-            <div className="card-text flex flex-col items-center gap-1.5">
-              <span className="text-orange-500 text-xs font-bold uppercase tracking-wider">Ayara Git</span>
-              <span className="text-white text-sm font-medium">Stok Listesi Kontrolü</span>
+            <div className="card-text flex flex-col items-center gap-3">
+              <span className="text-white text-sm font-black truncate max-w-[180px]">Stok Listesi Kontrolü</span>
+              <div className="flex items-center gap-2 bg-white text-zinc-950 pl-1.5 pr-4 py-1.5 rounded-2xl shadow-xl">
+                <div className="w-7 h-7 rounded-lg bg-zinc-950 flex items-center justify-center text-white shrink-0">
+                  <ArrowUpRight className="w-4 h-4" />
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-wider text-zinc-800">
+                  Ayara Git
+                </span>
+              </div>
             </div>
           </div>
 
@@ -141,9 +149,16 @@ export default function AyarlarPage() {
               </span>
             </div>
 
-            <div className="card-text flex flex-col items-center gap-1.5">
-              <span className="text-orange-500 text-xs font-bold uppercase tracking-wider">Ayara Git</span>
-              <span className="text-white text-sm font-medium">Reçete & Tarif Yönetimi</span>
+            <div className="card-text flex flex-col items-center gap-3">
+              <span className="text-white text-sm font-black truncate max-w-[180px]">Reçeteler Listesi Kontrolü</span>
+              <div className="flex items-center gap-2 bg-white text-zinc-950 pl-1.5 pr-4 py-1.5 rounded-2xl shadow-xl">
+                <div className="w-7 h-7 rounded-lg bg-zinc-950 flex items-center justify-center text-white shrink-0">
+                  <ArrowUpRight className="w-4 h-4" />
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-wider text-zinc-800">
+                  Ayara Git
+                </span>
+              </div>
             </div>
           </div>
 
@@ -166,9 +181,16 @@ export default function AyarlarPage() {
               </span>
             </div>
 
-            <div className="card-text flex flex-col items-center gap-1.5">
-              <span className="text-orange-500 text-xs font-bold uppercase tracking-wider">Ayara Git</span>
-              <span className="text-white text-sm font-medium">Son Tüketim Tarihleri</span>
+            <div className="card-text flex flex-col items-center gap-3">
+              <span className="text-white text-sm font-black truncate max-w-[180px]">SKT Takip Kontrolü</span>
+              <div className="flex items-center gap-2 bg-white text-zinc-950 pl-1.5 pr-4 py-1.5 rounded-2xl shadow-xl">
+                <div className="w-7 h-7 rounded-lg bg-zinc-950 flex items-center justify-center text-white shrink-0">
+                  <ArrowUpRight className="w-4 h-4" />
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-wider text-zinc-800">
+                  Ayara Git
+                </span>
+              </div>
             </div>
           </div>
 
@@ -191,9 +213,16 @@ export default function AyarlarPage() {
               </span>
             </div>
 
-            <div className="card-text flex flex-col items-center gap-1.5">
-              <span className="text-orange-500 text-xs font-bold uppercase tracking-wider">Ayara Git</span>
-              <span className="text-white text-sm font-medium">Personel & Şifre Yönetimi</span>
+            <div className="card-text flex flex-col items-center gap-3">
+              <span className="text-white text-sm font-black truncate max-w-[180px]">Yetki & Personel Ayarları</span>
+              <div className="flex items-center gap-2 bg-white text-zinc-950 pl-1.5 pr-4 py-1.5 rounded-2xl shadow-xl">
+                <div className="w-7 h-7 rounded-lg bg-zinc-950 flex items-center justify-center text-white shrink-0">
+                  <ArrowUpRight className="w-4 h-4" />
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-wider text-zinc-800">
+                  Ayara Git
+                </span>
+              </div>
             </div>
           </div>
 
@@ -216,9 +245,16 @@ export default function AyarlarPage() {
               </span>
             </div>
 
-            <div className="card-text flex flex-col items-center gap-1.5">
-              <span className="text-orange-500 text-xs font-bold uppercase tracking-wider">Ayara Git</span>
-              <span className="text-white text-sm font-medium">Firestore Audit Logları</span>
+            <div className="card-text flex flex-col items-center gap-3">
+              <span className="text-white text-sm font-black truncate max-w-[180px]">Kullanıcı İşlem Geçmişi</span>
+              <div className="flex items-center gap-2 bg-white text-zinc-950 pl-1.5 pr-4 py-1.5 rounded-2xl shadow-xl">
+                <div className="w-7 h-7 rounded-lg bg-zinc-950 flex items-center justify-center text-white shrink-0">
+                  <ArrowUpRight className="w-4 h-4" />
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-wider text-zinc-800">
+                  Ayara Git
+                </span>
+              </div>
             </div>
           </div>
 
@@ -241,9 +277,16 @@ export default function AyarlarPage() {
               </span>
             </div>
 
-            <div className="card-text flex flex-col items-center gap-1.5">
-              <span className="text-orange-500 text-xs font-bold uppercase tracking-wider">Ayara Git</span>
-              <span className="text-white text-sm font-medium">Personele Duyuru Gönder</span>
+            <div className="card-text flex flex-col items-center gap-3">
+              <span className="text-white text-sm font-black truncate max-w-[180px]">Duyuru Yönetimi</span>
+              <div className="flex items-center gap-2 bg-white text-zinc-950 pl-1.5 pr-4 py-1.5 rounded-2xl shadow-xl">
+                <div className="w-7 h-7 rounded-lg bg-zinc-950 flex items-center justify-center text-white shrink-0">
+                  <ArrowUpRight className="w-4 h-4" />
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-wider text-zinc-800">
+                  Ayara Git
+                </span>
+              </div>
             </div>
           </div>
 
@@ -266,9 +309,16 @@ export default function AyarlarPage() {
               </span>
             </div>
 
-            <div className="card-text flex flex-col items-center gap-1.5">
-              <span className="text-orange-500 text-xs font-bold uppercase tracking-wider">Ayara Git</span>
-              <span className="text-white text-sm font-medium">YouTube Playlist Yönetimi</span>
+            <div className="card-text flex flex-col items-center gap-3">
+              <span className="text-white text-sm font-black truncate max-w-[180px]">Müzik Ayarları</span>
+              <div className="flex items-center gap-2 bg-white text-zinc-950 pl-1.5 pr-4 py-1.5 rounded-2xl shadow-xl">
+                <div className="w-7 h-7 rounded-lg bg-zinc-950 flex items-center justify-center text-white shrink-0">
+                  <ArrowUpRight className="w-4 h-4" />
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-wider text-zinc-800">
+                  Ayara Git
+                </span>
+              </div>
             </div>
           </div>
 
