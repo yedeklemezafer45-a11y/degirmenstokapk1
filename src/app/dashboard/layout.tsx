@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
-import MusicPlayer from "@/components/MusicPlayer";
 import { usePathname } from "next/navigation";
 
 export default function DashboardLayout({
@@ -60,7 +59,6 @@ export default function DashboardLayout({
   return (
     <>
       {children}
-      <MusicPlayer />
     </>
   );
 }
