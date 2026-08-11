@@ -53,8 +53,12 @@ export default function MusicPlayer() {
         const firstScriptTag = document.getElementsByTagName("script")[0];
         firstScriptTag?.parentNode?.insertBefore(tag, firstScriptTag);
       }
-      initializePlayer(activeUrl);
       setLoading(false);
+      
+      // Ensure the container is rendered in the DOM before initializing the YT Player
+      setTimeout(() => {
+        initializePlayer(activeUrl);
+      }, 50);
     });
   }, []);
 
@@ -122,6 +126,12 @@ export default function MusicPlayer() {
     };
 
     const setup = () => {
+      const container = document.getElementById("yt-player-container");
+      if (!container) {
+        console.warn("yt-player-container element not found in DOM yet!");
+        return;
+      }
+
       const playerVars: any = {
         autoplay: 0,
         controls: 0,
@@ -197,7 +207,11 @@ export default function MusicPlayer() {
     }
   }, [videoId]);
 
-  if (loading || !embedUrl) return null;
+  if (loading || !embedUrl) {
+    return (
+      <div id="yt-player-container" className="absolute top-0 left-0 w-1 h-1 opacity-0 pointer-events-none overflow-hidden" />
+    );
+  }
 
   // Çal/Duraklat
   const togglePlay = () => {
