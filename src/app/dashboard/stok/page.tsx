@@ -88,18 +88,20 @@ export default function StokPage() {
     }
   };
 
-  // Yöneticinin Depoda Bulunan Toplam Adeti/Miktarı Güncellemesi (Stok Girişi)
+  // Yöneticinin Depoda Bulunan Toplam Adeti/Miktarı Güncellemesi (Stok İlavesi)
   const handleSaveBulkQuantity = async (id: string) => {
     const bulkValue = tempInputs[id];
     if (bulkValue === undefined || bulkValue === "") return;
 
-    const newDepodaBulunan = Number(parseFloat(bulkValue).toFixed(3));
-    if (isNaN(newDepodaBulunan) || newDepodaBulunan < 0) return;
+    const addedQty = Number(parseFloat(bulkValue).toFixed(3));
+    if (isNaN(addedQty) || addedQty <= 0) return;
 
     const item = stockList.find(i => i.id === id);
     if (!item) return;
 
+    const newDepodaBulunan = Number((item.depodaBulunan + addedQty).toFixed(3));
     const newQty = Math.max(0, Number((newDepodaBulunan - item.depodanAlinan).toFixed(3)));
+    
     const updatedItem: StockItem = {
       ...item,
       depodaBulunan: newDepodaBulunan,
@@ -110,9 +112,9 @@ export default function StokPage() {
       await saveStockItem(updatedItem);
       setTempInputs(prev => ({ ...prev, [id]: "" }));
       await logUserAction(
-        "Depo Toplamı Güncellendi",
+        "Stoka İlave Yapıldı",
         "STOK",
-        `"${item.name}" depoda bulunan miktarı ${newDepodaBulunan} olarak güncellendi. Yeni kalan: ${newQty} ${item.unit}`
+        `"${item.name}" stoğuna ${addedQty} ${item.unit} ilave edildi. Toplam Depoda: ${newDepodaBulunan}, Yeni Kalan: ${newQty} ${item.unit}`
       );
     } catch (err) {
       console.error("Giriş hatası:", err);
@@ -374,7 +376,7 @@ export default function StokPage() {
                             <div className="flex items-center gap-1.5">
                               <input
                                 type="number"
-                                placeholder="Adet"
+                                placeholder="+ Ekle"
                                 value={tempInputs[item.id] || ""}
                                 onChange={(e) => setTempInputs({ ...tempInputs, [item.id]: e.target.value })}
                                 className="w-16 px-2 py-1 text-xs text-center border border-[var(--border)] bg-[var(--background)] rounded-xl focus:outline-none"
@@ -382,7 +384,7 @@ export default function StokPage() {
                               <button
                                 onClick={() => handleSaveBulkQuantity(item.id)}
                                 className="p-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500 text-emerald-500 hover:text-white transition-colors cursor-pointer border border-emerald-500/20"
-                                title="Depo Toplamını Güncelle"
+                                title="Stoka İlave Et"
                               >
                                 <Check className="w-3.5 h-3.5" />
                               </button>
