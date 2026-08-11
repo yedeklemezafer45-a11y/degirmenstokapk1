@@ -457,7 +457,10 @@ export default function DashboardPage() {
 
                   {/* Centered Large Menu Title */}
                   <div className="text-center z-10 px-4 mt-2">
-                    <span className="text-xl sm:text-2xl font-black uppercase tracking-tighter text-[#FE8254] leading-tight block drop-shadow-sm">
+                    <span 
+                      style={{ fontFamily: "'Getai Grotesk', sans-serif" }}
+                      className="text-xl sm:text-2xl font-black uppercase tracking-tighter text-[#FE8254] leading-tight block drop-shadow-sm"
+                    >
                       {item.label}
                     </span>
                   </div>
@@ -490,7 +493,10 @@ export default function DashboardPage() {
 
                   {/* Centered Large Menu Title */}
                   <div className="text-center z-10 px-4 mt-2">
-                    <span className="text-xl sm:text-2xl font-black uppercase tracking-tighter text-[#3F5A62] dark:text-zinc-950 leading-tight block drop-shadow-sm">
+                    <span 
+                      style={{ fontFamily: "'Getai Grotesk', sans-serif" }}
+                      className="text-xl sm:text-2xl font-black uppercase tracking-tighter text-[#3F5A62] dark:text-zinc-950 leading-tight block drop-shadow-sm"
+                    >
                       {item.label}
                     </span>
                   </div>
