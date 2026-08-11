@@ -34,10 +34,9 @@ export default function MuzikAyarlariPage() {
     }
 
     getMusicSettings().then((s) => {
-      if (s?.playlistUrl) {
-        setPlaylistUrl(s.playlistUrl);
-        setCurrentUrl(s.playlistUrl);
-      }
+      const activeUrl = s?.playlistUrl || "https://youtube.com/playlist?list=PLF4FX8f5fKzyLo9WVMxYUNNBFqnfyPs7S&si=CbpFb5Nz-u77kX80";
+      setPlaylistUrl(activeUrl);
+      setCurrentUrl(activeUrl);
     });
   }, []);
 

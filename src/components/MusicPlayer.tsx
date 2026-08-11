@@ -44,17 +44,16 @@ export default function MusicPlayer() {
   useEffect(() => {
     // 1. settings'ten playlist url'sini çek
     getMusicSettings().then((settings) => {
-      if (settings?.playlistUrl) {
-        setEmbedUrl(settings.playlistUrl);
-        // Load YouTube API
-        if (!window.YT) {
-          const tag = document.createElement("script");
-          tag.src = "https://www.youtube.com/iframe_api";
-          const firstScriptTag = document.getElementsByTagName("script")[0];
-          firstScriptTag?.parentNode?.insertBefore(tag, firstScriptTag);
-        }
-        initializePlayer(settings.playlistUrl);
+      const activeUrl = settings?.playlistUrl || "https://youtube.com/playlist?list=PLF4FX8f5fKzyLo9WVMxYUNNBFqnfyPs7S&si=CbpFb5Nz-u77kX80";
+      setEmbedUrl(activeUrl);
+      // Load YouTube API
+      if (!window.YT) {
+        const tag = document.createElement("script");
+        tag.src = "https://www.youtube.com/iframe_api";
+        const firstScriptTag = document.getElementsByTagName("script")[0];
+        firstScriptTag?.parentNode?.insertBefore(tag, firstScriptTag);
       }
+      initializePlayer(activeUrl);
       setLoading(false);
     });
   }, []);
