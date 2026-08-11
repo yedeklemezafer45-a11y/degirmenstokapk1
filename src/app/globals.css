@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@variant dark (&:where(.dark, .dark *));
+
 :root {
   --background: #f8fafc;
   --foreground: #0f172a;
@@ -97,6 +99,14 @@ body {
 .custom-border-card:hover .card-text {
   opacity: 1;
   transform: translateY(0);
+}
+
+/* Logo inversion for dark mode */
+.logo-invert-dark {
+  transition: filter 0.3s ease;
+}
+.dark .logo-invert-dark {
+  filter: invert(0.9) brightness(1.5);
 }
 
 
