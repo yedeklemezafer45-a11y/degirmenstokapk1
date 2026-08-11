@@ -13,13 +13,16 @@ import {
   Search,
   Bell,
   Package,
-  Check
+  Check,
+  ArrowUpRight
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { StockItem } from "@/lib/stockStore";
 import { subscribeToStocks, saveStockItem } from "@/lib/stockService";
 import { logUserAction } from "@/lib/auditLogService";
 
 export default function StokPage() {
+  const router = useRouter();
   const [theme, setTheme] = useState<"light" | "dark">("dark");
   const [stockList, setStockList] = useState<StockItem[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -148,7 +151,7 @@ export default function StokPage() {
               if (selectedCategory) {
                 setSelectedCategory(null);
               } else {
-                window.location.href = "/dashboard";
+                router.push("/dashboard");
               }
             }}
             className="p-2 rounded-xl hover:bg-[var(--foreground)]/5 text-zinc-500 hover:text-[var(--foreground)] transition-colors cursor-pointer mr-1"
@@ -182,7 +185,7 @@ export default function StokPage() {
           </button>
 
           <button 
-            onClick={() => window.location.href = "/"}
+            onClick={() => router.push("/")}
             className="p-2 rounded-xl hover:bg-red-500/10 text-zinc-500 hover:text-red-500 transition-colors cursor-pointer"
             title="Çıkış Yap"
           >
@@ -243,9 +246,16 @@ export default function StokPage() {
                   </span>
                 </div>
 
-                <div className="card-text flex flex-col items-center gap-1.5">
-                  <span className="text-orange-500 text-[10px] font-bold uppercase tracking-wider">İçeriği Gör</span>
-                  <span className="text-white text-xs font-semibold leading-tight">{category}</span>
+                <div className="card-text flex flex-col items-center gap-3">
+                  <span className="text-white text-xs font-black truncate max-w-[170px]">{category}</span>
+                  <div className="flex items-center gap-2 bg-white text-zinc-950 pl-1.5 pr-4 py-1.5 rounded-2xl shadow-xl">
+                    <div className="w-7 h-7 rounded-lg bg-zinc-950 flex items-center justify-center text-white shrink-0">
+                      <ArrowUpRight className="w-4 h-4" />
+                    </div>
+                    <span className="text-[10px] font-black uppercase tracking-wider text-zinc-800">
+                      Görüntüle
+                    </span>
+                  </div>
                 </div>
               </div>
             ))}

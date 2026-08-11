@@ -20,8 +20,10 @@ import {
 import { StockItem, StockCategory } from "@/lib/stockStore";
 import { subscribeToStocks, saveAllStocks, saveStockItem, deleteStockItem } from "@/lib/stockService";
 import { logUserAction } from "@/lib/auditLogService";
+import { useRouter } from "next/navigation";
 
 export default function StokKontroluPage() {
+  const router = useRouter();
   const [theme, setTheme] = useState<"light" | "dark">("dark");
   const [stockList, setStockList] = useState<StockItem[]>([]);
   const [userRole, setUserRole] = useState<string>("waiter");
@@ -296,7 +298,7 @@ export default function StokKontroluPage() {
       <header className="sticky top-0 z-40 w-full border-b border-[var(--border)] bg-[var(--card)]/80 backdrop-blur-md px-6 py-4 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-3">
           <button 
-            onClick={() => window.location.href = "/dashboard/ayarlar"}
+            onClick={() => router.push("/dashboard/ayarlar")}
             className="p-2 rounded-xl hover:bg-[var(--foreground)]/5 text-zinc-500 hover:text-[var(--foreground)] transition-colors cursor-pointer mr-1"
           >
             <ChevronLeft className="w-5 h-5" />
@@ -314,7 +316,7 @@ export default function StokKontroluPage() {
           <button onClick={toggleTheme} className="p-2 rounded-xl hover:bg-[var(--foreground)]/5 text-zinc-500 hover:text-[var(--foreground)] transition-colors cursor-pointer">
             {theme === "dark" ? <Sun className="w-5 h-5 text-amber-500" /> : <Moon className="w-5 h-5" />}
           </button>
-          <button onClick={() => window.location.href = "/"} className="p-2 rounded-xl hover:bg-red-500/10 text-zinc-500 hover:text-red-500 transition-colors cursor-pointer" title="Çıkış Yap">
+          <button onClick={() => router.push("/")} className="p-2 rounded-xl hover:bg-red-500/10 text-zinc-500 hover:text-red-500 transition-colors cursor-pointer" title="Çıkış Yap">
             <LogOut className="w-5 h-5" />
           </button>
         </div>

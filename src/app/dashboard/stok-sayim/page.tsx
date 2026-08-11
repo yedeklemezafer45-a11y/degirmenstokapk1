@@ -23,9 +23,11 @@ import { StockItem } from "@/lib/stockStore";
 import { subscribeToStocks, saveAllStocks } from "@/lib/stockService";
 import { saveReport, MonthlyReportArchive } from "@/lib/reportService";
 import { logUserAction } from "@/lib/auditLogService";
+import { useRouter } from "next/navigation";
 
 
 export default function StokSayimPage() {
+  const router = useRouter();
   const [theme, setTheme] = useState<"light" | "dark">("dark");
   const [stockList, setStockList] = useState<StockItem[]>([]);
   const [userRole, setUserRole] = useState<string>("waiter");
@@ -350,7 +352,7 @@ export default function StokSayimPage() {
       <header className="sticky top-0 z-40 w-full border-b border-[var(--border)] bg-[var(--card)]/80 backdrop-blur-md px-6 py-4 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-3">
           <button 
-            onClick={() => window.location.href = "/dashboard"}
+            onClick={() => router.push("/dashboard")}
             className="p-2 rounded-xl hover:bg-[var(--foreground)]/5 text-zinc-500 hover:text-[var(--foreground)] transition-colors cursor-pointer mr-1"
           >
             <ChevronLeft className="w-5 h-5" />
@@ -368,7 +370,7 @@ export default function StokSayimPage() {
           <button onClick={toggleTheme} className="p-2 rounded-xl hover:bg-[var(--foreground)]/5 text-zinc-500 hover:text-[var(--foreground)] transition-colors cursor-pointer">
             {theme === "dark" ? <Sun className="w-5 h-5 text-amber-500" /> : <Moon className="w-5 h-5" />}
           </button>
-          <button onClick={() => window.location.href = "/"} className="p-2 rounded-xl hover:bg-red-500/10 text-zinc-500 hover:text-red-500 transition-colors cursor-pointer" title="Çıkış Yap">
+          <button onClick={() => router.push("/")} className="p-2 rounded-xl hover:bg-red-500/10 text-zinc-500 hover:text-red-500 transition-colors cursor-pointer" title="Çıkış Yap">
             <LogOut className="w-5 h-5" />
           </button>
         </div>
@@ -377,50 +379,135 @@ export default function StokSayimPage() {
       {/* Ana İçerik */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-6 space-y-6 pb-24">
         
-        {/* İLERLEME VE SAYIM SAYACI KARTI */}
-        <div className="bg-[var(--card)] border border-[var(--border)] rounded-3xl p-5 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-4 w-full md:w-auto">
-            <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500 font-bold text-sm shrink-0">
-              %{progressPercent}
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="font-extrabold text-sm text-zinc-200">İşlem Yapılan Ürün İlerlemesi</span>
-                <span className="text-xs font-bold px-2 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                  {checkedCount} / {totalItemsCount} Ürün Tamamlandı
-                </span>
-              </div>
-              <div className="w-full bg-[var(--background)] h-2 rounded-full mt-2 overflow-hidden border border-[var(--border)] min-w-[220px]">
-                <div 
-                  className="bg-gradient-to-r from-emerald-500 to-teal-400 h-full transition-all duration-500 rounded-full"
-                  style={{ width: `${progressPercent}%` }}
-                />
-              </div>
-            </div>
-          </div>
+        {/* YENİ GÖRSEL 1 STİLİNDEKİ ADIMLI İLERLEME ÇUBUĞU KARTI */}
+        {(() => {
+          const steps = [
+            { id: 1, label: "Çay Grubu", categories: ["Çay Ve Bitki Çayları"] },
+            { id: 2, label: "Kahveler", categories: ["Kahveler"] },
+            { id: 3, label: "Şurup & Sos & Püre", categories: ["Şuruplar", "Soslar", "Püreler"] },
+            { id: 4, label: "Litrelik Ürünler", categories: ["Litrelik Ürünler"] },
+            { id: 5, label: "Diğer Grubu", categories: ["Toz Grubu", "Ek Ürünler", "Yan Ürünler"] }
+          ];
 
-          <div className="flex items-center gap-3 w-full md:w-auto justify-end">
-            <button
-              onClick={handleResetCheckmarks}
-              className="text-[11px] text-zinc-400 hover:text-red-400 font-semibold transition-colors px-3 py-1.5 rounded-xl border border-[var(--border)] hover:border-red-500/30 cursor-pointer"
-            >
-              İşaretleri Sıfırla
-            </button>
+          const stepsWithStatus = steps.map(step => {
+            const stepProducts = stockList.filter(item => step.categories.includes(item.category));
+            const totalCount = stepProducts.length;
+            const checkedCountInStep = stepProducts.filter(item => checkedItemIds[item.id]).length;
+            const isCompleted = totalCount > 0 && checkedCountInStep === totalCount;
+            return {
+              ...step,
+              totalCount,
+              checkedCountInStep,
+              isCompleted
+            };
+          });
 
-            <button
-              onClick={handleSaveChanges}
-              disabled={isSaving}
-              className={`flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white transition-all shadow-lg cursor-pointer ${
-                isDirty 
-                  ? "bg-orange-600 hover:bg-orange-700 animate-pulse" 
-                  : "bg-emerald-600 hover:bg-emerald-700"
-              }`}
-            >
-              {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-              {isSaving ? "Kaydediliyor..." : isDirty ? "Sayım Sonuçlarını Kaydet" : "Sonuçları Güncelle"}
-            </button>
-          </div>
-        </div>
+          const completedStepsCount = stepsWithStatus.filter(s => s.isCompleted).length;
+          const fillWidth = completedStepsCount > 0 ? (completedStepsCount * 20 - 10) : 0;
+
+          return (
+            <div className="bg-[var(--card)] border border-[var(--border)] rounded-3xl p-6 shadow-sm space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <h3 className="font-extrabold text-base tracking-tight text-zinc-800 dark:text-zinc-100">
+                    Neredeyse Bitirdiniz!
+                  </h3>
+                  <p className="text-xs text-zinc-500 mt-1">
+                    Kategorilerin altındaki tüm ürünler sayıldığında adımlar otomatik yeşile dönecektir.
+                  </p>
+                </div>
+                
+                <div className="flex items-center gap-3 self-end sm:self-center">
+                  <button
+                    onClick={handleResetCheckmarks}
+                    className="text-[11px] text-zinc-400 hover:text-red-400 font-semibold transition-colors px-3 py-1.5 rounded-xl border border-[var(--border)] hover:border-red-500/30 cursor-pointer"
+                  >
+                    İşaretleri Sıfırla
+                  </button>
+
+                  <button
+                    onClick={handleSaveChanges}
+                    disabled={isSaving}
+                    className={`flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white transition-all shadow-lg cursor-pointer ${
+                      isDirty 
+                        ? "bg-orange-600 hover:bg-orange-700 animate-pulse" 
+                        : "bg-emerald-600 hover:bg-emerald-700"
+                    }`}
+                  >
+                    {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                    {isSaving ? "Kaydediliyor..." : isDirty ? "Sayım Sonuçlarını Kaydet" : "Sonuçları Güncelle"}
+                  </button>
+                </div>
+              </div>
+
+              {/* Stepper Progress Bar */}
+              <div className="relative pt-4 pb-12 px-2 sm:px-6">
+                <div className="w-full bg-zinc-100 dark:bg-zinc-900/50 h-10 rounded-3xl relative border border-zinc-200 dark:border-zinc-800 p-1 overflow-hidden">
+                  
+                  {/* Progress Fill */}
+                  <div 
+                    className="bg-gradient-to-r from-emerald-950/70 via-emerald-700 to-emerald-400 h-full rounded-2xl transition-all duration-500 shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]"
+                    style={{ width: `${fillWidth}%` }}
+                  />
+
+                  {/* Step Indicators */}
+                  <div className="absolute inset-0 flex justify-between items-center px-[6%] sm:px-[8%]">
+                    {stepsWithStatus.map((step) => {
+                      const isCompleted = step.isCompleted;
+                      
+                      return (
+                        <div key={step.id} className="relative flex flex-col items-center">
+                          {/* Step Circle */}
+                          <div 
+                            className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center border-2 shadow-lg transition-all duration-500 z-10 ${
+                              isCompleted 
+                                ? "bg-emerald-500 border-white text-white scale-110" 
+                                : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-emerald-500/40"
+                            }`}
+                            title={`${step.label}: ${step.checkedCountInStep}/${step.totalCount} ürün sayıldı`}
+                          >
+                            {isCompleted ? (
+                              <Check className="w-3.5 h-3.5 stroke-[3]" />
+                            ) : (
+                              <span className="text-[10px] sm:text-[11px] font-black">{step.id}</span>
+                            )}
+                          </div>
+
+                          {/* Label info under circle */}
+                          <div className="absolute top-10 sm:top-11 flex flex-col items-center text-center w-20 sm:w-28 select-none">
+                            <span className={`text-[8px] sm:text-[9px] font-extrabold w-3.5 h-3.5 rounded-full flex items-center justify-center mb-0.5 leading-none ${
+                              isCompleted ? "bg-emerald-500/15 text-emerald-400" : "bg-zinc-800 text-zinc-500"
+                            }`}>
+                              {step.id}
+                            </span>
+                            <span className={`text-[8px] sm:text-[9px] font-black uppercase tracking-wider leading-tight whitespace-nowrap ${
+                              isCompleted ? "text-emerald-400" : "text-zinc-500"
+                            }`}>
+                              {step.label}
+                            </span>
+                            <span className="text-[7px] sm:text-[8px] font-bold text-zinc-500/70">
+                              ({step.checkedCountInStep}/{step.totalCount})
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                </div>
+              </div>
+
+              {/* Tip box */}
+              <div className="flex justify-center pt-2">
+                <div className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full border border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-900/40 text-[10px] font-extrabold text-zinc-500 dark:text-zinc-400 tracking-tight">
+                  <span className="text-emerald-500 font-black">+ İpucu:</span>
+                  <span>Sol sütundaki onay kutularını işaretledikçe kategorilerin ilerlemesi dolacaktır.</span>
+                </div>
+              </div>
+
+            </div>
+          );
+        })()}
 
         {/* ARAMA VE KATEGORİ FİLTRELERİ */}
         <div className="flex flex-col sm:flex-row items-center gap-4">

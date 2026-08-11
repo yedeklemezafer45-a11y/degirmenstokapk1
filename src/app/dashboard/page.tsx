@@ -18,8 +18,10 @@ import {
 } from "lucide-react";
 import { getAnnouncement, Announcement } from "@/lib/announcementService";
 import { subscribeToStocks } from "@/lib/stockService";
+import { useRouter } from "next/navigation";
 
 export default function DashboardPage() {
+  const router = useRouter();
   const [theme, setTheme] = useState<"light" | "dark">("dark");
   const [userRole, setUserRole] = useState<string>("waiter");
   const [userFullName, setUserFullName] = useState<string>("Personel");
@@ -139,7 +141,7 @@ export default function DashboardPage() {
           </div>
 
           <button 
-            onClick={() => window.location.href = "/"}
+            onClick={() => router.push("/")}
             className="p-2 rounded-xl hover:bg-red-500/10 text-zinc-500 hover:text-red-500 transition-colors cursor-pointer"
             title="Çıkış Yap"
           >
@@ -253,7 +255,7 @@ export default function DashboardPage() {
             <div 
               key={idx}
               onClick={() => {
-                if (item.path !== "#") window.location.href = item.path;
+                if (item.path !== "#") router.push(item.path);
               }}
               className="custom-border-card"
               style={{
