@@ -14,6 +14,7 @@ export interface FirestoreUser {
   role: "admin" | "yonetici" | "waiter";
   password: string;
   allowedMenus?: string[];
+  mustChangePassword?: boolean;
 }
 
 const USERS_COL = "users";

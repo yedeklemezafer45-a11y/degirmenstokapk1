@@ -19,6 +19,14 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   
+  // İlk Girişte Şifre Değiştirme Modalı
+  const [tempResetUser, setTempResetUser] = useState<any>(null);
+  const [currentPassVal, setCurrentPassVal] = useState("");
+  const [newPassVal, setNewPassVal] = useState("");
+  const [confirmPassVal, setConfirmPassVal] = useState("");
+  const [isResetLoading, setIsResetLoading] = useState(false);
+  const [showNewPass, setShowNewPass] = useState(false);
+
   // Şifremi Unuttum Modalı
   const [isForgotOpen, setIsForgotOpen] = useState(false);
   const [forgotInput, setForgotInput] = useState("");
@@ -72,6 +80,15 @@ export default function LoginPage() {
       const user = await getUserByUsername(username.trim().toLowerCase());
 
       if (user && user.password.trim() === password.trim()) {
+        if (user.mustChangePassword) {
+          setTempResetUser(user);
+          setCurrentPassVal(password.trim());
+          setNewPassVal("");
+          setConfirmPassVal("");
+          setIsLoading(false);
+          return;
+        }
+
         // Oturumu sessionStorage'e kaydet (tema/aktif kullanıcı bilgisi)
         sessionStorage.setItem("activeUser", JSON.stringify({
           username: user.username,
@@ -166,6 +183,75 @@ export default function LoginPage() {
       setForgotError("Bağlantı hatası.");
     } finally {
       setForgotLoading(false);
+    }
+  };
+
+  const handleFirstLoginPasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!tempResetUser) return;
+
+    if (!currentPassVal || !newPassVal || !confirmPassVal) {
+      showToast("Lütfen tüm şifre alanlarını doldurun.", "error");
+      return;
+    }
+
+    if (currentPassVal.trim() !== tempResetUser.password.trim()) {
+      showToast("Girdiğiniz mevcut geçici şifre yanlış!", "error");
+      return;
+    }
+
+    if (newPassVal !== confirmPassVal) {
+      showToast("Yeni şifreler birbiriyle uyuşmuyor!", "error");
+      return;
+    }
+
+    if (newPassVal.trim().length < 4) {
+      showToast("Yeni şifre en az 4 karakter uzunluğunda olmalıdır!", "error");
+      return;
+    }
+
+    if (newPassVal.trim() === tempResetUser.password.trim()) {
+      showToast("Yeni şifre, geçici şifre ile aynı olamaz!", "error");
+      return;
+    }
+
+    setIsResetLoading(true);
+    try {
+      const { saveUser } = await import("@/lib/userService");
+      
+      const updatedUser = {
+        ...tempResetUser,
+        password: newPassVal.trim(),
+        mustChangePassword: false
+      };
+
+      await saveUser(updatedUser);
+
+      // Başarılı güncelleme sonrası giriş işlemini tamamla
+      sessionStorage.setItem("activeUser", JSON.stringify({
+        username: updatedUser.username,
+        role: updatedUser.role,
+        fullName: updatedUser.name,
+        allowedMenus: updatedUser.allowedMenus || null
+      }));
+
+      await logUserAction(
+        "İlk Giriş Şifresi Değiştirildi",
+        "PERSONEL",
+        `@${updatedUser.username} (${updatedUser.name}) ilk girişte şifresini başarıyla güncelledi.`
+      );
+
+      showToast("Şifreniz başarıyla güncellendi! Giriş yapılıyor...", "success");
+      setTempResetUser(null);
+      
+      setTimeout(() => {
+        window.location.href = "/dashboard";
+      }, 1000);
+    } catch (err) {
+      console.error("Şifre güncelleme hatası:", err);
+      showToast("Şifre güncellenirken hata oluştu!", "error");
+    } finally {
+      setIsResetLoading(false);
     }
   };
 
@@ -408,6 +494,91 @@ export default function LoginPage() {
                 className="w-full py-3.5 rounded-xl bg-[var(--foreground)] text-[var(--background)] hover:opacity-90 font-medium text-sm transition-all duration-200 cursor-pointer"
               >
                 Devam Et
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+      {/* İlk Giriş Şifre Değiştirme Modalı */}
+      {tempResetUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
+          <div className="w-full max-w-[380px] bg-[var(--card)] border border-[var(--border)] rounded-3xl p-8 shadow-2xl relative space-y-5">
+            
+            {/* Kapat Butonu */}
+            <button
+              onClick={() => {
+                setTempResetUser(null);
+                setCurrentPassVal("");
+                setNewPassVal("");
+                setConfirmPassVal("");
+              }}
+              className="absolute top-4 right-4 p-1.5 rounded-full hover:bg-[var(--foreground)]/10 text-zinc-400 hover:text-[var(--foreground)] cursor-pointer transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <form onSubmit={handleFirstLoginPasswordChange} className="space-y-4">
+              <div className="text-center">
+                <h2 className="text-lg font-bold text-[var(--foreground)]">Şifrenizi Güncelleyin</h2>
+                <p className="text-xs text-zinc-500 mt-1 leading-relaxed">
+                  Hesabınızın güvenliği için yöneticinin belirlediği geçici şifreyi değiştirip yeni şifrenizi oluşturmanız gerekmektedir.
+                </p>
+              </div>
+
+              {/* Geçici Şifre */}
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">Mevcut Geçici Şifre</label>
+                <input
+                  type="password"
+                  required
+                  placeholder="Geçici Şifre"
+                  value={currentPassVal}
+                  onChange={(e) => setCurrentPassVal(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl border border-[var(--border)] bg-[var(--background)] text-[var(--foreground)] placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-orange-500 transition-all text-xs"
+                />
+              </div>
+
+              {/* Yeni Şifre */}
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">Yeni Şifre</label>
+                <div className="relative">
+                  <input
+                    type={showNewPass ? "text" : "password"}
+                    required
+                    placeholder="En az 4 karakter"
+                    value={newPassVal}
+                    onChange={(e) => setNewPassVal(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-xl border border-[var(--border)] bg-[var(--background)] text-[var(--foreground)] placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-orange-500 transition-all text-xs"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPass(!showNewPass)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300"
+                  >
+                    {showNewPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Yeni Şifre Tekrar */}
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">Yeni Şifre (Tekrar)</label>
+                <input
+                  type="password"
+                  required
+                  placeholder="Şifreyi Onaylayın"
+                  value={confirmPassVal}
+                  onChange={(e) => setConfirmPassVal(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl border border-[var(--border)] bg-[var(--background)] text-[var(--foreground)] placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-orange-500 transition-all text-xs"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={isResetLoading}
+                className="w-full py-3.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-medium text-xs transition-all duration-200 cursor-pointer disabled:opacity-50 animate-pulse"
+              >
+                {isResetLoading ? "Şifre Güncelleniyor..." : "Şifreyi Güncelle ve Giriş Yap"}
               </button>
             </form>
           </div>

@@ -116,7 +116,8 @@ export default function PersonelYetkileriPage() {
       name: newName.trim(),
       role: newRole,
       password: newPassword.trim(),
-      allowedMenus: newAllowedMenus
+      allowedMenus: newAllowedMenus,
+      mustChangePassword: true
     };
 
     setIsSaving(true);
