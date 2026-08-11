@@ -76,7 +76,8 @@ export default function LoginPage() {
         sessionStorage.setItem("activeUser", JSON.stringify({
           username: user.username,
           role: user.role,
-          fullName: user.name
+          fullName: user.name,
+          allowedMenus: user.allowedMenus || null
         }));
         
         await logUserAction(

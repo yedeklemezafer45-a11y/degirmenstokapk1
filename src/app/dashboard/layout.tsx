@@ -3,12 +3,14 @@
 import React, { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import MusicPlayer from "@/components/MusicPlayer";
+import { usePathname } from "next/navigation";
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const pathname = usePathname();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [checking, setChecking] = useState(true);
 
@@ -23,6 +25,17 @@ export default function DashboardLayout({
         const parsed = JSON.parse(activeUser);
         if (parsed && parsed.username) {
           setIsAuthenticated(true);
+          
+          // Yetki kısıtlaması kontrolü
+          if (parsed.allowedMenus && parsed.allowedMenus.length > 0) {
+            const isPathAllowed = pathname === "/dashboard" || parsed.allowedMenus.some((menu: string) => {
+              return pathname.startsWith(menu);
+            });
+            if (!isPathAllowed) {
+              window.location.href = "/dashboard";
+              return;
+            }
+          }
         } else {
           sessionStorage.removeItem("activeUser");
           window.location.href = "/";
@@ -33,7 +46,7 @@ export default function DashboardLayout({
       }
     }
     setChecking(false);
-  }, []);
+  }, [pathname]);
 
   if (checking || !isAuthenticated) {
     return (

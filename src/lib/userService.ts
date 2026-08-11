@@ -13,6 +13,7 @@ export interface FirestoreUser {
   name: string;
   role: "admin" | "yonetici" | "waiter";
   password: string;
+  allowedMenus?: string[];
 }
 
 const USERS_COL = "users";

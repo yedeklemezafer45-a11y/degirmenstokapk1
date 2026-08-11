@@ -14,7 +14,8 @@ import {
   AlertTriangle,
   Megaphone,
   X,
-  ArrowUpRight
+  ArrowUpRight,
+  Power
 } from "lucide-react";
 import { getAnnouncement, Announcement } from "@/lib/announcementService";
 import { subscribeToStocks } from "@/lib/stockService";
@@ -25,6 +26,10 @@ export default function DashboardPage() {
   const [theme, setTheme] = useState<"light" | "dark">("dark");
   const [userRole, setUserRole] = useState<string>("waiter");
   const [userFullName, setUserFullName] = useState<string>("Personel");
+  const [allowedMenus, setAllowedMenus] = useState<string[] | null>(null);
+
+  const [timeStr, setTimeStr] = useState("");
+  const [dateStr, setDateStr] = useState("");
 
   const [criticalCount, setCriticalCount] = useState(0);
   const [criticalItems, setCriticalItems] = useState<{ id: string; name: string; quantity: number; unit: string }[]>([]);
@@ -45,7 +50,24 @@ export default function DashboardPage() {
       const parsed = JSON.parse(activeUser);
       setUserRole(parsed.role || "waiter");
       setUserFullName(parsed.fullName || parsed.name || parsed.username || "Personel");
+      setAllowedMenus(parsed.allowedMenus || null);
     }
+
+    // Gerçek zamanlı saat ve tarih güncelleyici
+    const updateClock = () => {
+      const now = new Date();
+      let hours = now.getHours();
+      const minutes = now.getMinutes().toString().padStart(2, "0");
+      const ampm = hours >= 12 ? "PM" : "AM";
+      hours = hours % 12;
+      hours = hours ? hours : 12;
+      setTimeStr(`${hours}:${minutes} ${ampm}`);
+
+      const months = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
+      setDateStr(`${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`);
+    };
+    updateClock();
+    const clockInterval = setInterval(updateClock, 60000); // 60 saniyede bir güncellensin (dakika)
 
     // Duyuru çek
     getAnnouncement().then(setAnnouncement);
@@ -77,7 +99,10 @@ export default function DashboardPage() {
       setSktWarnings(warnings);
     });
 
-    return () => unsubscribe();
+    return () => {
+      unsubscribe();
+      clearInterval(clockInterval);
+    };
   }, []);
 
   const toggleTheme = () => {
@@ -108,6 +133,11 @@ export default function DashboardPage() {
 
   const totalWarnings = criticalCount + sktWarnings.length;
 
+  // Kısıtlı menü filtrelemesi (allowedMenus tanımlı ise sadece listedeki menüleri göster)
+  const visibleModules = allowedMenus && allowedMenus.length > 0
+    ? modules.filter(m => allowedMenus.includes(m.path))
+    : modules;
+
   return (
     <div className="min-h-screen flex flex-col bg-[var(--background)] text-[var(--foreground)] transition-colors duration-300">
       
@@ -115,32 +145,15 @@ export default function DashboardPage() {
       <header className="sticky top-0 z-40 w-full border-b border-[var(--border)] bg-[var(--card)]/80 backdrop-blur-md px-6 py-4 flex items-center justify-between shadow-sm">
         
         {/* Sol Taraf: Marka */}
-        <div className="flex items-center gap-3 w-1/4">
+        <div className="flex items-center gap-3 w-1/2">
           <div>
             <h1 className="font-black text-base tracking-tight leading-none text-[var(--foreground)]">Değirmen Cafe</h1>
             <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest mt-1 block">Kontrol Paneli</span>
           </div>
         </div>
 
-        {/* Orta Taraf: Zafer Yönetici (Kullanıcı Adı & Görevi) */}
-        <div className="flex items-center justify-center w-2/4 text-center">
-          <div className="flex items-center gap-2.5 px-4 py-1.5 rounded-full border border-[var(--border)] bg-[var(--card)] shadow-sm">
-            {/* Modernized Avatar: Sleek dark rounded square from Version 1 instead of Z letter */}
-            <div className="w-5 h-5 rounded-md bg-zinc-950 dark:bg-white text-white dark:text-zinc-950 flex items-center justify-center text-[10px] font-extrabold shrink-0 shadow-sm">
-              👤
-            </div>
-            <div className="text-left flex items-center gap-2">
-              {/* font-black tracking-tighter text like "Merhaba," greeting */}
-              <span className="text-xs font-black tracking-tighter text-[var(--foreground)]">{userFullName}</span>
-              <span className="text-[8px] font-black px-1.5 py-0.5 rounded-md bg-orange-500/10 text-orange-500 border border-orange-500/20 uppercase tracking-wider">
-                {userRole === "admin" ? "ADMİN" : userRole === "yonetici" ? "YÖNETİCİ" : "BARİSTA"}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Sağ Taraf: Aksiyon Butonları & Çıkış */}
-        <div className="flex items-center justify-end gap-3 w-1/4 relative">
+        {/* Sağ Taraf: Aksiyon Butonları, Saat Dilimi & Çıkış */}
+        <div className="flex items-center justify-end gap-4 w-1/2 relative">
           
           {/* Bildirim Çanı */}
           <div className="relative">
@@ -255,20 +268,23 @@ export default function DashboardPage() {
 
           <div className="h-6 w-[1px] bg-[var(--border)]"></div>
 
-          {/* Çıkış Butonu (Version 1 Pill Model - Hover'da Yazı Çıkar) */}
+          {/* Görsel 2 Saat Dilimi */}
+          <div className="text-right select-none pr-1">
+            <div className="text-xs font-black tracking-tight text-[var(--foreground)] leading-none">
+              {timeStr}
+            </div>
+            <div className="text-[8px] font-bold text-zinc-400 mt-1.5 uppercase tracking-widest">
+              {dateStr}
+            </div>
+          </div>
+
+          {/* Çıkış Butonu (Görsel 2 Kapama / Power Butonu Modeli) */}
           <button 
             onClick={() => router.push("/")}
-            className="flex items-center bg-zinc-950 dark:bg-zinc-900 border border-white/10 hover:bg-zinc-800 text-white p-1 rounded-full shadow hover:scale-105 active:scale-95 transition-all duration-300 group cursor-pointer"
+            className="w-9 h-9 rounded-full bg-zinc-950 dark:bg-zinc-900 border border-white/5 hover:bg-red-500/10 text-zinc-400 hover:text-red-500 flex items-center justify-center transition-all duration-300 shadow hover:scale-105 active:scale-95 cursor-pointer shrink-0"
             title="Çıkış Yap"
           >
-            <div className="w-6 h-6 rounded-md bg-white text-zinc-950 flex items-center justify-center shrink-0">
-              <LogOut className="w-3.5 h-3.5 text-zinc-950" />
-            </div>
-            <div className="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-300 ease-in-out">
-              <span className="text-[9px] font-black uppercase tracking-wider text-zinc-200 pr-2.5 pl-1.5 select-none whitespace-nowrap">
-                ÇIKIŞ
-              </span>
-            </div>
+            <Power className="w-4 h-4" />
           </button>
         </div>
       </header>
@@ -375,7 +391,7 @@ export default function DashboardPage() {
 
         {/* Dinamik Kartlar Grid (Görseldeki Asimetrik Cutout Tasarımı) */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 w-full justify-items-center py-6 max-w-5xl">
-          {modules.map((item, idx) => {
+          {visibleModules.map((item, idx) => {
             // Alternate styles: steel (index 0, 2, 4...) and peach (index 1, 3...)
             const isSteel = idx % 2 === 0;
             

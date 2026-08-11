@@ -30,6 +30,13 @@ export default function PersonelYetkileriPage() {
   const [newPassword, setNewPassword] = useState("");
   const [newName, setNewName] = useState("");
   const [newRole, setNewRole] = useState<FirestoreUser["role"]>("waiter");
+  const [newAllowedMenus, setNewAllowedMenus] = useState<string[]>([
+    "/dashboard/stok",
+    "/dashboard/stok-sayim",
+    "/dashboard/receteler",
+    "/dashboard/aylik-stok-takibi",
+    "/dashboard/ayarlar"
+  ]);
 
   // Toast Bildirim State
   const [showToast, setShowToast] = useState(false);
@@ -108,7 +115,8 @@ export default function PersonelYetkileriPage() {
       username: cleanUsername,
       name: newName.trim(),
       role: newRole,
-      password: newPassword.trim()
+      password: newPassword.trim(),
+      allowedMenus: newAllowedMenus
     };
 
     setIsSaving(true);
@@ -119,10 +127,57 @@ export default function PersonelYetkileriPage() {
       setNewPassword("");
       setNewName("");
       setNewRole("waiter");
+      setNewAllowedMenus([
+        "/dashboard/stok",
+        "/dashboard/stok-sayim",
+        "/dashboard/receteler",
+        "/dashboard/aylik-stok-takibi",
+        "/dashboard/ayarlar"
+      ]);
       triggerToast(`✅ ${newUser.name} başarıyla eklendi! Artık her cihazdan giriş yapabilir.`);
     } catch (err) {
       console.error("Kullanıcı eklenemedi:", err);
       triggerToast("Kullanıcı eklenirken hata oluştu!", "error");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // İzin verilen menüleri dinamik olarak açıp kapatma fonksiyonu
+  const handleToggleMenu = async (user: FirestoreUser, path: string) => {
+    if (user.username === "zafer") {
+      triggerToast("Ana admin hesabı kısıtlanamaz!", "error");
+      return;
+    }
+
+    const currentAllowed = user.allowedMenus || [
+      "/dashboard/stok",
+      "/dashboard/stok-sayim",
+      "/dashboard/receteler",
+      "/dashboard/aylik-stok-takibi",
+      "/dashboard/ayarlar"
+    ];
+
+    let newAllowed: string[];
+    if (currentAllowed.includes(path)) {
+      newAllowed = currentAllowed.filter((p: string) => p !== path);
+    } else {
+      newAllowed = [...currentAllowed, path];
+    }
+
+    const updatedUser = {
+      ...user,
+      allowedMenus: newAllowed
+    };
+
+    setIsSaving(true);
+    try {
+      await saveUser(updatedUser);
+      setUsers(prev => prev.map(u => u.username === user.username ? updatedUser : u));
+      triggerToast(`✅ @${user.username} yetki listesi güncellendi.`);
+    } catch (err) {
+      console.error("Yetki kısıtlaması güncellenemedi:", err);
+      triggerToast("İzinler güncellenirken hata oluştu!", "error");
     } finally {
       setIsSaving(false);
     }
@@ -252,14 +307,53 @@ export default function PersonelYetkileriPage() {
               </select>
             </div>
 
-            <button 
-              type="submit"
-              disabled={isSaving}
-              className="flex items-center justify-center gap-2 bg-orange-600 hover:bg-orange-700 disabled:opacity-50 text-white font-bold py-2.5 rounded-xl text-xs transition-colors shadow-lg h-10 w-full cursor-pointer"
-            >
-              {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-              {isSaving ? "Kaydediliyor..." : "Personel Ekle"}
-            </button>
+            {/* Menü Erişim Yetkileri Kısıtlama Sekmesi */}
+            <div className="md:col-span-5 border-t border-[var(--border)]/60 pt-4 mt-2 space-y-3">
+              <span className="text-[10px] text-zinc-500 uppercase font-black tracking-widest block">Görüntüleyebileceği Menüler (Erişim Yetkisi)</span>
+              <div className="flex flex-wrap gap-2.5">
+                {[
+                  { label: "Stok Kontrolü", path: "/dashboard/stok" },
+                  { label: "Stok Sayım", path: "/dashboard/stok-sayim" },
+                  { label: "Reçeteler", path: "/dashboard/receteler" },
+                  { label: "Aylık Stok Takibi", path: "/dashboard/aylik-stok-takibi" },
+                  { label: "Ayarlar", path: "/dashboard/ayarlar" },
+                ].map((menu) => {
+                  const isChecked = newAllowedMenus.includes(menu.path);
+                  return (
+                    <label key={menu.path} className={`flex items-center gap-2 px-3.5 py-2 rounded-xl border text-[11px] font-bold cursor-pointer transition-all duration-200 select-none ${
+                      isChecked 
+                        ? "bg-orange-500/10 border-orange-500/35 text-orange-400" 
+                        : "bg-[var(--card)] border-[var(--border)] text-zinc-500 hover:text-zinc-300"
+                    }`}>
+                      <input 
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={() => {
+                          if (isChecked) {
+                            setNewAllowedMenus(prev => prev.filter(p => p !== menu.path));
+                          } else {
+                            setNewAllowedMenus(prev => [...prev, menu.path]);
+                          }
+                        }}
+                        className="rounded border-zinc-700 bg-zinc-900 text-orange-500 focus:ring-orange-500 focus:ring-offset-zinc-900 w-3.5 h-3.5"
+                      />
+                      {menu.label}
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="md:col-span-5 flex justify-end pt-2">
+              <button 
+                type="submit"
+                disabled={isSaving}
+                className="flex items-center justify-center gap-2 bg-orange-600 hover:bg-orange-700 disabled:opacity-50 text-white font-bold py-2.5 px-6 rounded-xl text-xs transition-colors shadow-lg h-10 cursor-pointer w-full md:w-auto"
+              >
+                {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                {isSaving ? "Kaydediliyor..." : "Personel Ekle"}
+              </button>
+            </div>
           </form>
 
           {/* ROL BAZLI MENÜ ERİŞİM BİLGİSİ */}
@@ -342,6 +436,7 @@ export default function PersonelYetkileriPage() {
                     <th className="py-3 px-4">Adı Soyadı</th>
                     <th className="py-3 px-4">Şifre</th>
                     <th className="py-3 px-4">Rol / Yetki</th>
+                    <th className="py-3 px-4">Erişebildiği Menüler</th>
                     <th className="py-3 px-4 text-right">İşlem</th>
                   </tr>
                 </thead>
@@ -368,6 +463,35 @@ export default function PersonelYetkileriPage() {
                           {u.role === "admin" ? "ADMIN" : u.role === "yonetici" ? "YÖNETİCİ" : "BARISTA"}
                         </span>
                       </td>
+                      <td className="py-4 px-4">
+                        <div className="flex flex-wrap gap-1.5 max-w-[280px]">
+                          {[
+                            { label: "Stok", path: "/dashboard/stok" },
+                            { label: "Sayım", path: "/dashboard/stok-sayim" },
+                            { label: "Reçete", path: "/dashboard/receteler" },
+                            { label: "Aylık", path: "/dashboard/aylik-stok-takibi" },
+                            { label: "Ayarlar", path: "/dashboard/ayarlar" },
+                          ].map((m) => {
+                            const isAllowed = !u.allowedMenus || u.allowedMenus.includes(m.path);
+                            const disabled = u.username === "zafer" || isSaving;
+                            return (
+                              <button
+                                key={m.path}
+                                disabled={disabled}
+                                onClick={() => handleToggleMenu(u, m.path)}
+                                className={`px-2 py-1 rounded-xl text-[9px] font-black border transition-all duration-200 select-none ${
+                                  isAllowed
+                                    ? "bg-emerald-500/10 text-emerald-500 dark:text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20"
+                                    : "bg-red-500/10 text-red-500 dark:text-red-400 border-red-500/20 hover:bg-red-500/20"
+                                } ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+                                title={isAllowed ? "Erişimi Kapat" : "Erişime İzin Ver"}
+                              >
+                                {m.label}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </td>
                       <td className="py-4 px-4 text-right">
                         {u.username !== "zafer" ? (
                           <button 
@@ -386,7 +510,7 @@ export default function PersonelYetkileriPage() {
                   ))}
                   {users.length === 0 && (
                     <tr>
-                      <td colSpan={5} className="text-center py-10 text-zinc-500 text-xs">
+                      <td colSpan={6} className="text-center py-10 text-zinc-500 text-xs">
                         Henüz kayıtlı kullanıcı bulunmuyor.
                       </td>
                     </tr>
