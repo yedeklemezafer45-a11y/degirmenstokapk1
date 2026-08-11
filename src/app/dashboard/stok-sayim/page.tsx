@@ -184,9 +184,10 @@ export default function StokSayimPage() {
 
   const formatTotalDisplay = (item: StockItem, countedQty: number, openUnits: number) => {
     const isLiquid = isLiquidItem(item);
-    const isLitrelik = item.category === "Litrelik Ürünler";
+    const targetCategories = ["Litrelik Ürünler", "Püreler", "Soslar", "Kahveler", "Toz Grubu"];
+    const isFormattedCustom = targetCategories.includes(item.category);
     
-    if (isLitrelik) {
+    if (isFormattedCustom) {
       if (countedQty > 0 && openUnits > 0) {
         return `${countedQty} Adet ${openUnits} Gram`;
       } else if (countedQty > 0) {
