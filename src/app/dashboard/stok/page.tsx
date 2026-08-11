@@ -227,38 +227,73 @@ export default function StokPage() {
         {/* EKRAN 1: KATEGORİ SEÇİM EKRANI */}
         {!selectedCategory ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 justify-items-center py-4">
-            {categories.map((category) => (
-              <div 
-                key={category}
-                onClick={() => setSelectedCategory(category)}
-                className="custom-border-card"
-                style={{
-                  boxShadow: "0 10px 30px -10px rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.05)"
-                }}
-              >
-                <svg className="custom-card-border-svg">
-                  <rect style={{ stroke: "rgba(255, 255, 255, 0.15)", strokeDashoffset: "1000" }} />
-                </svg>
-
-                <div className="card-logo flex flex-col items-center justify-center text-center px-6">
-                  <span className="text-sm font-extrabold tracking-wide text-zinc-300 leading-tight">
-                    {category}
-                  </span>
-                </div>
-
-                <div className="card-text flex flex-col items-center gap-3">
-                  <span className="text-white text-xs font-black truncate max-w-[170px]">{category}</span>
-                  <div className="flex items-center gap-2 bg-white text-zinc-950 pl-1.5 pr-4 py-1.5 rounded-2xl shadow-xl">
-                    <div className="w-7 h-7 rounded-lg bg-zinc-950 flex items-center justify-center text-white shrink-0">
-                      <ArrowUpRight className="w-4 h-4" />
+            {categories.map((category, idx) => {
+              const isSteel = idx % 2 === 0;
+              
+              if (isSteel) {
+                return (
+                  <div 
+                    key={category}
+                    onClick={() => setSelectedCategory(category)}
+                    className="relative w-full max-w-[240px] h-[170px] bg-[#3F5A62] hover:bg-[#4d6b75] dark:bg-[#253645] dark:hover:bg-[#2e4354] rounded-3xl p-5 flex flex-col items-center justify-center cursor-pointer transition-all duration-300 shadow-lg hover:shadow-xl hover:-translate-y-1 select-none overflow-hidden group"
+                  >
+                    {/* Top-Left Cutout (Concave Corner for Arrow Button) */}
+                    <div className="absolute top-0 left-0 w-12 h-12 bg-[var(--background)] rounded-br-[1.5rem] transition-colors duration-300">
+                      <div className="absolute inset-0 border-r border-b border-[var(--border)] rounded-br-[1.5rem]" />
+                      <div className="absolute top-0 left-0 w-8 h-8 bg-[#3F5A62] group-hover:bg-[#4d6b75] dark:bg-[#253645] dark:group-hover:bg-[#2e4354] text-[#FE8254] flex items-center justify-center rounded-lg border border-white/5 shadow-sm transition-colors duration-300">
+                        <ArrowUpRight className="w-3.5 h-3.5 -rotate-90" />
+                      </div>
                     </div>
-                    <span className="text-[10px] font-black uppercase tracking-wider text-zinc-800">
-                      Görüntüle
-                    </span>
+
+                    {/* Bottom-Right Cutout (Concave Corner for Text Label) */}
+                    <div className="absolute bottom-0 right-0 w-24 h-9 bg-[var(--background)] rounded-tl-[1.2rem] transition-colors duration-300">
+                      <div className="absolute inset-0 border-l border-t border-[var(--border)] rounded-tl-[1.2rem]" />
+                      <div className="absolute bottom-0 right-0 px-2 py-1 bg-[#3F5A62] group-hover:bg-[#4d6b75] dark:bg-[#253645] dark:group-hover:bg-[#2e4354] text-[8px] font-black uppercase text-[#FE8254] tracking-widest rounded-md border border-white/5 transition-colors duration-300">
+                        DEĞİRMEN
+                      </div>
+                    </div>
+
+                    {/* Centered Menu Title */}
+                    <div className="text-center z-10 px-3 mt-2">
+                      <span className="text-sm sm:text-base font-black uppercase tracking-tighter text-[#FE8254] leading-tight block drop-shadow-sm truncate max-w-[160px]">
+                        {category}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              </div>
-            ))}
+                );
+              } else {
+                return (
+                  <div 
+                    key={category}
+                    onClick={() => setSelectedCategory(category)}
+                    className="relative w-full max-w-[240px] h-[170px] bg-[#FE8254] hover:bg-[#ff956b] dark:bg-[#d46537] dark:hover:bg-[#e67545] rounded-3xl p-5 flex flex-col items-center justify-center cursor-pointer transition-all duration-300 shadow-lg hover:shadow-xl hover:-translate-y-1 select-none overflow-hidden group"
+                  >
+                    {/* Top-Right Cutout (Concave Corner for Arrow Button) */}
+                    <div className="absolute top-0 right-0 w-12 h-12 bg-[var(--background)] rounded-bl-[1.5rem] transition-colors duration-300">
+                      <div className="absolute inset-0 border-l border-b border-[var(--border)] rounded-bl-[1.5rem]" />
+                      <div className="absolute top-0 right-0 w-8 h-8 bg-[#FE8254] group-hover:bg-[#ff956b] dark:bg-[#d46537] dark:group-hover:bg-[#e67545] text-[#3F5A62] dark:text-zinc-950 flex items-center justify-center rounded-lg border border-white/5 shadow-sm transition-colors duration-300">
+                        <ArrowUpRight className="w-3.5 h-3.5" />
+                      </div>
+                    </div>
+
+                    {/* Bottom-Left Cutout (Concave Corner for Text Label) */}
+                    <div className="absolute bottom-0 left-0 w-24 h-9 bg-[var(--background)] rounded-tr-[1.2rem] transition-colors duration-300">
+                      <div className="absolute inset-0 border-r border-t border-[var(--border)] rounded-tr-[1.2rem]" />
+                      <div className="absolute bottom-0 left-0 px-2 py-1 bg-[#FE8254] group-hover:bg-[#ff956b] dark:bg-[#d46537] dark:group-hover:bg-[#e67545] text-[8px] font-black uppercase text-[#3F5A62] dark:text-zinc-950 tracking-widest rounded-md border border-white/5 transition-colors duration-300">
+                        CAFE
+                      </div>
+                    </div>
+
+                    {/* Centered Menu Title */}
+                    <div className="text-center z-10 px-3 mt-2">
+                      <span className="text-sm sm:text-base font-black uppercase tracking-tighter text-[#3F5A62] dark:text-zinc-950 leading-tight block drop-shadow-sm truncate max-w-[160px]">
+                        {category}
+                      </span>
+                    </div>
+                  </div>
+                );
+              }
+            })}
           </div>
         ) : (
           /* EKRAN 2: SEÇİLİ KATEGORİYE AİT ÜRÜN LİSTESİ */
