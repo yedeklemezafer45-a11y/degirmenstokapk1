@@ -303,16 +303,7 @@ export const mockRecipes: Recipe[] = [
     instructions: "Shakirin Icerisine\n- Sakura Surubu : 40 ML\n- Buz : BIR KUREK\n- Su : 150 ML\n\nUrunleri Hazirlayip Shakei Tamamlayip Servise Hazir Halde sunuyoruz.",
     gramaj: "12 oz"
   },
-  {
-    name: "Sakura Limonata",
-    category: "FREŞHLER",
-    ingredients: [
-      { product: "HM-SAKURA BASE", amount: 20, unit: "ml" },
-      { product: "HM-LİMONATA", amount: 150, unit: "ml" }
-    ],
-    instructions: "Shakirin Icerine\n- Sakura Surubu : 20 ML\n- Ev Yapimi Limonata : 150 Ml\n- Buz : BIR KUREK\n\nUrunleri Hazirlayip Shakei Tamamlayip Servise Hazir Halde sunuyoruz.",
-    gramaj: "12 oz"
-  },
+
   {
     name: "Sakura Mojito",
     category: "FREŞHLER",
@@ -418,17 +409,7 @@ export const mockRecipes: Recipe[] = [
     instructions: "Shakirin Icerisine\n- ORANGE MANGO Surubu : 40 ML\n- Buz : BIR KUREK\n- Su : 150 ML\n- PORTAKAL : 1 DILIM\n\nUrunleri Hazirlayip Shakei Tamamlayip Servise Hazir Halde sunuyoruz.",
     gramaj: "12 oz"
   },
-  {
-    name: "İtalyan Sodası",
-    category: "FREŞHLER",
-    ingredients: [
-      { product: "HM-NAR AROMALI KOKTEYL ŞURUBU", amount: 20, unit: "ml" },
-      { product: "HM-MEYVELİ SODA KARPUZ ÇİLEK", amount: 150, unit: "ml" },
-      { product: "HM-TURUNÇ AROMALI KOKTEYL ŞURUBU", amount: 20, unit: "ml" }
-    ],
-    instructions: "BARDAK Icerisine\n- NAR Surubu : 20 ML\n- Buz : BARDAK HACMI KADAR\n- KARPUZ CILEK SODA : 150 ML\n- TURUNC SURUBU : 20 ML\n\nNAR SURUBU EN ALT KISIMDA KALACAK SEKILDE UZERINE BARDAK HACMI KADAR BUZ, UZERINE KARPUZ CILEK SODA YAVAS DOKUP UZERINE TURUNC SURUBU",
-    gramaj: "12 oz"
-  },
+
 
   // FROZEN ÇEŞİTLERİ
   {
