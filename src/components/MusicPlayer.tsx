@@ -154,11 +154,22 @@ export default function MusicPlayer() {
     if (window.YT && window.YT.Player) {
       setup();
     } else {
-      const prevCallback = window.onYouTubeIframeAPIReady;
-      window.onYouTubeIframeAPIReady = () => {
-        if (prevCallback) prevCallback();
-        setup();
-      };
+      // Çift atamayı engellemek ve call stack taşmasını (recursion loop) önlemek için event modeline geçelim
+      if (typeof window !== "undefined") {
+        if (!window.onYouTubeIframeAPIReady) {
+          window.onYouTubeIframeAPIReady = () => {
+            const event = new CustomEvent("youtube-api-ready");
+            window.dispatchEvent(event);
+          };
+        }
+
+        const handleReady = () => {
+          setup();
+          window.removeEventListener("youtube-api-ready", handleReady);
+        };
+
+        window.addEventListener("youtube-api-ready", handleReady);
+      }
     }
   };
 
