@@ -13,7 +13,8 @@ import {
   Sparkles,
   ArrowRight,
   FileDown,
-  CheckCircle2
+  CheckCircle2,
+  Share2
 } from "lucide-react";
 import { mockRecipes, Recipe } from "@/lib/recipeStore";
 import { logUserAction } from "@/lib/auditLogService";
@@ -27,6 +28,37 @@ export default function RecetelerPage() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
   const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
+
+  const triggerToast = (msg: string) => {
+    setToastMessage(msg);
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 3000);
+  };
+
+  const handleSharePage = async () => {
+    const shareData = {
+      title: "Değirmen Envanter",
+      text: "Değirmen Kafe Stok ve Envanter Yönetim Paneli",
+      url: window.location.href,
+    };
+
+    try {
+      if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+        await navigator.share(shareData);
+      } else {
+        await navigator.clipboard.writeText(window.location.href);
+        triggerToast("Sayfa linki kopyalandı! Paylaşmak istediğiniz yere yapıştırabilirsiniz. 📋");
+      }
+    } catch (err) {
+      try {
+        await navigator.clipboard.writeText(window.location.href);
+        triggerToast("Sayfa linki kopyalandı! Paylaşmak istediğiniz yere yapıştırabilirsiniz. 📋");
+      } catch (copyErr) {
+        console.error("Paylaşım hatası:", copyErr);
+      }
+    }
+  };
 
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme") as "light" | "dark" | null;
@@ -147,8 +179,7 @@ export default function RecetelerPage() {
         "Tüm içecek ve ürün reçeteleri PDF / Yazıcı çıktısı olarak indirildi."
       );
 
-      setShowToast(true);
-      setTimeout(() => setShowToast(false), 4000);
+      triggerToast("Reçeteler başarıyla hazırlandı ve yazdırılıyor! (Firestore'a İşlendi)");
     } catch (err) {
       console.error("PDF indirme hatası:", err);
     }
@@ -168,7 +199,7 @@ export default function RecetelerPage() {
       {showToast && (
         <div className="fixed top-6 right-6 z-50 flex items-center gap-2 bg-emerald-600 text-white px-5 py-3 rounded-2xl shadow-xl text-xs font-semibold animate-bounce">
           <CheckCircle2 className="w-4 h-4 shrink-0" />
-          Reçeteler başarıyla hazırlandı ve yazdırılıyor! (Firestore'a İşlendi)
+          {toastMessage}
         </div>
       )}
 
@@ -198,6 +229,14 @@ export default function RecetelerPage() {
           >
             <FileDown className="w-4 h-4" />
             Tüm Reçeteleri İndir (PDF)
+          </button>
+
+          <button
+            onClick={handleSharePage}
+            className="p-2 rounded-xl hover:bg-[var(--foreground)]/5 text-zinc-500 hover:text-orange-500 transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer"
+            title="Sayfayı Paylaş"
+          >
+            <Share2 className="w-5 h-5" />
           </button>
 
           <button onClick={toggleTheme} className="p-2 rounded-xl hover:bg-[var(--foreground)]/5 text-zinc-500 hover:text-[var(--foreground)] transition-colors cursor-pointer">

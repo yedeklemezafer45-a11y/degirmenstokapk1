@@ -17,7 +17,8 @@ import {
   RotateCcw,
   CheckCircle2,
   Loader2,
-  Trash2
+  Trash2,
+  Share2
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { StockItem } from "@/lib/stockStore";
@@ -41,7 +42,31 @@ export default function AylikStokTakibiPage() {
   const triggerToast = (msg: string) => {
     setToastMessage(msg);
     setShowToast(true);
-    setTimeout(() => setShowToast(false), 4000);
+    setTimeout(() => setShowToast(false), 3000);
+  };
+
+  const handleSharePage = async () => {
+    const shareData = {
+      title: "Değirmen Envanter",
+      text: "Değirmen Kafe Stok ve Envanter Yönetim Paneli",
+      url: window.location.href,
+    };
+
+    try {
+      if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+        await navigator.share(shareData);
+      } else {
+        await navigator.clipboard.writeText(window.location.href);
+        triggerToast("Sayfa linki kopyalandı! Paylaşmak istediğiniz yere yapıştırabilirsiniz. 📋");
+      }
+    } catch (err) {
+      try {
+        await navigator.clipboard.writeText(window.location.href);
+        triggerToast("Sayfa linki kopyalandı! Paylaşmak istediğiniz yere yapıştırabilirsiniz. 📋");
+      } catch (copyErr) {
+        console.error("Paylaşım hatası:", copyErr);
+      }
+    }
   };
   
   useEffect(() => {
@@ -164,6 +189,13 @@ export default function AylikStokTakibiPage() {
         </div>
 
         <div className="flex items-center gap-4">
+          <button
+            onClick={handleSharePage}
+            className="p-2 rounded-xl hover:bg-[var(--foreground)]/5 text-zinc-500 hover:text-orange-500 transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer"
+            title="Sayfayı Paylaş"
+          >
+            <Share2 className="w-5 h-5" />
+          </button>
           <button onClick={toggleTheme} className="p-2 rounded-xl hover:bg-[var(--foreground)]/5 text-zinc-500 hover:text-[var(--foreground)] transition-colors cursor-pointer">
             {theme === "dark" ? <Sun className="w-5 h-5 text-amber-500" /> : <Moon className="w-5 h-5" />}
           </button>

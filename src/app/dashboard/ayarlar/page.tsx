@@ -13,7 +13,8 @@ import {
   History,
   Megaphone,
   Music,
-  ArrowUpRight
+  ArrowUpRight,
+  Share2
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -21,6 +22,36 @@ export default function AyarlarPage() {
   const router = useRouter();
   const [theme, setTheme] = useState<"light" | "dark">("dark");
   const [userRole, setUserRole] = useState<string>("waiter");
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const triggerToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 3000);
+  };
+
+  const handleSharePage = async () => {
+    const shareData = {
+      title: "Değirmen Envanter",
+      text: "Değirmen Kafe Stok ve Envanter Yönetim Paneli",
+      url: window.location.href,
+    };
+
+    try {
+      if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+        await navigator.share(shareData);
+      } else {
+        await navigator.clipboard.writeText(window.location.href);
+        triggerToast("Sayfa linki kopyalandı! Paylaşmak istediğiniz yere yapıştırabilirsiniz. 📋");
+      }
+    } catch (err) {
+      try {
+        await navigator.clipboard.writeText(window.location.href);
+        triggerToast("Sayfa linki kopyalandı! Paylaşmak istediğiniz yere yapıştırabilirsiniz. 📋");
+      } catch (copyErr) {
+        console.error("Paylaşım hatası:", copyErr);
+      }
+    }
+  };
 
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme") as "light" | "dark" | null;
@@ -75,6 +106,13 @@ export default function AyarlarPage() {
         </div>
 
         <div className="flex items-center gap-4">
+          <button
+            onClick={handleSharePage}
+            className="p-2 rounded-xl hover:bg-[var(--foreground)]/5 text-zinc-500 hover:text-orange-500 transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer"
+            title="Sayfayı Paylaş"
+          >
+            <Share2 className="w-5 h-5" />
+          </button>
           <button
             onClick={toggleTheme}
             className="p-2 rounded-xl hover:bg-[var(--foreground)]/5 text-zinc-500 hover:text-[var(--foreground)] transition-colors cursor-pointer"
@@ -304,6 +342,12 @@ export default function AyarlarPage() {
         </div>
       </footer>
 
+      {/* Toast Bildirim */}
+      {toastMessage && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 px-5 py-3 rounded-2xl text-xs font-bold shadow-xl backdrop-blur-md animate-slideUp">
+          {toastMessage}
+        </div>
+      )}
     </div>
   );
 }

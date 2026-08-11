@@ -14,7 +14,8 @@ import {
   Bell,
   Package,
   Check,
-  ArrowUpRight
+  ArrowUpRight,
+  Share2
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { StockItem } from "@/lib/stockStore";
@@ -30,6 +31,33 @@ export default function StokPage() {
   const [userRole, setUserRole] = useState<string>("waiter"); // Varsayılan personel
   const [userName, setUserName] = useState<string>("mehmet_barista");
   const [tempInputs, setTempInputs] = useState<Record<string, string>>({}); // Yoneticinin toplu girecegi adetler
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const handleSharePage = async () => {
+    const shareData = {
+      title: "Değirmen Envanter",
+      text: "Değirmen Kafe Stok ve Envanter Yönetim Paneli",
+      url: window.location.href,
+    };
+
+    try {
+      if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+        await navigator.share(shareData);
+      } else {
+        await navigator.clipboard.writeText(window.location.href);
+        setToastMessage("Kopyalandı! Sayfa linkini dilediğiniz yerde paylaşabilirsiniz. 📋");
+        setTimeout(() => setToastMessage(null), 3000);
+      }
+    } catch (err) {
+      try {
+        await navigator.clipboard.writeText(window.location.href);
+        setToastMessage("Kopyalandı! Sayfa linkini dilediğiniz yerde paylaşabilirsiniz. 📋");
+        setTimeout(() => setToastMessage(null), 3000);
+      } catch (copyErr) {
+        console.error("Paylaşım hatası:", copyErr);
+      }
+    }
+  };
 
   useEffect(() => {
     // LocalStorage veya store verilerini yükle
@@ -179,6 +207,14 @@ export default function StokPage() {
             )}
           </button>
           
+          <button
+            onClick={handleSharePage}
+            className="p-2 rounded-xl hover:bg-[var(--foreground)]/5 text-zinc-500 hover:text-orange-500 transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer"
+            title="Sayfayı Paylaş"
+          >
+            <Share2 className="w-5 h-5" />
+          </button>
+
           <button
             onClick={toggleTheme}
             className="p-2 rounded-xl hover:bg-[var(--foreground)]/5 text-zinc-500 hover:text-[var(--foreground)] transition-colors cursor-pointer"
@@ -420,6 +456,12 @@ export default function StokPage() {
         </div>
       </footer>
 
+      {/* Toast Bildirim */}
+      {toastMessage && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 px-5 py-3 rounded-2xl text-xs font-bold shadow-xl backdrop-blur-md animate-slideUp">
+          {toastMessage}
+        </div>
+      )}
     </div>
   );
 }
