@@ -253,51 +253,31 @@ export default function RecetelerPage() {
         </div>
 
         {/* Reçete Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {filteredRecipes.map((recipe) => (
             <div 
               key={recipe.id || recipe.name}
               onClick={() => setSelectedRecipe(recipe)}
-              className="group bg-[var(--card)] border border-[var(--border)] hover:border-orange-500/50 rounded-3xl p-6 transition-all duration-300 hover:shadow-xl cursor-pointer flex flex-col justify-between"
+              className="group bg-[var(--card)] border border-[var(--border)] hover:border-orange-500/50 rounded-3xl p-5 transition-all duration-300 hover:shadow-xl cursor-pointer flex flex-col justify-between space-y-4"
             >
-              <div className="space-y-4">
-                <div className="flex items-start justify-between gap-2">
-                  <span className="bg-orange-500/10 text-orange-500 border border-orange-500/20 px-3 py-1 rounded-xl text-[10px] font-bold">
-                    {recipe.category}
-                  </span>
-                  <span className="text-[10px] text-zinc-400 font-mono bg-[var(--background)] px-2.5 py-1 rounded-lg border border-[var(--border)] font-bold">
-                    {recipe.gramaj}
-                  </span>
-                </div>
-
-                <div>
-                  <h3 className="font-bold text-base text-zinc-800 dark:text-zinc-100 group-hover:text-orange-500 transition-colors">
-                    {recipe.name}
-                  </h3>
-                </div>
-
-                {/* Malzeme Listesi Özet */}
-                <div className="space-y-1.5 pt-2 border-t border-[var(--border)]/50">
-                  <p className="text-[10px] font-extrabold text-zinc-400 uppercase tracking-wider">Malzemeler</p>
-                  <ul className="space-y-1">
-                    {recipe.ingredients.slice(0, 4).map((ing, idx) => (
-                      <li key={idx} className="text-xs text-zinc-500 flex items-center justify-between">
-                        <span>{ing.product}</span>
-                        <span className="font-mono font-semibold text-zinc-400">{ing.amount} {ing.unit}</span>
-                      </li>
-                    ))}
-                    {recipe.ingredients.length > 4 && (
-                      <li className="text-[10px] text-orange-500 font-semibold italic">
-                        +{recipe.ingredients.length - 4} malzeme daha...
-                      </li>
-                    )}
-                  </ul>
-                </div>
+              <div className="flex items-start justify-between gap-2">
+                <span className="bg-orange-500/10 text-orange-500 border border-orange-500/20 px-2.5 py-0.5 rounded-lg text-[9px] font-bold">
+                  {recipe.category}
+                </span>
+                <span className="text-[9px] text-zinc-400 font-mono bg-[var(--background)] px-2 py-0.5 rounded-md border border-[var(--border)] font-bold">
+                  {recipe.gramaj}
+                </span>
               </div>
 
-              <div className="pt-4 mt-4 border-t border-[var(--border)]/40 flex items-center justify-between text-xs text-orange-500 font-semibold group-hover:translate-x-1 transition-transform">
-                <span>Hazırlanış Detayı</span>
-                <ArrowRight className="w-4 h-4" />
+              <div>
+                <h3 className="font-bold text-sm text-zinc-800 dark:text-zinc-100 group-hover:text-orange-500 transition-colors leading-snug">
+                  {recipe.name}
+                </h3>
+              </div>
+
+              <div className="flex items-center justify-between text-[10px] text-orange-500 font-bold group-hover:translate-x-0.5 transition-transform pt-1">
+                <span>Reçeteyi Göster</span>
+                <ArrowRight className="w-3.5 h-3.5" />
               </div>
             </div>
           ))}
