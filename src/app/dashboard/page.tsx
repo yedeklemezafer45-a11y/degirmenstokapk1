@@ -380,19 +380,19 @@ export default function DashboardPage() {
             const isSteel = idx % 2 === 0;
             
             if (isSteel) {
-              // Deep Steel Blue Card layout
+              // Deep Steel Blue Card layout with Neon Glow
               return (
                 <div 
                   key={idx}
                   onClick={() => {
                     if (item.path !== "#") router.push(item.path);
                   }}
-                  className="relative w-full max-w-[290px] h-[190px] bg-[#3F5A62] hover:bg-[#4d6b75] dark:bg-[#253645] dark:hover:bg-[#2e4354] rounded-3xl p-6 flex flex-col items-center justify-center cursor-pointer transition-all duration-300 shadow-lg hover:shadow-xl hover:-translate-y-1 select-none overflow-hidden group"
+                  className="relative w-full max-w-[290px] h-[190px] bg-[#3F5A62] hover:bg-[#4d6b75] dark:bg-[#253645] dark:hover:bg-[#2e4354] rounded-3xl p-6 flex flex-col items-center justify-center cursor-pointer transition-all duration-300 border border-[#FE8254]/20 hover:border-[#FE8254]/80 shadow-[0_0_15px_rgba(254,130,84,0.12)] hover:shadow-[0_0_30px_rgba(254,130,84,0.45)] hover:-translate-y-1 select-none overflow-hidden group"
                 >
                   {/* Top-Left Cutout (Concave Corner for Arrow Button) */}
                   <div className="absolute top-0 left-0 w-14 h-14 bg-[var(--background)] rounded-br-[2rem] transition-colors duration-300">
                     <div className="absolute inset-0 border-r border-b border-[var(--border)] rounded-br-[2rem]" />
-                    <div className="absolute top-0 left-0 w-9 h-9 bg-[#3F5A62] group-hover:bg-[#4d6b75] dark:bg-[#253645] dark:group-hover:bg-[#2e4354] text-[#FE8254] flex items-center justify-center rounded-xl border border-white/5 shadow-sm transition-colors duration-300">
+                    <div className="absolute top-0 left-0 w-9 h-9 bg-[#3F5A62] group-hover:bg-[#4d6b75] dark:bg-[#253645] dark:group-hover:bg-[#2e4354] text-[#FE8254] flex items-center justify-center rounded-xl border border-[#FE8254]/30 shadow-sm transition-colors duration-300">
                       <ArrowUpRight className="w-4 h-4 -rotate-90" />
                     </div>
                   </div>
@@ -400,7 +400,7 @@ export default function DashboardPage() {
                   {/* Bottom-Right Cutout (Concave Corner for Text Label) */}
                   <div className="absolute bottom-0 right-0 w-28 h-10 bg-[var(--background)] rounded-tl-[1.5rem] transition-colors duration-300">
                     <div className="absolute inset-0 border-l border-t border-[var(--border)] rounded-tl-[1.5rem]" />
-                    <div className="absolute bottom-0 right-0 px-3 py-1.5 bg-[#3F5A62] group-hover:bg-[#4d6b75] dark:bg-[#253645] dark:group-hover:bg-[#2e4354] text-[9px] font-black uppercase text-[#FE8254] tracking-widest rounded-lg border border-white/5 transition-colors duration-300">
+                    <div className="absolute bottom-0 right-0 px-3 py-1.5 bg-[#3F5A62] group-hover:bg-[#4d6b75] dark:bg-[#253645] dark:group-hover:bg-[#2e4354] text-[9px] font-black uppercase text-[#FE8254] tracking-widest rounded-lg border border-[#FE8254]/30 transition-colors duration-300">
                       DEĞİRMEN
                     </div>
                   </div>
@@ -415,19 +415,19 @@ export default function DashboardPage() {
                 </div>
               );
             } else {
-              // Burnt Peach Card layout
+              // Burnt Peach Card layout with Neon Glow
               return (
                 <div 
                   key={idx}
                   onClick={() => {
                     if (item.path !== "#") router.push(item.path);
                   }}
-                  className="relative w-full max-w-[290px] h-[190px] bg-[#FE8254] hover:bg-[#ff956b] dark:bg-[#d46537] dark:hover:bg-[#e67545] rounded-3xl p-6 flex flex-col items-center justify-center cursor-pointer transition-all duration-300 shadow-lg hover:shadow-xl hover:-translate-y-1 select-none overflow-hidden group"
+                  className="relative w-full max-w-[290px] h-[190px] bg-[#FE8254] hover:bg-[#ff956b] dark:bg-[#d46537] dark:hover:bg-[#e67545] rounded-3xl p-6 flex flex-col items-center justify-center cursor-pointer transition-all duration-300 border border-[#3F5A62]/20 hover:border-[#3F5A62]/60 shadow-[0_0_15px_rgba(254,130,84,0.12)] hover:shadow-[0_0_30px_rgba(254,130,84,0.45)] hover:-translate-y-1 select-none overflow-hidden group"
                 >
                   {/* Top-Right Cutout (Concave Corner for Arrow Button) */}
                   <div className="absolute top-0 right-0 w-14 h-14 bg-[var(--background)] rounded-bl-[2rem] transition-colors duration-300">
                     <div className="absolute inset-0 border-l border-b border-[var(--border)] rounded-bl-[2rem]" />
-                    <div className="absolute top-0 right-0 w-9 h-9 bg-[#FE8254] group-hover:bg-[#ff956b] dark:bg-[#d46537] dark:group-hover:bg-[#e67545] text-[#3F5A62] dark:text-zinc-950 flex items-center justify-center rounded-xl border border-white/5 shadow-sm transition-colors duration-300">
+                    <div className="absolute top-0 right-0 w-9 h-9 bg-[#FE8254] group-hover:bg-[#ff956b] dark:bg-[#d46537] dark:group-hover:bg-[#e67545] text-[#3F5A62] dark:text-zinc-950 flex items-center justify-center rounded-xl border border-[#3F5A62]/30 shadow-sm transition-colors duration-300">
                       <ArrowUpRight className="w-4 h-4" />
                     </div>
                   </div>
@@ -435,7 +435,7 @@ export default function DashboardPage() {
                   {/* Bottom-Left Cutout (Concave Corner for Text Label) */}
                   <div className="absolute bottom-0 left-0 w-28 h-10 bg-[var(--background)] rounded-tr-[1.5rem] transition-colors duration-300">
                     <div className="absolute inset-0 border-r border-t border-[var(--border)] rounded-tr-[1.5rem]" />
-                    <div className="absolute bottom-0 left-0 px-3 py-1.5 bg-[#FE8254] group-hover:bg-[#ff956b] dark:bg-[#d46537] dark:group-hover:bg-[#e67545] text-[9px] font-black uppercase text-[#3F5A62] dark:text-zinc-950 tracking-widest rounded-lg border border-white/5 transition-colors duration-300">
+                    <div className="absolute bottom-0 left-0 px-3 py-1.5 bg-[#FE8254] group-hover:bg-[#ff956b] dark:bg-[#d46537] dark:group-hover:bg-[#e67545] text-[9px] font-black uppercase text-[#3F5A62] dark:text-zinc-950 tracking-widest rounded-lg border border-[#3F5A62]/30 transition-colors duration-300">
                       CAFE
                     </div>
                   </div>
