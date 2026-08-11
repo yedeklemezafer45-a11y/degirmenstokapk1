@@ -182,6 +182,30 @@ export default function StokSayimPage() {
     }
   };
 
+  const formatTotalDisplay = (item: StockItem, countedQty: number, openUnits: number) => {
+    const isLiquid = isLiquidItem(item);
+    const isLitrelik = item.category === "Litrelik Ürünler";
+    
+    if (isLitrelik) {
+      if (countedQty > 0 && openUnits > 0) {
+        return `${countedQty} Adet ${openUnits} Gram`;
+      } else if (countedQty > 0) {
+        return `${countedQty} Adet`;
+      } else if (openUnits > 0) {
+        return `${openUnits} Gram`;
+      }
+      return "0 Adet";
+    }
+
+    const totalCalculated = calculateTotalQuantityInUnit(item, countedQty, openUnits);
+    const unitLabel = isLiquid 
+      ? "lt" 
+      : (item.unit === "kg" || item.unit === "Adet" 
+          ? "kg" 
+          : (item.unit === "Şişe" ? "Adet" : item.unit));
+    return `${totalCalculated.toFixed(3)} ${unitLabel}`;
+  };
+
   const categories = ["Tümü", ...Array.from(new Set(stockList.map((i) => i.category)))];
 
   const filteredStocks = stockList.filter((item) => {
@@ -310,16 +334,11 @@ export default function StokSayimPage() {
         items.forEach(item => {
           const { displayWeight } = extractWeightAndUnit(item);
           const isLiquid = isLiquidItem(item);
-          const unitLabel = isLiquid 
-            ? "lt" 
-            : (item.unit === "kg" || item.unit === "Adet" 
-                ? "kg" 
-                : (item.unit === "Şişe" ? "Adet" : item.unit));
           const openLabel = isLiquid ? "ml" : "gr";
 
           const countedVal = parseFloat(sayilanValues[item.id]) || 0;
           const openVal = parseFloat(aciktaValues[item.id]) || 0;
-          const totalVal = calculateTotalQuantityInUnit(item, countedVal, openVal);
+          const totalValText = formatTotalDisplay(item, countedVal, openVal);
 
           content += `
             <tr>
@@ -327,7 +346,7 @@ export default function StokSayimPage() {
               <td class="text-center font-mono text-muted">${displayWeight}</td>
               <td class="text-center font-mono">${countedVal}</td>
               <td class="text-center font-mono">${openVal} ${openLabel}</td>
-              <td class="text-right font-mono" style="color: #059669;">${totalVal.toFixed(3)} ${unitLabel}</td>
+              <td class="text-right font-mono" style="color: #059669;">${totalValText}</td>
             </tr>
           `;
         });
@@ -835,7 +854,7 @@ export default function StokSayimPage() {
 
                         {/* Toplam Karşılığı */}
                         <td className="py-4 px-4 text-right font-mono font-bold text-emerald-400 text-sm">
-                          {totalCalculated.toFixed(3)} {unitLabel}
+                          {formatTotalDisplay(item, countedQty, openUnits)}
                         </td>
                       </tr>
                     );
