@@ -57,6 +57,53 @@ export default function StokSayimPage() {
     setShowToast(true);
     setTimeout(() => setShowToast(false), 3000);
   };
+  // Ürünün Litrelik veya Sıvı Olup Olmadığını Kontrol Etme
+  const isLiquidItem = (item: StockItem) => {
+    return (
+      item.category === "Litrelik Ürünler" || 
+      item.unit?.toLowerCase() === "litre" || 
+      item.unit?.toLowerCase() === "lt" || 
+      item.weightInfo?.toLowerCase().includes("lt") ||
+      item.weightInfo?.toLowerCase().includes("litre")
+    );
+  };
+
+  const extractWeightAndUnit = (item: StockItem) => {
+    if (item.weightInfo) {
+      const match = item.weightInfo.match(/([0-9.,]+)/);
+      if (match) {
+        const val = parseFloat(match[1].replace(",", "."));
+        if (!isNaN(val)) return { parsedWeight: val, displayWeight: item.weightInfo };
+      }
+    }
+    return { parsedWeight: 1.0, displayWeight: isLiquidItem(item) ? "1.000 lt" : "1.000 kg" };
+  };
+
+  const getInitialSayilan = (item: StockItem) => {
+    const { parsedWeight } = extractWeightAndUnit(item);
+    if (!item.quantity) return "0";
+    const unitLower = item.unit.toLowerCase();
+    if (unitLower === "kg" || unitLower === "litre" || unitLower === "lt") {
+      return String(Math.floor(item.quantity / parsedWeight));
+    } else {
+      return String(Math.floor(item.quantity));
+    }
+  };
+
+  const getInitialAcikta = (item: StockItem) => {
+    const { parsedWeight } = extractWeightAndUnit(item);
+    if (!item.quantity) return "0";
+    const unitLower = item.unit.toLowerCase();
+    if (unitLower === "kg" || unitLower === "litre" || unitLower === "lt") {
+      const fullWeight = Math.floor(item.quantity / parsedWeight) * parsedWeight;
+      const diff = Math.max(0, item.quantity - fullWeight);
+      return String(Math.round(diff * 1000));
+    } else {
+      const diff = Math.max(0, item.quantity - Math.floor(item.quantity));
+      const divisor = parsedWeight * 1000;
+      return String(Math.round(diff * divisor));
+    }
+  };
 
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme") as "light" | "dark" | null;
@@ -87,7 +134,7 @@ export default function StokSayimPage() {
           const updated = { ...prev };
           fetchedStocks.forEach(item => {
             if (!(item.id in updated)) {
-              updated[item.id] = String(item.quantity || 0);
+              updated[item.id] = getInitialSayilan(item);
             }
           });
           return updated;
@@ -97,7 +144,7 @@ export default function StokSayimPage() {
           const updated = { ...prev };
           fetchedStocks.forEach(item => {
             if (!(item.id in updated)) {
-              updated[item.id] = "0";
+              updated[item.id] = getInitialAcikta(item);
             }
           });
           return updated;
@@ -121,28 +168,6 @@ export default function StokSayimPage() {
     document.documentElement.className = newTheme;
   };
 
-  // Ürünün Litrelik veya Sıvı Olup Olmadığını Kontrol Etme
-  const isLiquidItem = (item: StockItem) => {
-    return (
-      item.category === "Litrelik Ürünler" || 
-      item.unit?.toLowerCase() === "litre" || 
-      item.unit?.toLowerCase() === "lt" || 
-      item.weightInfo?.toLowerCase().includes("lt") ||
-      item.weightInfo?.toLowerCase().includes("litre")
-    );
-  };
-
-  const extractWeightAndUnit = (item: StockItem) => {
-    if (item.weightInfo) {
-      const match = item.weightInfo.match(/([0-9.,]+)/);
-      if (match) {
-        const val = parseFloat(match[1].replace(",", "."));
-        if (!isNaN(val)) return { parsedWeight: val, displayWeight: item.weightInfo };
-      }
-    }
-    return { parsedWeight: 1.0, displayWeight: isLiquidItem(item) ? "1.000 lt" : "1.000 kg" };
-  };
-
   const calculateTotalQuantityInUnit = (item: StockItem, countedQty: number, openUnits: number) => {
     const { parsedWeight } = extractWeightAndUnit(item);
     const unitLower = item.unit.toLowerCase();
@@ -152,9 +177,8 @@ export default function StokSayimPage() {
       return Number(((countedQty * parsedWeight) + (openUnits / 1000)).toFixed(3));
     } else {
       // Package-based unit (Adet, Şişe, Kutu, Paket)
-      const divisor = parsedWeight * 1000;
-      const openFraction = divisor > 0 ? (openUnits / divisor) : 0;
-      return Number((countedQty + openFraction).toFixed(3));
+      // Açıkta olan gramaj doğrudan 1000'e bölünerek adet kesri olarak eklenir
+      return Number((countedQty + (openUnits / 1000)).toFixed(3));
     }
   };
 
@@ -214,6 +238,136 @@ export default function StokSayimPage() {
     }
   };
 
+  const handleDownloadSayimPDF = (currentList: StockItem[]) => {
+    try {
+      const activeUserStr = sessionStorage.getItem("activeUser");
+      const activeUserName = activeUserStr ? JSON.parse(activeUserStr).fullName : "Yönetici";
+      const nowStr = new Date().toLocaleString("tr-TR");
+
+      let content = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <title>Değirmen Kafe - Fiziki Stok Sayım Raporu</title>
+          <style>
+            body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 25px; color: #1e293b; background-color: #fff; line-height: 1.5; }
+            .header { text-align: center; margin-bottom: 25px; border-bottom: 3px solid #ea580c; padding-bottom: 15px; }
+            .header h1 { color: #ea580c; margin: 0; font-size: 24px; font-weight: 800; letter-spacing: 0.5px; }
+            .header p { color: #64748b; margin: 5px 0 0 0; font-size: 12px; font-weight: 500; }
+            .info-grid { display: flex; justify-content: space-between; margin-bottom: 20px; font-size: 11px; color: #475569; border-bottom: 1px dashed #cbd5e1; padding-bottom: 10px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 11px; }
+            th { background-color: #f8fafc; border-bottom: 2px solid #cbd5e1; color: #475569; font-weight: 700; padding: 8px 10px; text-align: left; text-transform: uppercase; }
+            td { border-bottom: 1px solid #e2e8f0; padding: 8px 10px; color: #0f172a; }
+            tr:nth-child(even) td { background-color: #f8fafc; }
+            .cat-row { background-color: #fff7ed !important; font-weight: bold; color: #c2410c; }
+            .cat-row td { border-bottom: 2px solid #ffedd5; padding: 6px 10px; text-transform: uppercase; font-size: 12px; }
+            .font-mono { font-family: monospace; font-weight: bold; }
+            .text-right { text-align: right; }
+            .text-center { text-align: center; }
+            @media print {
+              body { padding: 10px; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>DEĞİRMEN KAFE</h1>
+            <p>FİZİKİ STOK SAYIM RAPORU</p>
+          </div>
+          <div class="info-grid">
+            <div><strong>Tarih:</strong> ${nowStr}</div>
+            <div><strong>Sayımı Gerçekleştiren:</strong> ${activeUserName}</div>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Ürün Adı</th>
+                <th class="text-center">Paket Hacmi</th>
+                <th class="text-center">Sayılan Kapalı Adet</th>
+                <th class="text-center">Açıkta Olan Miktar</th>
+                <th class="text-right">Toplam Miktar</th>
+              </tr>
+            </thead>
+            <tbody>
+      `;
+
+      // Group by category
+      const grouped: Record<string, StockItem[]> = {};
+      currentList.forEach(item => {
+        if (!grouped[item.category]) {
+          grouped[item.category] = [];
+        }
+        grouped[item.category].push(item);
+      });
+
+      Object.entries(grouped).forEach(([catName, items]) => {
+        content += `
+          <tr class="cat-row">
+            <td colspan="5">${catName}</td>
+          </tr>
+        `;
+        items.forEach(item => {
+          const { displayWeight } = extractWeightAndUnit(item);
+          const isLiquid = isLiquidItem(item);
+          const unitLabel = isLiquid 
+            ? "lt" 
+            : (item.unit === "kg" || item.unit === "Adet" 
+                ? "kg" 
+                : (item.unit === "Şişe" ? "Adet" : item.unit));
+          const openLabel = isLiquid ? "ml" : "gr";
+
+          const countedVal = parseFloat(sayilanValues[item.id]) || 0;
+          const openVal = parseFloat(aciktaValues[item.id]) || 0;
+          const totalVal = calculateTotalQuantityInUnit(item, countedVal, openVal);
+
+          content += `
+            <tr>
+              <td><strong>${item.name}</strong></td>
+              <td class="text-center font-mono text-muted">${displayWeight}</td>
+              <td class="text-center font-mono">${countedVal}</td>
+              <td class="text-center font-mono">${openVal} ${openLabel}</td>
+              <td class="text-right font-mono" style="color: #059669;">${totalVal.toFixed(3)} ${unitLabel}</td>
+            </tr>
+          `;
+        });
+      });
+
+      content += `
+            </tbody>
+          </table>
+        </body>
+        </html>
+      `;
+
+      const blob = new Blob([content], { type: "text/html;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+
+      const iframe = document.createElement("iframe");
+      iframe.style.position = "fixed";
+      iframe.style.right = "0";
+      iframe.style.bottom = "0";
+      iframe.style.width = "0";
+      iframe.style.height = "0";
+      iframe.style.border = "0";
+      iframe.src = url;
+
+      document.body.appendChild(iframe);
+
+      iframe.onload = () => {
+        setTimeout(() => {
+          iframe.contentWindow?.focus();
+          iframe.contentWindow?.print();
+          setTimeout(() => {
+            document.body.removeChild(iframe);
+          }, 1000);
+        }, 300);
+      };
+    } catch (error) {
+      console.error("PDF generation error:", error);
+    }
+  };
+
   // Toplu Değişiklikleri Firebase Firestore'a Kaydet
   const handleSaveChanges = async () => {
     setIsSaving(true);
@@ -240,6 +394,11 @@ export default function StokSayimPage() {
       );
 
       triggerToast("✅ Sayım sonuçları bulut veritabanına kaydedildi!");
+
+      // Sayım sonuçlarını otomatik PDF/Yazıcı çıktısı olarak tetikle
+      setTimeout(() => {
+        handleDownloadSayimPDF(updatedStock);
+      }, 800);
     } catch (err) {
       console.error("Stok kaydetme hatası:", err);
       triggerToast("Kaydedilirken hata oluştu!");
@@ -268,8 +427,14 @@ export default function StokSayimPage() {
         const { parsedWeight } = extractWeightAndUnit(item);
         const countedQty = parseFloat(sayilanValues[item.id]) || 0;
         const openGrams = parseFloat(aciktaValues[item.id]) || 0;
-        const totalCountedGram = Number(((countedQty * parsedWeight) + (openGrams / 1000)).toFixed(3));
+        const totalQty = calculateTotalQuantityInUnit(item, countedQty, openGrams);
+
+        const unitLower = item.unit.toLowerCase();
+        const isMassOrVolume = unitLower === "kg" || unitLower === "litre" || unitLower === "lt";
+        const totalCountedGram = isMassOrVolume ? totalQty : Number((totalQty * parsedWeight).toFixed(3));
         totalGramsAcc += totalCountedGram * 1000;
+
+        const sysKalanKg = isMassOrVolume ? item.quantity : Number((item.quantity * parsedWeight).toFixed(3));
 
         return {
           productId: item.id,
@@ -282,7 +447,7 @@ export default function StokSayimPage() {
           sayilanAdet: countedQty,
           sayilanAciktaGrams: openGrams,
           sayilanToplamGramaj: totalCountedGram,
-          farkGramaj: Number(((item.quantity * parsedWeight) - totalCountedGram).toFixed(3))
+          farkGramaj: Number((sysKalanKg - totalCountedGram).toFixed(3))
         };
       });
 
@@ -426,6 +591,16 @@ export default function StokSayimPage() {
                   </button>
 
                   <button
+                    onClick={() => handleDownloadSayimPDF(stockList)}
+                    type="button"
+                    className="flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold bg-zinc-800 hover:bg-zinc-700 text-zinc-100 border border-zinc-700/60 transition-all cursor-pointer shadow-sm"
+                    title="Sayım Sonuçlarını PDF Olarak İndir / Yazdır"
+                  >
+                    <FileSpreadsheet className="w-4 h-4 text-emerald-500" />
+                    <span>PDF İndir</span>
+                  </button>
+
+                  <button
                     onClick={handleSaveChanges}
                     disabled={isSaving}
                     className={`flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white transition-all shadow-lg cursor-pointer ${
@@ -564,7 +739,11 @@ export default function StokSayimPage() {
                   {filteredStocks.map((item) => {
                     const { displayWeight } = extractWeightAndUnit(item);
                     const isLiquid = isLiquidItem(item);
-                    const unitLabel = isLiquid ? "lt" : (item.unit === "kg" || item.unit === "Adet" ? "kg" : item.unit);
+                    const unitLabel = isLiquid 
+                      ? "lt" 
+                      : (item.unit === "kg" || item.unit === "Adet" 
+                          ? "kg" 
+                          : (item.unit === "Şişe" ? "Adet" : item.unit));
                     const openLabel = isLiquid ? "ml" : "gr";
 
                     const isChecked = !!checkedItemIds[item.id];
@@ -630,7 +809,7 @@ export default function StokSayimPage() {
                             type="number"
                             step="1"
                             min="0"
-                            value={sayilanValues[item.id] !== undefined ? sayilanValues[item.id] : item.quantity}
+                            value={sayilanValues[item.id] !== undefined ? sayilanValues[item.id] : getInitialSayilan(item)}
                             onChange={(e) => handleSayilanChange(item.id, e.target.value)}
                             className="w-24 bg-[var(--background)] border border-[var(--border)] rounded-xl px-3 py-1.5 text-center font-mono font-bold text-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
                           />
