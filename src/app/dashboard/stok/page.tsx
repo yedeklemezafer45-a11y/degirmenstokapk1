@@ -164,18 +164,7 @@ export default function StokPage() {
 
   const criticalCount = stockList.filter(item => item.quantity <= item.minLimit).length;
 
-  const categories = [
-    "Tümü",
-    "Çay Ve Bitki Çayları",
-    "Kahveler",
-    "Şuruplar",
-    "Soslar",
-    "Püreler",
-    "Toz Grubu",
-    "Ek Ürünler",
-    "Litrelik Ürünler",
-    "Yan Ürünler"
-  ];
+  const categories = ["Tümü", ...Array.from(new Set(stockList.map(i => i.category)))];
 
   return (
     <div className="min-h-screen flex flex-col bg-[var(--background)] text-[var(--foreground)] transition-colors duration-300">

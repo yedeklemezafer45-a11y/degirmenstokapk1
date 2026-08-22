@@ -43,18 +43,7 @@ export default function TumBolgelerStokPage() {
     { id: "vargel-kitap-kafe", name: "Vargel Kitap" }
   ];
 
-  const categories = [
-    "Tümü",
-    "Çay Ve Bitki Çayları",
-    "Kahveler",
-    "Şuruplar",
-    "Soslar",
-    "Püreler",
-    "Toz Grubu",
-    "Ek Ürünler",
-    "Litrelik Ürünler",
-    "Yan Ürünler"
-  ];
+  const categories = ["Tümü", ...Array.from(new Set(regionStocks.flatMap(rs => rs.items.map(i => i.category))))];
 
   const triggerToast = (msg: string) => {
     setToastMessage(msg);

@@ -133,18 +133,7 @@ export default function SktKontroluPage() {
     triggerToast("Değişiklikler geri alındı.");
   };
 
-  const categories = [
-    "Tümü",
-    "Şuruplar",
-    "Kahveler",
-    "Soslar",
-    "Toz Grubu",
-    "Çay Ve Bitki Çayları",
-    "Püreler",
-    "Litrelik Ürünler",
-    "Yan Ürünler",
-    "Ek Ürünler"
-  ];
+  const categories = ["Tümü", ...Array.from(new Set(stockList.map(i => i.category)))];
 
   // Filtreler
   const filteredStock = stockList.filter(item => {
