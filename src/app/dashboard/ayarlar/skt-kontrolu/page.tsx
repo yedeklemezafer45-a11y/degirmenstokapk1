@@ -133,10 +133,14 @@ export default function SktKontroluPage() {
     triggerToast("Değişiklikler geri alındı.");
   };
 
-  const categories = ["Tümü", ...Array.from(new Set(stockList.map(i => i.category)))];
+  const displayedStockList = selectedRegion === "degirmen-kafe"
+    ? stockList.filter(item => item.category !== "Soft İçecek Ürünleri" && item.category !== "Pastalar")
+    : stockList;
+
+  const categories = ["Tümü", ...Array.from(new Set(displayedStockList.map(i => i.category)))];
 
   // Filtreler
-  const filteredStock = stockList.filter(item => {
+  const filteredStock = displayedStockList.filter(item => {
     const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = selectedCategory === "Tümü" || item.category === selectedCategory;
     return matchesSearch && matchesCategory;

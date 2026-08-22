@@ -174,7 +174,11 @@ export default function SiparisPage() {
     triggerToast("WhatsApp'a yönlendiriliyorsunuz... 💬");
   };
 
-  const orderableStock = stockList.filter(item => item.orderable !== false);
+  const displayedStockList = selectedRegion === "degirmen-kafe"
+    ? stockList.filter(item => item.category !== "Soft İçecek Ürünleri" && item.category !== "Pastalar")
+    : stockList;
+
+  const orderableStock = displayedStockList.filter(item => item.orderable !== false);
 
   const categories = ["Tümü", ...Array.from(new Set(orderableStock.map(i => i.category)))];
 

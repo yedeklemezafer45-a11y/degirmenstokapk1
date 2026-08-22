@@ -203,9 +203,13 @@ export default function SiparisAyarlariPage() {
     }
   };
 
-  const categories = ["Tümü", ...Array.from(new Set(stockList.map(i => i.category)))];
+  const displayedStockList = selectedRegion === "degirmen-kafe"
+    ? stockList.filter(item => item.category !== "Soft İçecek Ürünleri" && item.category !== "Pastalar")
+    : stockList;
 
-  const filteredStock = stockList.filter(item => {
+  const categories = ["Tümü", ...Array.from(new Set(displayedStockList.map(i => i.category)))];
+
+  const filteredStock = displayedStockList.filter(item => {
     const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = selectedCategory === "Tümü" || item.category === selectedCategory;
     return matchesSearch && matchesCategory;

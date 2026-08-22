@@ -156,15 +156,19 @@ export default function StokPage() {
     }
   };
 
-  const filteredStock = stockList.filter(item => {
+  const displayedStockList = selectedRegion === "degirmen-kafe"
+    ? stockList.filter(item => item.category !== "Soft İçecek Ürünleri" && item.category !== "Pastalar")
+    : stockList;
+
+  const filteredStock = displayedStockList.filter(item => {
     const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = !selectedCategory || selectedCategory === "Tümü" || item.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
 
-  const criticalCount = stockList.filter(item => item.quantity <= item.minLimit).length;
+  const criticalCount = displayedStockList.filter(item => item.quantity <= item.minLimit).length;
 
-  const categories = ["Tümü", ...Array.from(new Set(stockList.map(i => i.category)))];
+  const categories = ["Tümü", ...Array.from(new Set(displayedStockList.map(i => i.category)))];
 
   return (
     <div className="min-h-screen flex flex-col bg-[var(--background)] text-[var(--foreground)] transition-colors duration-300">

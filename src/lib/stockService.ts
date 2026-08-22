@@ -30,14 +30,7 @@ export async function seedDefaultStocksForRegion(regionId: string): Promise<void
   const path = getStocksCollectionPath(regionId);
   const batch = writeBatch(db);
 
-  let itemsToSeed = mockStockItems;
-  if (regionId === "degirmen-kafe") {
-    itemsToSeed = mockStockItems.filter(
-      item => item.category !== "Soft İçecek Ürünleri" && item.category !== "Pastalar"
-    );
-  }
-
-  for (const item of itemsToSeed) {
+  for (const item of mockStockItems) {
     const itemRef = doc(db, path, item.id);
     // Sıfır stokla başlat
     const seedItem: StockItem = {
@@ -56,15 +49,7 @@ export async function seedDefaultStocksForRegion(regionId: string): Promise<void
 // Eksik varsayılan ürünleri Firestore'a yükle (Yeni kategori/ürün güncellemeleri için)
 export async function ensureAllDefaultStocksExist(regionId: string, currentItems: StockItem[]): Promise<void> {
   const currentIds = new Set(currentItems.map(i => i.id));
-  
-  let itemsToCheck = mockStockItems;
-  if (regionId === "degirmen-kafe") {
-    itemsToCheck = mockStockItems.filter(
-      item => item.category !== "Soft İçecek Ürünleri" && item.category !== "Pastalar"
-    );
-  }
-
-  const missingItems = itemsToCheck.filter(item => !currentIds.has(item.id));
+  const missingItems = mockStockItems.filter(item => !currentIds.has(item.id));
   
   if (missingItems.length > 0) {
     console.log(`Region ${regionId} has ${missingItems.length} missing items. Seeding them...`);
@@ -95,24 +80,14 @@ export async function getAllStocks(regionId: string): Promise<StockItem[]> {
       await seedDefaultStocksForRegion(regionId);
       const freshSnap = await getDocs(collection(db, path));
       const items = freshSnap.docs.map(d => d.data() as StockItem);
-      const filtered = regionId === "degirmen-kafe" 
-        ? items.filter(i => i.category !== "Soft İçecek Ürünleri" && i.category !== "Pastalar")
-        : items;
-      return [...filtered].sort((a, b) => a.name.localeCompare(b.name, "tr"));
+      return [...items].sort((a, b) => a.name.localeCompare(b.name, "tr"));
     }
-    let items = snapshot.docs.map(d => d.data() as StockItem);
+    const items = snapshot.docs.map(d => d.data() as StockItem);
     await ensureAllDefaultStocksExist(regionId, items);
-    
-    if (regionId === "degirmen-kafe") {
-      items = items.filter(i => i.category !== "Soft İçecek Ürünleri" && i.category !== "Pastalar");
-    }
     return [...items].sort((a, b) => a.name.localeCompare(b.name, "tr"));
   } catch (err) {
     console.error(`getAllStocks (${regionId}) hatası:`, err);
-    const mockFiltered = regionId === "degirmen-kafe"
-      ? mockStockItems.filter(i => i.category !== "Soft İçecek Ürünleri" && i.category !== "Pastalar")
-      : mockStockItems;
-    return [...mockFiltered].sort((a, b) => a.name.localeCompare(b.name, "tr"));
+    return [...mockStockItems].sort((a, b) => a.name.localeCompare(b.name, "tr"));
   }
 }
 
@@ -137,11 +112,7 @@ export function subscribeToStocks(
       const rawItems = snapshot.docs.map(d => d.data() as StockItem);
       // Arka planda eksik olanları ekle
       ensureAllDefaultStocksExist(regionId, rawItems).then(() => {
-        let items = rawItems;
-        if (regionId === "degirmen-kafe") {
-          items = items.filter(i => i.category !== "Soft İçecek Ürünleri" && i.category !== "Pastalar");
-        }
-        const sorted = [...items].sort((a, b) => a.name.localeCompare(b.name, "tr"));
+        const sorted = [...rawItems].sort((a, b) => a.name.localeCompare(b.name, "tr"));
         callback(sorted);
       });
     },
