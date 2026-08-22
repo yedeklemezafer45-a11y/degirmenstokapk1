@@ -142,7 +142,8 @@ export default function StokKontroluPage() {
       quantity: depoVal,
       minLimit: parseFloat(newItemLimit) || 0,
       price: parseFloat(newItemPrice) || 0,
-      weightInfo: newItemWeight.trim() || "1.000 kg"
+      weightInfo: newItemWeight.trim() || "1.000 kg",
+      orderable: true
     };
 
     setIsSaving(true);

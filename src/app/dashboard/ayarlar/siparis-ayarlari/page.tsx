@@ -13,11 +13,14 @@ import {
   Square,
   AlertTriangle,
   ShoppingCart,
-  CheckCircle2
+  CheckCircle2,
+  Plus,
+  X
 } from "lucide-react";
-import { subscribeToStocks, saveAllStocks } from "@/lib/stockService";
-import { StockItem } from "@/lib/stockStore";
+import { subscribeToStocks, saveAllStocks, saveStockItem } from "@/lib/stockService";
+import { StockItem, StockCategory } from "@/lib/stockStore";
 import { useRouter } from "next/navigation";
+import { logUserAction } from "@/lib/auditLogService";
 
 export default function SiparisAyarlariPage() {
   const router = useRouter();
@@ -29,6 +32,15 @@ export default function SiparisAyarlariPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
+
+  // Yeni Ürün Ekleme State'leri
+  const [isAddOpen, setIsAddOpen] = useState(false);
+  const [newItemName, setNewItemName] = useState("");
+  const [newItemCategory, setNewItemCategory] = useState<StockCategory>("Çay Ve Bitki Çayları");
+  const [newItemUnit, setNewItemUnit] = useState("Adet");
+  const [newItemLimit, setNewItemLimit] = useState("0");
+  const [newItemPrice, setNewItemPrice] = useState("0");
+  const [newItemWeight, setNewItemWeight] = useState("1.000 kg");
 
   // Bölge State'leri
   const [selectedRegion, setSelectedRegion] = useState("degirmen-kafe");
@@ -117,6 +129,52 @@ export default function SiparisAyarlariPage() {
     triggerToast(select ? "Tüm ürünler siparişe açıldı." : "Tüm ürünlerin sipariş yetkisi kapatıldı.");
   };
 
+  // Yeni Ürün Ekle (Hem envantere eklenir hem de otomatik siparişe açılır)
+  const handleAddItem = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newItemName.trim()) {
+      triggerToast("Lütfen ürün adını giriniz!");
+      return;
+    }
+
+    const newId = "custom_" + Date.now();
+    const newItem: StockItem = {
+      id: newId,
+      name: newItemName.trim(),
+      category: newItemCategory,
+      unit: newItemUnit,
+      depodaBulunan: 0,
+      depodanAlinan: 0,
+      quantity: 0,
+      minLimit: parseFloat(newItemLimit) || 0,
+      price: parseFloat(newItemPrice) || 0,
+      weightInfo: newItemWeight.trim() || "1.000 kg",
+      orderable: true // Otomatik siparişe açık
+    };
+
+    setIsSaving(true);
+    try {
+      await saveStockItem(selectedRegion, newItem);
+      
+      setStockList(prev => [newItem, ...prev]);
+
+      await logUserAction(
+        "Yeni Sipariş Ürünü Eklendi",
+        "STOK",
+        `"${newItem.name}" (${newItem.category}) ürünü sipariş menüsüne ve stok kontrolüne eklendi.`
+      );
+
+      setNewItemName("");
+      setIsAddOpen(false);
+      triggerToast(`✅ "${newItem.name}" siparişe ve stok kontrolüne eklendi!`);
+    } catch (err) {
+      console.error(err);
+      triggerToast("Ürün eklenirken hata oluştu!");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   // Değişiklikleri Veritabanına Kaydet
   const handleSaveChanges = async () => {
     setIsSaving(true);
@@ -202,8 +260,134 @@ export default function SiparisAyarlariPage() {
               <Square className="w-3.5 h-3.5" />
               Tümünü Kapat
             </button>
+            <button
+              type="button"
+              onClick={() => setIsAddOpen(!isAddOpen)}
+              className="flex items-center gap-1.5 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-[10px] font-black rounded-xl transition-all cursor-pointer uppercase tracking-wider shadow-md shadow-orange-500/10"
+            >
+              {isAddOpen ? <X className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
+              {isAddOpen ? "Kapat" : "Yeni Ürün Ekle"}
+            </button>
           </div>
         </div>
+
+        {/* Yeni Ürün Ekle Formu */}
+        {isAddOpen && (
+          <form 
+            onSubmit={handleAddItem}
+            className="bg-[var(--card)] border border-[var(--border)] rounded-[2rem] p-6 shadow-md space-y-4 animate-slideDown"
+          >
+            <div className="flex items-center gap-2 border-b border-[var(--border)]/60 pb-3">
+              <ShoppingCart className="w-4 h-4 text-orange-500" />
+              <h3 className="font-extrabold text-sm uppercase tracking-wider">Yeni Sipariş Ürünü Ekle</h3>
+              <p className="text-[10px] text-zinc-500 ml-2">(Bu ürün envanter listesinde 0 adet bakiyle oluşturulur ve otomatik siparişe açılır)</p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              
+              {/* Ürün Adı */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block">Ürün Adı *</label>
+                <input 
+                  type="text"
+                  required
+                  placeholder="Örn: HM-ÇİLEK AROMALI ŞURUP"
+                  value={newItemName}
+                  onChange={(e) => setNewItemName(e.target.value)}
+                  className="w-full bg-[var(--background)] border border-[var(--border)] rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-orange-500 text-[var(--foreground)]"
+                />
+              </div>
+
+              {/* Kategori */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block">Kategori</label>
+                <select
+                  value={newItemCategory}
+                  onChange={(e) => setNewItemCategory(e.target.value as StockCategory)}
+                  className="w-full bg-[var(--background)] border border-[var(--border)] rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-orange-500 text-[var(--foreground)]"
+                >
+                  <option value="Çay Ve Bitki Çayları">Çay Ve Bitki Çayları</option>
+                  <option value="Kahveler">Kahveler</option>
+                  <option value="Şuruplar">Şuruplar</option>
+                  <option value="Soslar">Soslar</option>
+                  <option value="Püreler">Püreler</option>
+                  <option value="Toz Grubu">Toz Grubu</option>
+                  <option value="Ek Ürünler">Ek Ürünler</option>
+                  <option value="Litrelik Ürünler">Litrelik Ürünler</option>
+                  <option value="Yan Ürünler">Yan Ürünler</option>
+                </select>
+              </div>
+
+              {/* Ölçü Birimi */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block">Ölçü Birimi</label>
+                <select
+                  value={newItemUnit}
+                  onChange={(e) => setNewItemUnit(e.target.value)}
+                  className="w-full bg-[var(--background)] border border-[var(--border)] rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-orange-500 text-[var(--foreground)]"
+                >
+                  <option value="Adet">Adet</option>
+                  <option value="kg">Kilogram (kg)</option>
+                  <option value="Litre">Litre</option>
+                  <option value="Şişe">Şişe</option>
+                  <option value="Paket">Paket</option>
+                  <option value="Kutu">Kutu</option>
+                  <option value="Kavanoz">Kavanoz</option>
+                </select>
+              </div>
+
+              {/* Kritik Limit */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block">Kritik Stok Limiti</label>
+                <input 
+                  type="number"
+                  min="0"
+                  placeholder="Örn: 2"
+                  value={newItemLimit}
+                  onChange={(e) => setNewItemLimit(e.target.value)}
+                  className="w-full bg-[var(--background)] border border-[var(--border)] rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-orange-500 text-[var(--foreground)]"
+                />
+              </div>
+
+              {/* Fiyat */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block">Birim Fiyatı (TL)</label>
+                <input 
+                  type="number"
+                  min="0"
+                  placeholder="Örn: 150"
+                  value={newItemPrice}
+                  onChange={(e) => setNewItemPrice(e.target.value)}
+                  className="w-full bg-[var(--background)] border border-[var(--border)] rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-orange-500 text-[var(--foreground)]"
+                />
+              </div>
+
+              {/* Paket Ağırlığı */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block">Paket Ağırlık / Hacim Bilgisi</label>
+                <input 
+                  type="text"
+                  placeholder="Örn: 0.970 kg"
+                  value={newItemWeight}
+                  onChange={(e) => setNewItemWeight(e.target.value)}
+                  className="w-full bg-[var(--background)] border border-[var(--border)] rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-orange-500 text-[var(--foreground)]"
+                />
+              </div>
+
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="submit"
+                disabled={isSaving}
+                className="flex items-center gap-1.5 px-5 py-2.5 bg-orange-500 hover:bg-orange-600 text-white font-extrabold rounded-xl text-xs transition-all cursor-pointer shadow-md shadow-orange-500/10"
+              >
+                {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                Ürünü Kaydet ve Siparişe Aç
+              </button>
+            </div>
+          </form>
+        )}
 
         {/* Kategori Filtresi */}
         <div className="flex flex-wrap gap-2">
