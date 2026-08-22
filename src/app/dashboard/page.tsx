@@ -176,6 +176,7 @@ export default function DashboardPage() {
     { label: "Stok Kontrolü", active: true, path: "/dashboard/stok" },
     { label: "Stok Sayım", active: true, path: "/dashboard/stok-sayim" },
     { label: "Reçeteler", active: true, path: "/dashboard/receteler" },
+    { label: "Sipariş Ver", active: true, path: "/dashboard/siparis" },
   ];
 
   const [showNotifDropdown, setShowNotifDropdown] = useState(false);
@@ -531,7 +532,7 @@ export default function DashboardPage() {
                   {/* Bottom-Left Cutout (Concave Corner for Text Label) */}
                   <div className="absolute bottom-0 left-0 w-28 h-10 bg-[var(--background)] rounded-tr-[1.5rem] transition-colors duration-300">
                     <div className="absolute bottom-0 left-0 px-3 py-1.5 bg-[#FE8254] group-hover:bg-[#ff956b] dark:bg-[#d46537] dark:group-hover:bg-[#e67545] text-[9px] font-black uppercase text-[#3F5A62] dark:text-zinc-950 tracking-widest rounded-lg transition-colors duration-300">
-                      CAFE
+                      {item.label === "Sipariş Ver" ? "SİPARİŞ" : item.label === "Tüm Şube Stokları" ? "ANALİZ" : "CAFE"}
                     </div>
                   </div>
 

@@ -14,7 +14,8 @@ import {
   Megaphone,
   Music,
   ArrowUpRight,
-  Share2
+  Share2,
+  ShoppingCart
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -319,6 +320,38 @@ export default function AyarlarPage() {
 
             <div className="card-text flex flex-col items-center gap-3">
               <span className="text-white text-sm font-black truncate max-w-[180px]">Duyuru Yönetimi</span>
+              <div className="flex items-center gap-2 bg-white text-zinc-950 pl-1.5 pr-4 py-1.5 rounded-2xl shadow-xl">
+                <div className="w-7 h-7 rounded-lg bg-zinc-950 flex items-center justify-center text-white shrink-0">
+                  <ArrowUpRight className="w-4 h-4" />
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-wider text-zinc-800">
+                  Ayara Git
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Kart 7: Sipariş Listesi Ayarları */}
+          <div 
+            onClick={() => router.push("/dashboard/ayarlar/siparis-ayarlari")}
+            className="custom-border-card"
+            style={{
+              boxShadow: "0 10px 30px -10px rgba(234, 88, 12, 0.3), inset 0 0 0 1px rgba(234, 88, 12, 0.2)"
+            }}
+          >
+            <svg className="custom-card-border-svg">
+              <rect style={{ stroke: "#ea580c", strokeDashoffset: "0" }} />
+            </svg>
+
+            <div className="card-logo flex flex-col items-center justify-center text-center px-6 gap-2">
+              <ShoppingCart className="w-5 h-5 text-orange-500" />
+              <span className="text-base font-extrabold tracking-wide text-zinc-300">
+                Sipariş Menüsü Ayarları
+              </span>
+            </div>
+
+            <div className="card-text flex flex-col items-center gap-3">
+              <span className="text-white text-sm font-black truncate max-w-[180px]">Sipariş Menüsü Ayarları</span>
               <div className="flex items-center gap-2 bg-white text-zinc-950 pl-1.5 pr-4 py-1.5 rounded-2xl shadow-xl">
                 <div className="w-7 h-7 rounded-lg bg-zinc-950 flex items-center justify-center text-white shrink-0">
                   <ArrowUpRight className="w-4 h-4" />

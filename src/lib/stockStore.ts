@@ -21,6 +21,7 @@ export interface StockItem {
   price: number;
   weightInfo?: string;   // Ürün paket ağırlık bilgisi (örn: "0.970 kg", "2.500 kg")
   expDate?: string;      // Son Tüketim Tarihi (YYYY-MM-DD formatında)
+  orderable?: boolean;   // Sipariş verilebilir mi?
 }
 
 export const mockStockItems: StockItem[] = [
