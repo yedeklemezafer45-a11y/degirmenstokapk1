@@ -16,7 +16,7 @@ import {
   UserCheck,
   Loader2
 } from "lucide-react";
-import { getAllUsers, saveUser, removeUser, FirestoreUser } from "@/lib/userService";
+import { getAllUsers, saveUser, removeUser, FirestoreUser, BRANCH_REGIONS } from "@/lib/userService";
 
 export default function PersonelYetkileriPage() {
   const [theme, setTheme] = useState<"light" | "dark">("dark");
@@ -36,6 +36,13 @@ export default function PersonelYetkileriPage() {
     "/dashboard/receteler",
     "/dashboard/aylik-stok-takibi",
     "/dashboard/ayarlar"
+  ]);
+  const [newAllowedRegions, setNewAllowedRegions] = useState<string[]>([
+    "degirmen-kafe",
+    "13-eylul-vargel-kafe",
+    "millet-bahcesi-vargel-kafe",
+    "vargel-karavan",
+    "vargel-kitap-kafe"
   ]);
 
   // Toast Bildirim State
@@ -117,6 +124,7 @@ export default function PersonelYetkileriPage() {
       role: newRole,
       password: newPassword.trim(),
       allowedMenus: newAllowedMenus,
+      allowedRegions: newAllowedRegions,
       mustChangePassword: true
     };
 
@@ -134,6 +142,13 @@ export default function PersonelYetkileriPage() {
         "/dashboard/receteler",
         "/dashboard/aylik-stok-takibi",
         "/dashboard/ayarlar"
+      ]);
+      setNewAllowedRegions([
+        "degirmen-kafe",
+        "13-eylul-vargel-kafe",
+        "millet-bahcesi-vargel-kafe",
+        "vargel-karavan",
+        "vargel-kitap-kafe"
       ]);
       triggerToast(`✅ ${newUser.name} başarıyla eklendi! Artık her cihazdan giriş yapabilir.`);
     } catch (err) {
@@ -179,6 +194,46 @@ export default function PersonelYetkileriPage() {
     } catch (err) {
       console.error("Yetki kısıtlaması güncellenemedi:", err);
       triggerToast("İzinler güncellenirken hata oluştu!", "error");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // İzin verilen bölgeleri dinamik olarak açıp kapatma fonksiyonu
+  const handleToggleRegion = async (user: FirestoreUser, regionId: string) => {
+    if (user.username === "zafer") {
+      triggerToast("Ana admin hesabı kısıtlanamaz!", "error");
+      return;
+    }
+
+    const currentAllowed = user.allowedRegions || [
+      "degirmen-kafe",
+      "13-eylul-vargel-kafe",
+      "millet-bahcesi-vargel-kafe",
+      "vargel-karavan",
+      "vargel-kitap-kafe"
+    ];
+
+    let newAllowed: string[];
+    if (currentAllowed.includes(regionId)) {
+      newAllowed = currentAllowed.filter((r: string) => r !== regionId);
+    } else {
+      newAllowed = [...currentAllowed, regionId];
+    }
+
+    const updatedUser = {
+      ...user,
+      allowedRegions: newAllowed
+    };
+
+    setIsSaving(true);
+    try {
+      await saveUser(updatedUser);
+      setUsers(prev => prev.map(u => u.username === user.username ? updatedUser : u));
+      triggerToast(`✅ @${user.username} bölge yetkileri güncellendi.`);
+    } catch (err) {
+      console.error("Bölge yetkisi güncellenemedi:", err);
+      triggerToast("Bölge yetkileri güncellenirken hata oluştu!", "error");
     } finally {
       setIsSaving(false);
     }
@@ -345,6 +400,37 @@ export default function PersonelYetkileriPage() {
               </div>
             </div>
 
+            {/* Şube Erişim Yetkileri Kısıtlama Sekmesi */}
+            <div className="md:col-span-5 border-t border-[var(--border)]/60 pt-4 mt-2 space-y-3">
+              <span className="text-[10px] text-zinc-500 uppercase font-black tracking-widest block">Erişebileceği Bölgeler (Şubeler)</span>
+              <div className="flex flex-wrap gap-2.5">
+                {BRANCH_REGIONS.map((region) => {
+                  const isChecked = newAllowedRegions.includes(region.id);
+                  return (
+                    <label key={region.id} className={`flex items-center gap-2 px-3.5 py-2 rounded-xl border text-[11px] font-bold cursor-pointer transition-all duration-200 select-none ${
+                      isChecked 
+                        ? "bg-orange-500/10 border-orange-500/35 text-orange-400" 
+                        : "bg-[var(--card)] border-[var(--border)] text-zinc-500 hover:text-zinc-300"
+                    }`}>
+                      <input 
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={() => {
+                          if (isChecked) {
+                            setNewAllowedRegions(prev => prev.filter(r => r !== region.id));
+                          } else {
+                            setNewAllowedRegions(prev => [...prev, region.id]);
+                          }
+                        }}
+                        className="rounded border-zinc-700 bg-zinc-900 text-orange-500 focus:ring-orange-500 focus:ring-offset-zinc-900 w-3.5 h-3.5"
+                      />
+                      {region.name}
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+
             <div className="md:col-span-5 flex justify-end pt-2">
               <button 
                 type="submit"
@@ -438,6 +524,7 @@ export default function PersonelYetkileriPage() {
                     <th className="py-3 px-4">Şifre</th>
                     <th className="py-3 px-4">Rol / Yetki</th>
                     <th className="py-3 px-4">Erişebildiği Menüler</th>
+                    <th className="py-3 px-4">Erişebildiği Şubeler</th>
                     <th className="py-3 px-4 text-right">İşlem</th>
                   </tr>
                 </thead>
@@ -488,6 +575,29 @@ export default function PersonelYetkileriPage() {
                                 title={isAllowed ? "Erişimi Kapat" : "Erişime İzin Ver"}
                               >
                                 {m.label}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </td>
+                      <td className="py-4 px-4">
+                        <div className="flex flex-wrap gap-1.5 max-w-[280px]">
+                          {BRANCH_REGIONS.map((region) => {
+                            const isAllowed = !u.allowedRegions || u.allowedRegions.includes(region.id);
+                            const disabled = u.username === "zafer" || isSaving;
+                            return (
+                              <button
+                                key={region.id}
+                                disabled={disabled}
+                                onClick={() => handleToggleRegion(u, region.id)}
+                                className={`px-2 py-1 rounded-xl text-[9px] font-black border transition-all duration-200 select-none ${
+                                  isAllowed
+                                    ? "bg-emerald-500/10 text-emerald-500 dark:text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20"
+                                    : "bg-red-500/10 text-red-500 dark:text-red-400 border-red-500/20 hover:bg-red-500/20"
+                                } ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+                                title={isAllowed ? "Şube Erişimini Kapat" : "Şube Erişimine İzin Ver"}
+                              >
+                                {region.name}
                               </button>
                             );
                           })}

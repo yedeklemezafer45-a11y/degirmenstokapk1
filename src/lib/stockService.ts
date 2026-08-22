@@ -11,54 +11,71 @@ import {
 } from "firebase/firestore";
 import { StockItem, mockStockItems } from "./stockStore";
 
-const STOCKS_COL = "stocks";
-
-// Tekli Stok Sil
-export async function deleteStockItem(id: string): Promise<void> {
-  await deleteDoc(doc(db, STOCKS_COL, id));
+// Get collection path based on region
+export function getStocksCollectionPath(regionId: string): string {
+  if (!regionId || regionId === "degirmen-kafe") {
+    return "stocks";
+  }
+  return `regions/${regionId}/stocks`;
 }
 
-// Varsayılan stokları Firestore'a yükle (Seeding)
-export async function seedDefaultStocks(): Promise<void> {
+// Tekli Stok Sil
+export async function deleteStockItem(regionId: string, id: string): Promise<void> {
+  const path = getStocksCollectionPath(regionId);
+  await deleteDoc(doc(db, path, id));
+}
+
+// Varsayılan stokları belirli bir bölge için Firestore'a yükle (Seeding)
+export async function seedDefaultStocksForRegion(regionId: string): Promise<void> {
+  const path = getStocksCollectionPath(regionId);
   const batch = writeBatch(db);
   for (const item of mockStockItems) {
-    const itemRef = doc(db, STOCKS_COL, item.id);
-    batch.set(itemRef, item);
+    const itemRef = doc(db, path, item.id);
+    // Sıfır stokla başlat
+    const seedItem: StockItem = {
+      ...item,
+      depodaBulunan: 0,
+      depodanAlinan: 0,
+      quantity: 0,
+      expDate: ""
+    };
+    batch.set(itemRef, seedItem);
   }
   await batch.commit();
 }
 
 // Tüm Stokları Getir (tek seferlik)
-export async function getAllStocks(): Promise<StockItem[]> {
+export async function getAllStocks(regionId: string): Promise<StockItem[]> {
+  const path = getStocksCollectionPath(regionId);
   try {
-    const snapshot = await getDocs(collection(db, STOCKS_COL));
+    const snapshot = await getDocs(collection(db, path));
     if (snapshot.empty) {
-      await seedDefaultStocks();
-      return mockStockItems;
+      await seedDefaultStocksForRegion(regionId);
+      const freshSnap = await getDocs(collection(db, path));
+      return freshSnap.docs.map(d => d.data() as StockItem);
     }
     return snapshot.docs.map(d => d.data() as StockItem);
   } catch (err) {
-    console.error("getAllStocks hatası:", err);
+    console.error(`getAllStocks (${regionId}) hatası:`, err);
     return mockStockItems;
   }
 }
 
 /**
  * Gerçek zamanlı stok dinleyicisi (onSnapshot).
- * Herhangi bir kullanıcı stok güncellediğinde tüm açık sayfalar otomatik güncellenir.
- * @returns Dinleyiciyi durdurmak için çağrılacak unsubscribe fonksiyonu
  */
 export function subscribeToStocks(
+  regionId: string,
   callback: (items: StockItem[]) => void,
   onError?: (err: Error) => void
 ): Unsubscribe {
+  const path = getStocksCollectionPath(regionId);
   return onSnapshot(
-    collection(db, STOCKS_COL),
+    collection(db, path),
     (snapshot) => {
       if (snapshot.empty) {
-        // İlk kez çalışıyorsa seed et
-        seedDefaultStocks().then(() => {
-          callback(mockStockItems);
+        seedDefaultStocksForRegion(regionId).then(() => {
+          // İlk kez tetiklendiğinde seed sonrası Snapshot zaten tekrar ateşlenecektir.
         });
         return;
       }
@@ -66,22 +83,24 @@ export function subscribeToStocks(
       callback(items);
     },
     (error) => {
-      console.error("subscribeToStocks hatası:", error);
+      console.error(`subscribeToStocks (${regionId}) hatası:`, error);
       if (onError) onError(error);
     }
   );
 }
 
 // Tekli Stok Güncelle/Ekle
-export async function saveStockItem(item: StockItem): Promise<void> {
-  await setDoc(doc(db, STOCKS_COL, item.id), item);
+export async function saveStockItem(regionId: string, item: StockItem): Promise<void> {
+  const path = getStocksCollectionPath(regionId);
+  await setDoc(doc(db, path, item.id), item);
 }
 
 // Tüm Stok Listesini Toplu Kaydet
-export async function saveAllStocks(items: StockItem[]): Promise<void> {
+export async function saveAllStocks(regionId: string, items: StockItem[]): Promise<void> {
   const batch = writeBatch(db);
+  const path = getStocksCollectionPath(regionId);
   for (const item of items) {
-    const itemRef = doc(db, STOCKS_COL, item.id);
+    const itemRef = doc(db, path, item.id);
     batch.set(itemRef, item);
   }
   await batch.commit();

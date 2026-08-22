@@ -25,6 +25,8 @@ export default function SktKontroluPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("Tümü");
   const [isDirty, setIsDirty] = useState(false);
+  const [selectedRegion, setSelectedRegion] = useState("degirmen-kafe");
+  const [selectedRegionName, setSelectedRegionName] = useState("Değirmen Kafe");
 
   // SKT Tarihleri Draft State (ID -> YYYY-MM-DD)
   const [sktValues, setSktValues] = useState<Record<string, string>>({});
@@ -50,12 +52,17 @@ export default function SktKontroluPage() {
 
     // Rol Kontrolü (Sadece yetkili personel girebilir)
     const activeUser = sessionStorage.getItem("activeUser");
+    let activeRegion = "degirmen-kafe";
     if (activeUser) {
       const parsed = JSON.parse(activeUser);
       setUserRole(parsed.role || "waiter");
       if (parsed.role !== "admin" && parsed.role !== "yonetici") {
         window.location.href = "/dashboard";
       }
+      const reg = parsed.selectedRegion || "degirmen-kafe";
+      activeRegion = reg;
+      setSelectedRegion(reg);
+      setSelectedRegionName(parsed.selectedRegionName || "Değirmen Kafe");
     } else {
       window.location.href = "/";
     }
@@ -63,6 +70,7 @@ export default function SktKontroluPage() {
     // Gerçek zamanlı Firestore dinleyicisi
     setIsLoading(true);
     const unsubscribe = subscribeToStocks(
+      activeRegion,
       (items) => {
         setStockList(items);
         const initialSkt: Record<string, string> = {};
@@ -104,7 +112,7 @@ export default function SktKontroluPage() {
         expDate: sktValues[item.id] || undefined
       }));
 
-      await saveAllStocks(updatedStock);
+      await saveAllStocks(selectedRegion, updatedStock);
       setIsDirty(false);
       triggerToast("SKT Son Tüketim Tarihleri başarıyla güncellendi!");
       await logUserAction("SKT Tarihleri Güncellendi", "STOK", "Ürünlerin Son Tüketim Tarihleri toplu olarak güncellendi.");
@@ -195,7 +203,7 @@ export default function SktKontroluPage() {
           </div>
           <div>
             <h1 className="font-bold text-lg tracking-tight">SKT Takip Kontrol Paneli</h1>
-            <p className="text-xs text-zinc-500">Ürün Son Tüketim Tarihi ve Kritik Gün Girişi</p>
+            <p className="text-xs text-zinc-500">{selectedRegionName} · Son Tüketim Tarihi Girişleri</p>
           </div>
         </div>
 

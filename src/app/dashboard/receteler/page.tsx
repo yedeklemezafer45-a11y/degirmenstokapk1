@@ -29,6 +29,8 @@ export default function RecetelerPage() {
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
+  const [selectedRegion, setSelectedRegion] = useState("degirmen-kafe");
+  const [selectedRegionName, setSelectedRegionName] = useState("Değirmen Kafe");
 
   const triggerToast = (msg: string) => {
     setToastMessage(msg);
@@ -67,7 +69,23 @@ export default function RecetelerPage() {
       document.documentElement.className = savedTheme;
     }
 
-    setRecipes(mockRecipes);
+    const activeUser = sessionStorage.getItem("activeUser");
+    let activeRegion = "degirmen-kafe";
+    if (activeUser) {
+      const parsed = JSON.parse(activeUser);
+      const reg = parsed.selectedRegion || "degirmen-kafe";
+      activeRegion = reg;
+      setSelectedRegion(reg);
+      setSelectedRegionName(parsed.selectedRegionName || "Değirmen Kafe");
+    }
+
+    const storageKey = activeRegion === "degirmen-kafe" ? "degirmen_recipes" : `degirmen_recipes_${activeRegion}`;
+    const savedRecipes = localStorage.getItem(storageKey);
+    if (savedRecipes) {
+      setRecipes(JSON.parse(savedRecipes));
+    } else {
+      setRecipes(mockRecipes);
+    }
   }, []);
 
   const toggleTheme = () => {
@@ -217,7 +235,7 @@ export default function RecetelerPage() {
           </div>
           <div>
             <h1 className="font-bold text-lg tracking-tight">Bar & Mutfak Ürün Reçeteleri</h1>
-            <p className="text-xs text-zinc-500">Standart Hazırlanış & Gramaj Rehberi</p>
+            <p className="text-xs text-zinc-500">{selectedRegionName} · Standart Hazırlanış & Gramaj Rehberi</p>
           </div>
         </div>
 

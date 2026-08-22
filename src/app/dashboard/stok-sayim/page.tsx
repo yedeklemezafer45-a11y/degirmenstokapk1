@@ -37,6 +37,8 @@ export default function StokSayimPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>("Tümü");
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [selectedRegion, setSelectedRegion] = useState("degirmen-kafe");
+  const [selectedRegionName, setSelectedRegionName] = useState("Değirmen Kafe");
 
   // Sayılan Adet Girişleri (Draft State)
   const [sayilanValues, setSayilanValues] = useState<Record<string, string>>({});
@@ -138,9 +140,14 @@ export default function StokSayimPage() {
     }
 
     const activeUser = sessionStorage.getItem("activeUser");
+    let activeRegion = "degirmen-kafe";
     if (activeUser) {
       const parsed = JSON.parse(activeUser);
       setUserRole(parsed.role || "waiter");
+      const reg = parsed.selectedRegion || "degirmen-kafe";
+      activeRegion = reg;
+      setSelectedRegion(reg);
+      setSelectedRegionName(parsed.selectedRegionName || "Değirmen Kafe");
     }
 
     // Onay kutularını yükleme
@@ -152,6 +159,7 @@ export default function StokSayimPage() {
     // Gerçek zamanlı Firestore dinleyicisi
     setIsLoading(true);
     const unsubscribe = subscribeToStocks(
+      activeRegion,
       (fetchedStocks) => {
         setStockList(fetchedStocks);
 
@@ -428,7 +436,7 @@ export default function StokSayimPage() {
         };
       });
 
-      await saveAllStocks(updatedStock);
+      await saveAllStocks(selectedRegion, updatedStock);
       setStockList(updatedStock);
       setIsDirty(false);
 
@@ -507,7 +515,7 @@ export default function StokSayimPage() {
         stockSnapshot: reportSnapshot
       };
 
-      await saveReport(newArchiveReport);
+      await saveReport(selectedRegion, newArchiveReport);
 
       const resetStock = stockList.map(item => {
         const countedQty = parseFloat(sayilanValues[item.id]) || 0;
@@ -522,7 +530,7 @@ export default function StokSayimPage() {
         };
       });
 
-      await saveAllStocks(resetStock);
+      await saveAllStocks(selectedRegion, resetStock);
       setStockList(resetStock);
       setCheckedItemIds({});
       localStorage.removeItem("degirmen_sayim_checked_ids");
@@ -572,7 +580,7 @@ export default function StokSayimPage() {
           </div>
           <div>
             <h1 className="font-bold text-lg tracking-tight">Fiziki Stok Sayımı & Gramaj / Litre Hesabı</h1>
-            <p className="text-xs text-zinc-500">İşlem Onay Kutusu Destekli · Canlı Takip</p>
+            <p className="text-xs text-zinc-500">{selectedRegionName} · İşlem Onay Kutusu Destekli · Canlı Takip</p>
           </div>
         </div>
 

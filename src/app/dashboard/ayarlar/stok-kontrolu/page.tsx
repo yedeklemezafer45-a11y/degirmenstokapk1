@@ -30,6 +30,8 @@ export default function StokKontroluPage() {
   const [isDirty, setIsDirty] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [selectedRegion, setSelectedRegion] = useState("degirmen-kafe");
+  const [selectedRegionName, setSelectedRegionName] = useState("Değirmen Kafe");
 
   // İşlem Yapılan Ürünlerin Onay Listesi
   const [checkedItemIds, setCheckedItemIds] = useState<Record<string, boolean>>({});
@@ -64,6 +66,7 @@ export default function StokKontroluPage() {
     }
 
     const activeUser = sessionStorage.getItem("activeUser");
+    let activeRegion = "degirmen-kafe";
     if (activeUser) {
       const parsed = JSON.parse(activeUser);
       setUserRole(parsed.role || "waiter");
@@ -71,6 +74,10 @@ export default function StokKontroluPage() {
         window.location.href = "/dashboard";
         return;
       }
+      const reg = parsed.selectedRegion || "degirmen-kafe";
+      activeRegion = reg;
+      setSelectedRegion(reg);
+      setSelectedRegionName(parsed.selectedRegionName || "Değirmen Kafe");
     } else {
       window.location.href = "/";
       return;
@@ -85,6 +92,7 @@ export default function StokKontroluPage() {
     // Gerçek zamanlı Firestore dinleyicisi — tüm kullanıcılarda anlık güncelleme
     setIsLoading(true);
     const unsubscribe = subscribeToStocks(
+      activeRegion,
       (items) => {
         setStockList(items);
         setIsLoading(false);
@@ -139,7 +147,7 @@ export default function StokKontroluPage() {
 
     setIsSaving(true);
     try {
-      await saveStockItem(newItem);
+      await saveStockItem(selectedRegion, newItem);
       setStockList(prev => [newItem, ...prev]);
 
       // Eklenen ürünü onaylı işaretle
@@ -194,7 +202,7 @@ export default function StokKontroluPage() {
 
     setIsSaving(true);
     try {
-      await saveStockItem(updatedItem);
+      await saveStockItem(selectedRegion, updatedItem);
       // onSnapshot otomatik güncelleyecek, manuel setState gerek yok
       setDepoInputs(prev => ({ ...prev, [id]: "" }));
 
@@ -225,7 +233,7 @@ export default function StokKontroluPage() {
 
     setIsSaving(true);
     try {
-      await deleteStockItem(id);
+      await deleteStockItem(selectedRegion, id);
       // local list update will be handled automatically by onSnapshot real-time sync, but let's filter it just in case
       setStockList(prev => prev.filter(item => item.id !== id));
 
@@ -254,7 +262,7 @@ export default function StokKontroluPage() {
   const handleSaveChanges = async () => {
     setIsSaving(true);
     try {
-      await saveAllStocks(stockList);
+      await saveAllStocks(selectedRegion, stockList);
       setIsDirty(false);
 
       await logUserAction(
@@ -308,7 +316,7 @@ export default function StokKontroluPage() {
           </div>
           <div>
             <h1 className="font-bold text-lg tracking-tight">Stok Listesi & Envanter Kontrolü</h1>
-            <p className="text-xs text-zinc-500">İşlem Onay Kutusu Destekli · Ürün Ekle/Sil</p>
+            <p className="text-xs text-zinc-500">{selectedRegionName} · Ürün Ekle / Sil / Limit Düzenle</p>
           </div>
         </div>
 

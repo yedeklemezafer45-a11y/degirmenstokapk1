@@ -32,6 +32,8 @@ export default function StokPage() {
   const [userName, setUserName] = useState<string>("mehmet_barista");
   const [tempInputs, setTempInputs] = useState<Record<string, string>>({}); // Yoneticinin toplu girecegi adetler
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [selectedRegion, setSelectedRegion] = useState("degirmen-kafe");
+  const [selectedRegionName, setSelectedRegionName] = useState("Değirmen Kafe");
 
   const handleSharePage = async () => {
     const shareData = {
@@ -69,14 +71,19 @@ export default function StokPage() {
 
     // Giriş yapan aktif kullanıcıyı bul
     const activeUser = sessionStorage.getItem("activeUser");
+    let activeRegion = "degirmen-kafe";
     if (activeUser) {
       const parsed = JSON.parse(activeUser);
       setUserRole(parsed.role || "waiter");
       setUserName(parsed.username || "mehmet_barista");
+      const reg = parsed.selectedRegion || "degirmen-kafe";
+      activeRegion = reg;
+      setSelectedRegion(reg);
+      setSelectedRegionName(parsed.selectedRegionName || "Değirmen Kafe");
     }
 
     // Gerçek zamanlı Firestore dinleyicisi
-    const unsubscribe = subscribeToStocks((items) => {
+    const unsubscribe = subscribeToStocks(activeRegion, (items) => {
       setStockList(items);
     });
 
@@ -105,7 +112,7 @@ export default function StokPage() {
     };
 
     try {
-      await saveStockItem(updatedItem);
+      await saveStockItem(selectedRegion, updatedItem);
       await logUserAction(
         "Depodan Ürün Alındı",
         "STOK",
@@ -137,7 +144,7 @@ export default function StokPage() {
     };
 
     try {
-      await saveStockItem(updatedItem);
+      await saveStockItem(selectedRegion, updatedItem);
       setTempInputs(prev => ({ ...prev, [id]: "" }));
       await logUserAction(
         "Stoka İlave Yapıldı",
@@ -195,7 +202,7 @@ export default function StokPage() {
             <h1 className="font-bold text-lg tracking-tight">
               {selectedCategory ? `${selectedCategory} Envanteri` : "Stok Kategorileri"}
             </h1>
-            <p className="text-xs text-zinc-500">Değirmen Cafe | Rol: <span className="font-bold text-orange-500 uppercase">{userRole}</span></p>
+            <p className="text-xs text-zinc-500">{selectedRegionName} | Rol: <span className="font-bold text-orange-500 uppercase">{userRole}</span></p>
           </div>
         </div>
 

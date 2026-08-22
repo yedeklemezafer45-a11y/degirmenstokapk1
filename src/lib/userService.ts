@@ -8,6 +8,19 @@ import {
   deleteDoc
 } from "firebase/firestore";
 
+export interface BranchRegion {
+  id: string;
+  name: string;
+}
+
+export const BRANCH_REGIONS: BranchRegion[] = [
+  { id: "degirmen-kafe", name: "Değirmen Kafe" },
+  { id: "13-eylul-vargel-kafe", name: "13 Eylül Vargel Kafe" },
+  { id: "millet-bahcesi-vargel-kafe", name: "Millet Bahçesi Vargel Kafe" },
+  { id: "vargel-karavan", name: "Vargel Karavan" },
+  { id: "vargel-kitap-kafe", name: "Vargel Kitap Kafe" }
+];
+
 export interface FirestoreUser {
   username: string;
   name: string;
@@ -15,6 +28,7 @@ export interface FirestoreUser {
   password: string;
   allowedMenus?: string[];
   mustChangePassword?: boolean;
+  allowedRegions?: string[];
 }
 
 const USERS_COL = "users";

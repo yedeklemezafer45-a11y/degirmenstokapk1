@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { getAnnouncement, Announcement } from "@/lib/announcementService";
 import { subscribeToStocks } from "@/lib/stockService";
+import { BRANCH_REGIONS } from "@/lib/userService";
 import { useRouter } from "next/navigation";
 
 export default function DashboardPage() {
@@ -28,6 +29,12 @@ export default function DashboardPage() {
   const [userRole, setUserRole] = useState<string>("waiter");
   const [userFullName, setUserFullName] = useState<string>("Personel");
   const [allowedMenus, setAllowedMenus] = useState<string[] | null>(null);
+
+  // Bölge State'leri
+  const [selectedRegion, setSelectedRegion] = useState("degirmen-kafe");
+  const [selectedRegionName, setSelectedRegionName] = useState("Değirmen Kafe");
+  const [allowedRegions, setAllowedRegions] = useState<string[] | null>(null);
+  const [showRegionSwitcher, setShowRegionSwitcher] = useState(false);
 
   const [timeStr, setTimeStr] = useState("");
   const [dateStr, setDateStr] = useState("");
@@ -65,6 +72,23 @@ export default function DashboardPage() {
     }
   };
 
+  const handleSwitchRegion = (regionId: string) => {
+    const activeUser = sessionStorage.getItem("activeUser");
+    if (activeUser) {
+      const parsed = JSON.parse(activeUser);
+      const regionName = BRANCH_REGIONS.find(r => r.id === regionId)?.name || regionId;
+      
+      const updatedUser = {
+        ...parsed,
+        selectedRegion: regionId,
+        selectedRegionName: regionName
+      };
+      
+      sessionStorage.setItem("activeUser", JSON.stringify(updatedUser));
+      window.location.reload();
+    }
+  };
+
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme") as "light" | "dark" | null;
     if (savedTheme) {
@@ -74,11 +98,18 @@ export default function DashboardPage() {
 
     // Giriş yapan kullanıcının bilgilerini al
     const activeUser = sessionStorage.getItem("activeUser");
+    let activeRegion = "degirmen-kafe";
     if (activeUser) {
       const parsed = JSON.parse(activeUser);
       setUserRole(parsed.role || "waiter");
       setUserFullName(parsed.fullName || parsed.name || parsed.username || "Personel");
       setAllowedMenus(parsed.allowedMenus || null);
+      
+      const reg = parsed.selectedRegion || "degirmen-kafe";
+      activeRegion = reg;
+      setSelectedRegion(reg);
+      setSelectedRegionName(parsed.selectedRegionName || "Değirmen Kafe");
+      setAllowedRegions(parsed.allowedRegions || null);
     }
 
     // Gerçek zamanlı saat ve tarih güncelleyici
@@ -101,7 +132,7 @@ export default function DashboardPage() {
     getAnnouncement().then(setAnnouncement);
 
     // Gerçek zamanlı Firestore stok analizi (kritik limit + SKT)
-    const unsubscribe = subscribeToStocks((currentStock) => {
+    const unsubscribe = subscribeToStocks(activeRegion, (currentStock) => {
       const critCount = currentStock.filter(item => item.quantity <= item.minLimit).length;
       setCriticalCount(critCount);
 
@@ -149,8 +180,9 @@ export default function DashboardPage() {
 
   const [showNotifDropdown, setShowNotifDropdown] = useState(false);
 
-  // Aylık Stok Takibi yetkisini admin veya yoneticiye verelim
+  // Tüm Şube Stokları ve Aylık Stok Takibi yetkisini admin veya yoneticiye verelim
   if (userRole === "admin" || userRole === "yonetici") {
+    modules.push({ label: "Tüm Şube Stokları", active: true, path: "/dashboard/tum-bolgeler-stok" });
     modules.push({ label: "Aylık Stok Takibi", active: true, path: "/dashboard/aylik-stok-takibi" });
   }
 
@@ -175,9 +207,21 @@ export default function DashboardPage() {
         {/* Sol Taraf: Marka */}
         <div className="flex items-center gap-3 w-1/2">
           <div>
-            <h1 className="font-black text-base tracking-tight leading-none text-[var(--foreground)]">Değirmen Cafe</h1>
-            <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest mt-1 block">Kontrol Paneli</span>
+            <h1 className="font-black text-base tracking-tight leading-none text-[var(--foreground)]">
+              {selectedRegionName}
+            </h1>
+            <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest mt-1.5 block">Kontrol Paneli</span>
           </div>
+
+          {/* Bölge Değiştirici Buton */}
+          {(userRole === "admin" || userRole === "yonetici" || (allowedRegions && allowedRegions.length > 1)) && (
+            <button
+              onClick={() => setShowRegionSwitcher(true)}
+              className="ml-2 px-3 py-1.5 bg-orange-600 hover:bg-orange-700 text-white text-[10px] font-extrabold rounded-lg shadow-md transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer uppercase tracking-wider"
+            >
+              Bölge Değiştir
+            </button>
+          )}
         </div>
 
         {/* Sağ Taraf: Aksiyon Butonları, Saat Dilimi & Çıkış */}
@@ -515,6 +559,63 @@ export default function DashboardPage() {
           <span>© 2026 Değirmen Cafe. Tüm hakları saklıdır.</span>
         </div>
       </footer>
+
+      {/* Bölge Değiştirici Modalı */}
+      {showRegionSwitcher && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fadeIn">
+          <div className="w-full max-w-[440px] bg-[var(--card)] border border-[var(--border)] rounded-[2.5rem] p-8 shadow-2xl relative space-y-6">
+            
+            {/* Kapat Butonu */}
+            <button
+              onClick={() => setShowRegionSwitcher(false)}
+              className="absolute top-5 right-5 p-1.5 rounded-full hover:bg-[var(--foreground)]/10 text-zinc-400 hover:text-[var(--foreground)] cursor-pointer transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="text-center space-y-2">
+              <h2 className="text-lg font-black tracking-tight text-[var(--foreground)]">Aktif Çalışma Bölgesi</h2>
+              <p className="text-xs text-zinc-500">
+                Geçiş yapmak istediğiniz şubeyi seçin. Stok verileriniz seçilen şubeye göre filtrelenecektir.
+              </p>
+            </div>
+
+            <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1 no-scrollbar">
+              {(() => {
+                let userRegions = BRANCH_REGIONS;
+                if (allowedRegions && allowedRegions.length > 0 && userRole !== "admin" && userRole !== "yonetici") {
+                  userRegions = BRANCH_REGIONS.filter(r => allowedRegions.includes(r.id));
+                }
+                return userRegions.map((region) => {
+                  const isCurrent = region.id === selectedRegion;
+                  return (
+                    <button
+                      key={region.id}
+                      disabled={isCurrent}
+                      onClick={() => handleSwitchRegion(region.id)}
+                      className={`w-full text-left p-4 rounded-2xl border transition-all duration-300 flex items-center justify-between group ${
+                        isCurrent 
+                          ? "bg-orange-500/10 border-orange-500/35 text-orange-400 cursor-not-allowed" 
+                          : "bg-[var(--background)]/40 border-[var(--border)] text-zinc-300 hover:bg-orange-500/5 hover:border-orange-500/20 hover:text-orange-400 cursor-pointer hover:-translate-y-0.5"
+                      }`}
+                    >
+                      <div>
+                        <span className="text-xs font-bold block">{region.name}</span>
+                        <span className="text-[9px] text-zinc-500">{isCurrent ? "Şu Anki Aktif Şubeniz" : "Geçiş Yapmak İçin Tıklayın"}</span>
+                      </div>
+                      {!isCurrent && (
+                        <div className="w-7 h-7 rounded-lg bg-[var(--foreground)]/5 group-hover:bg-orange-500/20 flex items-center justify-center text-zinc-500 group-hover:text-orange-400 transition-all">
+                          →
+                        </div>
+                      )}
+                    </button>
+                  );
+                });
+              })()}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Toast Bildirim */}
       {toastMessage && (

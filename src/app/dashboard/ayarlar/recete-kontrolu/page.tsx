@@ -29,6 +29,8 @@ export default function ReceteKontroluPage() {
   const [stockOptions, setStockOptions] = useState<StockItem[]>([]);
   const [userRole, setUserRole] = useState<string>("waiter");
   const [isDirty, setIsDirty] = useState(false);
+  const [selectedRegion, setSelectedRegion] = useState("degirmen-kafe");
+  const [selectedRegionName, setSelectedRegionName] = useState("Değirmen Kafe");
 
   // Arama & Kategori Filtreleme
   const [searchQuery, setSearchQuery] = useState("");
@@ -65,18 +67,24 @@ export default function ReceteKontroluPage() {
 
     // Rol Kontrolü
     const activeUser = sessionStorage.getItem("activeUser");
+    let activeRegion = "degirmen-kafe";
     if (activeUser) {
       const parsed = JSON.parse(activeUser);
       setUserRole(parsed.role || "waiter");
       if (parsed.role !== "admin") {
         window.location.href = "/dashboard";
       }
+      const reg = parsed.selectedRegion || "degirmen-kafe";
+      activeRegion = reg;
+      setSelectedRegion(reg);
+      setSelectedRegionName(parsed.selectedRegionName || "Değirmen Kafe");
     } else {
       window.location.href = "/";
     }
 
     // Gerçek zamanlı Firestore dinleyicisi ile stok seçeneklerini yükle
     const unsubscribe = subscribeToStocks(
+      activeRegion,
       (items) => {
         setStockOptions(items);
       },
@@ -86,7 +94,8 @@ export default function ReceteKontroluPage() {
     );
 
     // Reçeteleri yükle
-    const savedRecipes = localStorage.getItem("degirmen_recipes");
+    const storageKey = activeRegion === "degirmen-kafe" ? "degirmen_recipes" : `degirmen_recipes_${activeRegion}`;
+    const savedRecipes = localStorage.getItem(storageKey);
     if (savedRecipes) {
       setRecipesList(JSON.parse(savedRecipes));
       setDbRecipesList(JSON.parse(savedRecipes));
@@ -187,9 +196,10 @@ export default function ReceteKontroluPage() {
 
   // Yapılan Değişiklikleri Kaydet (Tüm kategoriler için toplu sisteme yansıtır)
   const handleSaveChanges = () => {
-    localStorage.setItem("degirmen_recipes", JSON.stringify(recipesList));
+    const storageKey = selectedRegion === "degirmen-kafe" ? "degirmen_recipes" : `degirmen_recipes_${selectedRegion}`;
+    localStorage.setItem(storageKey, JSON.stringify(recipesList));
     // Eşzamanlılığı korumak için sayfalardaki reset bayrağını da tazeleyelim
-    localStorage.setItem("degirmen_recipes_reset_03", "true");
+    localStorage.setItem(`degirmen_recipes_reset_03_${selectedRegion}`, "true");
     setDbRecipesList(recipesList);
     setIsDirty(false);
     triggerToast("Tüm değişiklikler başarıyla veritabanına kaydedildi!");
@@ -227,7 +237,7 @@ export default function ReceteKontroluPage() {
           </div>
           <div>
             <h1 className="font-bold text-lg tracking-tight">Reçeteler Listesi Kontrolü</h1>
-            <p className="text-xs text-zinc-500">Reçete Ekleme, Düzenleme ve Silme Paneli</p>
+            <p className="text-xs text-zinc-500">{selectedRegionName} · Reçete Ekleme, Düzenleme ve Silme Paneli</p>
           </div>
         </div>
 

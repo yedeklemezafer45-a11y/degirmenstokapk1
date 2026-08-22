@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Eye, EyeOff, Moon, Sun, X, Mail, CheckCircle2, AlertCircle, Info } from "lucide-react";
-import { getUserByUsername, getAllUsers } from "@/lib/userService";
+import { getUserByUsername, getAllUsers, BRANCH_REGIONS } from "@/lib/userService";
 import { logUserAction } from "@/lib/auditLogService";
 
 // Toast Bildirim Tipi
@@ -26,6 +26,11 @@ export default function LoginPage() {
   const [confirmPassVal, setConfirmPassVal] = useState("");
   const [isResetLoading, setIsResetLoading] = useState(false);
   const [showNewPass, setShowNewPass] = useState(false);
+
+  // Bölge Seçim Modalı/Adımı State'leri
+  const [showRegionSelect, setShowRegionSelect] = useState(false);
+  const [regionUser, setRegionUser] = useState<any>(null);
+  const [availableRegions, setAvailableRegions] = useState<any[]>([]);
 
   // Şifremi Unuttum Modalı
   const [isForgotOpen, setIsForgotOpen] = useState(false);
@@ -89,24 +94,17 @@ export default function LoginPage() {
           return;
         }
 
-        // Oturumu sessionStorage'e kaydet (tema/aktif kullanıcı bilgisi)
-        sessionStorage.setItem("activeUser", JSON.stringify({
-          username: user.username,
-          role: user.role,
-          fullName: user.name,
-          allowedMenus: user.allowedMenus || null
-        }));
+        // Bölge seçim adımını başlat!
+        setRegionUser(user);
         
-        await logUserAction(
-          "Sisteme Giriş Yapıldı",
-          "GIRIS",
-          `@${user.username} (${user.name}) kullanıcı adıyla sisteme başarıyla giriş yapıldı.`
-        );
-
-        showToast(`Hoşgeldiniz, ${user.name}! Giriş Başarılı.`, "success");
-        setTimeout(() => {
-          window.location.href = "/dashboard";
-        }, 1000);
+        let userRegions = BRANCH_REGIONS;
+        if (user.allowedRegions && user.allowedRegions.length > 0) {
+          userRegions = BRANCH_REGIONS.filter(r => user.allowedRegions!.includes(r.id));
+        }
+        
+        setAvailableRegions(userRegions);
+        setShowRegionSelect(true);
+        setIsLoading(false);
       } else {
         showToast("Hatalı kullanıcı adı veya şifre!", "error");
       }
@@ -116,6 +114,35 @@ export default function LoginPage() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleSelectRegion = async (regionId: string) => {
+    if (!regionUser) return;
+    setIsLoading(true);
+
+    const regionName = BRANCH_REGIONS.find(r => r.id === regionId)?.name || regionId;
+
+    sessionStorage.setItem("activeUser", JSON.stringify({
+      username: regionUser.username,
+      role: regionUser.role,
+      fullName: regionUser.name,
+      allowedMenus: regionUser.allowedMenus || null,
+      allowedRegions: regionUser.allowedRegions || null,
+      selectedRegion: regionId,
+      selectedRegionName: regionName
+    }));
+
+    await logUserAction(
+      "Sisteme Giriş Yapıldı",
+      "GIRIS",
+      `@${regionUser.username} (${regionUser.name}) kullanıcısı ${regionName} bölgesini seçerek sisteme girdi.`
+    );
+
+    showToast(`Hoşgeldiniz, ${regionUser.name}! Giriş Başarılı (${regionName}).`, "success");
+    setShowRegionSelect(false);
+    setTimeout(() => {
+      window.location.href = "/dashboard";
+    }, 1000);
   };
 
   // Google ile Giriş Simülasyonu (Modern Modal)
@@ -136,17 +163,16 @@ export default function LoginPage() {
       );
 
       if (user) {
-        sessionStorage.setItem("activeUser", JSON.stringify({
-          username: user.username,
-          role: user.role,
-          fullName: user.name
-        }));
-
-        showToast(`Google ile giriş başarılı! Hoşgeldiniz, ${user.name}`, "success");
+        setRegionUser(user);
+        
+        let userRegions = BRANCH_REGIONS;
+        if (user.allowedRegions && user.allowedRegions.length > 0) {
+          userRegions = BRANCH_REGIONS.filter(r => user.allowedRegions!.includes(r.id));
+        }
+        
+        setAvailableRegions(userRegions);
+        setShowRegionSelect(true);
         setGoogleEmail("");
-        setTimeout(() => {
-          window.location.href = "/dashboard";
-        }, 1000);
       } else {
         showToast("Bu Google hesabı sistemde kayıtlı değil!", "error");
       }
@@ -496,6 +522,55 @@ export default function LoginPage() {
                 Devam Et
               </button>
             </form>
+          </div>
+        </div>
+      )}
+      {/* Bölge Seçim Modalı */}
+      {showRegionSelect && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fadeIn">
+          <div className="w-full max-w-[440px] bg-[var(--card)] border border-[var(--border)] rounded-[2.5rem] p-8 shadow-2xl relative space-y-6">
+            
+            {/* Kapat Butonu */}
+            <button
+              onClick={() => {
+                setShowRegionSelect(false);
+                setRegionUser(null);
+              }}
+              className="absolute top-5 right-5 p-1.5 rounded-full hover:bg-[var(--foreground)]/10 text-zinc-400 hover:text-[var(--foreground)] cursor-pointer transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="text-center space-y-2">
+              <div className="w-16 h-16 mx-auto flex items-center justify-center">
+                <img src="/logo.png" alt="Değirmen Logo" className="w-full h-full object-contain" />
+              </div>
+              <h2 className="text-lg font-black tracking-tight text-[var(--foreground)]">Çalışma Bölgesi Seçin</h2>
+              <p className="text-xs text-zinc-500">
+                Giriş yapacağınız şubeyi seçerek envanter ve reçete işlemlerini başlatın.
+              </p>
+            </div>
+
+            <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1 no-scrollbar">
+              {availableRegions.map((region) => (
+                <button
+                  key={region.id}
+                  onClick={() => handleSelectRegion(region.id)}
+                  className="w-full text-left p-4 rounded-2xl border border-[var(--border)] bg-[var(--background)]/40 hover:bg-orange-500/10 hover:border-orange-500/30 text-zinc-300 hover:text-orange-400 transition-all duration-300 hover:-translate-y-0.5 cursor-pointer flex items-center justify-between group"
+                >
+                  <div>
+                    <span className="text-xs font-bold block">{region.name}</span>
+                    <span className="text-[9px] text-zinc-500 group-hover:text-orange-500/80">Envanter & Reçete Yönetimi</span>
+                  </div>
+                  <div className="w-7 h-7 rounded-lg bg-[var(--foreground)]/5 group-hover:bg-orange-500/20 flex items-center justify-center text-zinc-500 group-hover:text-orange-400 transition-all">
+                    →
+                  </div>
+                </button>
+              ))}
+              {availableRegions.length === 0 && (
+                <p className="text-xs text-zinc-500 italic text-center py-4">Bu kullanıcı için atanmış yetkili bölge bulunmuyor.</p>
+              )}
+            </div>
           </div>
         </div>
       )}

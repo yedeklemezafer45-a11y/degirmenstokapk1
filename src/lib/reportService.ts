@@ -18,25 +18,33 @@ export interface MonthlyReportArchive {
   stockSnapshot: any[];
 }
 
-const REPORTS_COL = "monthly_reports";
+export function getReportsCollectionPath(regionId: string): string {
+  if (!regionId || regionId === "degirmen-kafe") {
+    return "monthly_reports";
+  }
+  return `regions/${regionId}/monthly_reports`;
+}
 
 // Tüm Arşiv Raporlarını Getir
-export async function getAllReports(): Promise<MonthlyReportArchive[]> {
+export async function getAllReports(regionId: string): Promise<MonthlyReportArchive[]> {
+  const path = getReportsCollectionPath(regionId);
   try {
-    const snapshot = await getDocs(collection(db, REPORTS_COL));
+    const snapshot = await getDocs(collection(db, path));
     return snapshot.docs.map(d => d.data() as MonthlyReportArchive);
   } catch (err) {
-    console.error("getAllReports hatası:", err);
+    console.error(`getAllReports (${regionId}) hatası:`, err);
     return [];
   }
 }
 
 // Rapor Kaydet
-export async function saveReport(report: MonthlyReportArchive): Promise<void> {
-  await setDoc(doc(db, REPORTS_COL, report.id), report);
+export async function saveReport(regionId: string, report: MonthlyReportArchive): Promise<void> {
+  const path = getReportsCollectionPath(regionId);
+  await setDoc(doc(db, path, report.id), report);
 }
 
 // Rapor Sil
-export async function removeReport(reportId: string): Promise<void> {
-  await deleteDoc(doc(db, REPORTS_COL, reportId));
+export async function removeReport(regionId: string, reportId: string): Promise<void> {
+  const path = getReportsCollectionPath(regionId);
+  await deleteDoc(doc(db, path, reportId));
 }

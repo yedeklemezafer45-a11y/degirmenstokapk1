@@ -34,6 +34,8 @@ export default function AylikStokTakibiPage() {
   const [archivedReports, setArchivedReports] = useState<MonthlyReportArchive[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [selectedRegion, setSelectedRegion] = useState("degirmen-kafe");
+  const [selectedRegionName, setSelectedRegionName] = useState("Değirmen Kafe");
   
   // Toast Bildirim
   const [showToast, setShowToast] = useState(false);
@@ -78,6 +80,7 @@ export default function AylikStokTakibiPage() {
 
     // Rol Kontrolü
     const activeUser = sessionStorage.getItem("activeUser");
+    let activeRegion = "degirmen-kafe";
     if (activeUser) {
       const parsed = JSON.parse(activeUser);
       setUserRole(parsed.role || "waiter");
@@ -85,16 +88,21 @@ export default function AylikStokTakibiPage() {
         window.location.href = "/dashboard";
         return;
       }
+      const reg = parsed.selectedRegion || "degirmen-kafe";
+      activeRegion = reg;
+      setSelectedRegion(reg);
+      setSelectedRegionName(parsed.selectedRegionName || "Değirmen Kafe");
     } else {
       window.location.href = "/";
       return;
     }
 
-    loadReports();
+    loadReports(activeRegion);
 
     // Gerçek zamanlı Firestore stok dinleyicisi — anlık güncelleme
     setIsLoading(true);
     const unsubscribe = subscribeToStocks(
+      activeRegion,
       (fetchedStocks) => {
         setStockList(fetchedStocks);
         setIsLoading(false);
@@ -108,9 +116,10 @@ export default function AylikStokTakibiPage() {
     return () => unsubscribe();
   }, []);
 
-  const loadReports = async () => {
+  const loadReports = async (regId?: string) => {
     try {
-      const fetchedReports = await getAllReports();
+      const targetRegion = typeof regId === "string" ? regId : selectedRegion;
+      const fetchedReports = await getAllReports(targetRegion);
       setArchivedReports(fetchedReports);
     } catch (err) {
       console.error("Rapor okuma hatası:", err);
@@ -149,7 +158,7 @@ export default function AylikStokTakibiPage() {
     if (!window.confirm("Bu arşivlenmiş raporu silmek istediğinize emin misiniz?")) return;
     setIsSaving(true);
     try {
-      await removeReport(id);
+      await removeReport(selectedRegion, id);
       setArchivedReports(prev => prev.filter(r => r.id !== id));
       triggerToast("Arşiv raporu silindi.");
     } catch (err) {
@@ -184,7 +193,7 @@ export default function AylikStokTakibiPage() {
           </div>
           <div>
             <h1 className="font-bold text-lg tracking-tight">Aylık Stok Takip & Karşılaştırma Raporları</h1>
-            <p className="text-xs text-zinc-500">Firestore Bulut Veritabanı · Anlık Canlı Takip</p>
+            <p className="text-xs text-zinc-500">{selectedRegionName} · Firestore Bulut Veritabanı</p>
           </div>
         </div>
 
@@ -249,7 +258,7 @@ export default function AylikStokTakibiPage() {
               </div>
 
               <button
-                onClick={loadReports}
+                onClick={() => loadReports()}
                 disabled={isLoading}
                 className="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-zinc-200 font-semibold cursor-pointer"
               >
