@@ -141,11 +141,13 @@ export default function TumBolgelerStokPage() {
       });
     });
 
-    return Object.values(itemMap).filter(item => {
-      const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesCategory = selectedCategory === "Tümü" || item.category === selectedCategory;
-      return matchesSearch && matchesCategory;
-    });
+    return Object.values(itemMap)
+      .filter(item => {
+        const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesCategory = selectedCategory === "Tümü" || item.category === selectedCategory;
+        return matchesSearch && matchesCategory;
+      })
+      .sort((a, b) => a.name.localeCompare(b.name, "tr"));
   };
 
   const uniqueItems = getUniqueItemKeys();

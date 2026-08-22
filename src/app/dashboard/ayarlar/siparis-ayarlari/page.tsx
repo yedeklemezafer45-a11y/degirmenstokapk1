@@ -329,8 +329,12 @@ export default function SiparisAyarlariPage() {
                   <option value="Litrelik Ürünler">Litrelik Ürünler</option>
                   <option value="Yan Ürünler">Yan Ürünler</option>
                   <option value="Kutu Ve Plastik Ürünler">Kutu Ve Plastik Ürünler</option>
-                  <option value="Soft İçecek Ürünleri">Soft İçecek Ürünleri</option>
-                  <option value="Pastalar">Pastalar</option>
+                  {selectedRegion !== "degirmen-kafe" && (
+                    <>
+                      <option value="Soft İçecek Ürünleri">Soft İçecek Ürünleri</option>
+                      <option value="Pastalar">Pastalar</option>
+                    </>
+                  )}
                 </select>
               </div>
 
