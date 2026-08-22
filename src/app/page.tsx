@@ -253,13 +253,16 @@ export default function LoginPage() {
 
       await saveUser(updatedUser);
 
-      // Başarılı güncelleme sonrası giriş işlemini tamamla
-      sessionStorage.setItem("activeUser", JSON.stringify({
-        username: updatedUser.username,
-        role: updatedUser.role,
-        fullName: updatedUser.name,
-        allowedMenus: updatedUser.allowedMenus || null
-      }));
+      // Başarılı şifre güncelleme sonrası bölge seçimine sokalım
+      setRegionUser(updatedUser);
+      
+      let userRegions = BRANCH_REGIONS;
+      if (updatedUser.allowedRegions && updatedUser.allowedRegions.length > 0) {
+        userRegions = BRANCH_REGIONS.filter(r => updatedUser.allowedRegions!.includes(r.id));
+      }
+      
+      setAvailableRegions(userRegions);
+      setShowRegionSelect(true);
 
       await logUserAction(
         "İlk Giriş Şifresi Değiştirildi",
@@ -267,12 +270,8 @@ export default function LoginPage() {
         `@${updatedUser.username} (${updatedUser.name}) ilk girişte şifresini başarıyla güncelledi.`
       );
 
-      showToast("Şifreniz başarıyla güncellendi! Giriş yapılıyor...", "success");
+      showToast("Şifreniz başarıyla güncellendi! Şimdi şubenizi seçin.", "success");
       setTempResetUser(null);
-      
-      setTimeout(() => {
-        window.location.href = "/dashboard";
-      }, 1000);
     } catch (err) {
       console.error("Şifre güncelleme hatası:", err);
       showToast("Şifre güncellenirken hata oluştu!", "error");
