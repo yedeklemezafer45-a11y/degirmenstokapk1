@@ -37,11 +37,37 @@ export async function seedDefaultStocksForRegion(regionId: string): Promise<void
       depodaBulunan: 0,
       depodanAlinan: 0,
       quantity: 0,
-      expDate: ""
+      expDate: "",
+      orderable: true
     };
     batch.set(itemRef, seedItem);
   }
   await batch.commit();
+}
+
+// Eksik varsayılan ürünleri Firestore'a yükle (Yeni kategori/ürün güncellemeleri için)
+export async function ensureAllDefaultStocksExist(regionId: string, currentItems: StockItem[]): Promise<void> {
+  const currentIds = new Set(currentItems.map(i => i.id));
+  const missingItems = mockStockItems.filter(item => !currentIds.has(item.id));
+  
+  if (missingItems.length > 0) {
+    console.log(`Region ${regionId} has ${missingItems.length} missing items. Seeding them...`);
+    const path = getStocksCollectionPath(regionId);
+    const batch = writeBatch(db);
+    for (const item of missingItems) {
+      const itemRef = doc(db, path, item.id);
+      const seedItem: StockItem = {
+        ...item,
+        depodaBulunan: 0,
+        depodanAlinan: 0,
+        quantity: 0,
+        expDate: "",
+        orderable: true
+      };
+      batch.set(itemRef, seedItem);
+    }
+    await batch.commit();
+  }
 }
 
 // Tüm Stokları Getir (tek seferlik)
@@ -54,7 +80,9 @@ export async function getAllStocks(regionId: string): Promise<StockItem[]> {
       const freshSnap = await getDocs(collection(db, path));
       return freshSnap.docs.map(d => d.data() as StockItem);
     }
-    return snapshot.docs.map(d => d.data() as StockItem);
+    const items = snapshot.docs.map(d => d.data() as StockItem);
+    await ensureAllDefaultStocksExist(regionId, items);
+    return items;
   } catch (err) {
     console.error(`getAllStocks (${regionId}) hatası:`, err);
     return mockStockItems;
@@ -80,7 +108,10 @@ export function subscribeToStocks(
         return;
       }
       const items = snapshot.docs.map(d => d.data() as StockItem);
-      callback(items);
+      // Arka planda eksik olanları ekle
+      ensureAllDefaultStocksExist(regionId, items).then(() => {
+        callback(items);
+      });
     },
     (error) => {
       console.error(`subscribeToStocks (${regionId}) hatası:`, error);
