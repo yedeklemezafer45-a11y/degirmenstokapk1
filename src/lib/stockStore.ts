@@ -8,7 +8,9 @@ export type StockCategory =
   | "Ek Ürünler"
   | "Litrelik Ürünler"
   | "Yan Ürünler"
-  | "Kutu Ve Plastik Ürünler";
+  | "Kutu Ve Plastik Ürünler"
+  | "Soft İçecek Ürünleri"
+  | "Pastalar";
 
 export interface StockItem {
   id: string;
@@ -114,5 +116,32 @@ export const mockStockItems: StockItem[] = [
   { id: "ex2", name: "HM-CİCİ BEBE", category: "Ek Ürünler", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Kutu", minLimit: 2, price: 65, weightInfo: "0.700 kg" },
   { id: "ex3", name: "HM-KATLA BALLA SÜZME ÇİÇEK BALI (STİCK)", category: "Ek Ürünler", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Kutu", minLimit: 50, price: 3.5, weightInfo: "Kutu: 0.800 kg (120 Adet x 7g)" },
   { id: "ex4", name: "HM-KÜP ŞEKER", category: "Ek Ürünler", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Kutu", minLimit: 3, price: 80, weightInfo: "1.000 kg" },
-  { id: "ex5", name: "HM-LOTUS BİSCOFF SPREAD SÜRÜLEBİLİR BİSKÜVİ EZMESİ", category: "Ek Ürünler", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Kavanoz", minLimit: 1, price: 160, weightInfo: "1.600 kg" }
+  { id: "ex5", name: "HM-LOTUS BİSCOFF SPREAD SÜRÜLEBİLİR BİSKÜVİ EZMESİ", category: "Ek Ürünler", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Kavanoz", minLimit: 1, price: 160, weightInfo: "1.600 kg" },
+
+  // SOFT İÇECEK ÜRÜNLERİ
+  { id: "soft1", name: "HM-SU", category: "Soft İçecek Ürünleri", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Adet", minLimit: 10, price: 10, weightInfo: "0.500 Lt" },
+  { id: "soft2", name: "HM-FANTA", category: "Soft İçecek Ürünleri", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Adet", minLimit: 10, price: 30, weightInfo: "0.330 Lt" },
+  { id: "soft3", name: "HM-COCA COLA", category: "Soft İçecek Ürünleri", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Adet", minLimit: 10, price: 30, weightInfo: "0.330 Lt" },
+  { id: "soft4", name: "HM-COCA COLA ZERO", category: "Soft İçecek Ürünleri", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Adet", minLimit: 10, price: 30, weightInfo: "0.330 Lt" },
+  { id: "soft5", name: "HM-SPRİTE", category: "Soft İçecek Ürünleri", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Adet", minLimit: 10, price: 30, weightInfo: "0.330 Lt" },
+  { id: "soft6", name: "HM-LİPTON ICE TEA ŞEFTALİ", category: "Soft İçecek Ürünleri", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Adet", minLimit: 10, price: 30, weightInfo: "0.330 Lt" },
+  { id: "soft7", name: "HM-LİPTON ICE TEA MANGO", category: "Soft İçecek Ürünleri", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Adet", minLimit: 10, price: 30, weightInfo: "0.330 Lt" },
+  { id: "soft8", name: "HM-LİPTON ICE TEA KARPUZ ÇİLEK", category: "Soft İçecek Ürünleri", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Adet", minLimit: 10, price: 30, weightInfo: "0.330 Lt" },
+  { id: "soft9", name: "HM-MEYVE SUYU ŞEFTALİ", category: "Soft İçecek Ürünleri", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Adet", minLimit: 10, price: 25, weightInfo: "0.200 Lt" },
+  { id: "soft10", name: "HM-MEYVE SUYU VİŞNE", category: "Soft İçecek Ürünleri", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Adet", minLimit: 10, price: 25, weightInfo: "0.200 Lt" },
+  { id: "soft11", name: "HM-MEYVE SUYU KARIŞIK", category: "Soft İçecek Ürünleri", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Adet", minLimit: 10, price: 25, weightInfo: "0.200 Lt" },
+  { id: "soft12", name: "HM-MEYVELİ SODA LİMON", category: "Soft İçecek Ürünleri", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Adet", minLimit: 10, price: 20, weightInfo: "0.200 Lt" },
+  { id: "soft13", name: "HM-MEYVELİ SODA ELMA", category: "Soft İçecek Ürünleri", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Adet", minLimit: 10, price: 20, weightInfo: "0.200 Lt" },
+  { id: "soft14", name: "HM-MEYVELİ SODA KARPUZ ÇİLEK", category: "Soft İçecek Ürünleri", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Adet", minLimit: 10, price: 20, weightInfo: "0.200 Lt" },
+  { id: "soft15", name: "HM-SADE SODA", category: "Soft İçecek Ürünleri", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Adet", minLimit: 10, price: 15, weightInfo: "0.200 Lt" },
+
+  // PASTALAR
+  { id: "cake1", name: "HM-LATTE KARE PASTA", category: "Pastalar", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Adet", minLimit: 5, price: 100, weightInfo: "1 Dilim" },
+  { id: "cake2", name: "HM-FRAMBUAZ CHESECAKE", category: "Pastalar", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Adet", minLimit: 5, price: 100, weightInfo: "1 Dilim" },
+  { id: "cake3", name: "HM-TRAMİSU", category: "Pastalar", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Adet", minLimit: 5, price: 100, weightInfo: "1 Dilim" },
+  { id: "cake4", name: "HM-LİMONLU CHESECAKE", category: "Pastalar", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Adet", minLimit: 5, price: 100, weightInfo: "1 Dilim" },
+  { id: "cake5", name: "HM-DEVİLS PASTA", category: "Pastalar", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Adet", minLimit: 5, price: 100, weightInfo: "1 Dilim" },
+  { id: "cake6", name: "HM-MAGNOLYA LOTUS", category: "Pastalar", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Adet", minLimit: 5, price: 80, weightInfo: "1 Adet" },
+  { id: "cake7", name: "HM-MAGNOLYA YABAN MERSİNLİ", category: "Pastalar", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Adet", minLimit: 5, price: 80, weightInfo: "1 Adet" },
+  { id: "cake8", name: "HM-MAGNOLYA ORMAN MEYVELİ", category: "Pastalar", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Adet", minLimit: 5, price: 80, weightInfo: "1 Adet" }
 ];

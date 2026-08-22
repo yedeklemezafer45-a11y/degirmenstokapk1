@@ -420,6 +420,8 @@ export default function StokKontroluPage() {
                 <option value="Yan Ürünler">Yan Ürünler</option>
                 <option value="Çay Ve Bitki Çayları">Çay Ve Bitki Çayları</option>
                 <option value="Kutu Ve Plastik Ürünler">Kutu Ve Plastik Ürünler</option>
+                <option value="Soft İçecek Ürünleri">Soft İçecek Ürünleri</option>
+                <option value="Pastalar">Pastalar</option>
               </select>
             </div>
 
