@@ -7,7 +7,8 @@ export type StockCategory =
   | "Toz Grubu"
   | "Ek Ürünler"
   | "Litrelik Ürünler"
-  | "Yan Ürünler";
+  | "Yan Ürünler"
+  | "Kutu Ve Plastik Ürünler";
 
 export interface StockItem {
   id: string;

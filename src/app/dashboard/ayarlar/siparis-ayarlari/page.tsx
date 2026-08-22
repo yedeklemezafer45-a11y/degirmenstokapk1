@@ -97,6 +97,19 @@ export default function SiparisAyarlariPage() {
     return () => unsubscribe();
   }, []);
 
+  // Kutu ve Plastik Ürünler seçilirse Paket Hacim / Gramaj değerini otomatik belirle
+  useEffect(() => {
+    if (newItemCategory === "Kutu Ve Plastik Ürünler") {
+      const lowerName = newItemName.toLowerCase();
+      if (lowerName.includes("plastik bardak") || lowerName.includes("plastik kapak")) {
+        setNewItemWeight("Koli İçerisinde 1000 adet");
+      } else {
+        setNewItemWeight("Koli / Kutu");
+      }
+      setNewItemUnit("Koli");
+    }
+  }, [newItemCategory, newItemName]);
+
   const toggleTheme = () => {
     const newTheme = theme === "dark" ? "light" : "dark";
     setTheme(newTheme);
@@ -315,6 +328,7 @@ export default function SiparisAyarlariPage() {
                   <option value="Ek Ürünler">Ek Ürünler</option>
                   <option value="Litrelik Ürünler">Litrelik Ürünler</option>
                   <option value="Yan Ürünler">Yan Ürünler</option>
+                  <option value="Kutu Ve Plastik Ürünler">Kutu Ve Plastik Ürünler</option>
                 </select>
               </div>
 
@@ -327,6 +341,7 @@ export default function SiparisAyarlariPage() {
                   className="w-full bg-[var(--background)] border border-[var(--border)] rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-orange-500 text-[var(--foreground)]"
                 >
                   <option value="Adet">Adet</option>
+                  <option value="Koli">Koli</option>
                   <option value="kg">Kilogram (kg)</option>
                   <option value="Litre">Litre</option>
                   <option value="Şişe">Şişe</option>
@@ -345,19 +360,6 @@ export default function SiparisAyarlariPage() {
                   placeholder="Örn: 2"
                   value={newItemLimit}
                   onChange={(e) => setNewItemLimit(e.target.value)}
-                  className="w-full bg-[var(--background)] border border-[var(--border)] rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-orange-500 text-[var(--foreground)]"
-                />
-              </div>
-
-              {/* Fiyat */}
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block">Birim Fiyatı (TL)</label>
-                <input 
-                  type="number"
-                  min="0"
-                  placeholder="Örn: 150"
-                  value={newItemPrice}
-                  onChange={(e) => setNewItemPrice(e.target.value)}
                   className="w-full bg-[var(--background)] border border-[var(--border)] rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-orange-500 text-[var(--foreground)]"
                 />
               </div>

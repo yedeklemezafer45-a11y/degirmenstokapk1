@@ -106,6 +106,19 @@ export default function StokKontroluPage() {
     return () => unsubscribe();
   }, []);
 
+  // Kutu ve Plastik Ürünler seçilirse Paket Hacim / Gramaj değerini otomatik belirle
+  useEffect(() => {
+    if (newItemCategory === "Kutu Ve Plastik Ürünler") {
+      const lowerName = newItemName.toLowerCase();
+      if (lowerName.includes("plastik bardak") || lowerName.includes("plastik kapak")) {
+        setNewItemWeight("Koli İçerisinde 1000 adet");
+      } else {
+        setNewItemWeight("Koli / Kutu");
+      }
+      setNewItemUnit("Koli");
+    }
+  }, [newItemCategory, newItemName]);
+
   const toggleTheme = () => {
     const newTheme = theme === "dark" ? "light" : "dark";
     setTheme(newTheme);
@@ -406,6 +419,7 @@ export default function StokKontroluPage() {
                 <option value="Litrelik Ürünler">Litrelik Ürünler</option>
                 <option value="Yan Ürünler">Yan Ürünler</option>
                 <option value="Çay Ve Bitki Çayları">Çay Ve Bitki Çayları</option>
+                <option value="Kutu Ve Plastik Ürünler">Kutu Ve Plastik Ürünler</option>
               </select>
             </div>
 
@@ -439,6 +453,7 @@ export default function StokKontroluPage() {
                 className="w-full bg-[var(--background)] border border-[var(--border)] rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-orange-500"
               >
                 <option value="Adet">Adet</option>
+                <option value="Koli">Koli</option>
                 <option value="kg">kg</option>
                 <option value="Litre">Litre</option>
                 <option value="Kutu">Kutu</option>
