@@ -57,6 +57,11 @@ export default function SiparisAyarlariPage() {
     setTimeout(() => setShowToast(false), 3000);
   };
 
+  const isDirtyRef = React.useRef(isDirty);
+  useEffect(() => {
+    isDirtyRef.current = isDirty;
+  }, [isDirty]);
+
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme") as "light" | "dark" | null;
     if (savedTheme) {
@@ -86,7 +91,9 @@ export default function SiparisAyarlariPage() {
     const unsubscribe = subscribeToStocks(
       activeRegion,
       (items) => {
-        setStockList(items);
+        if (!isDirtyRef.current) {
+          setStockList(items);
+        }
         setIsLoading(false);
       },
       () => {
