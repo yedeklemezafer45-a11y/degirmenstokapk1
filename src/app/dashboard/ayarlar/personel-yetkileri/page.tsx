@@ -34,6 +34,8 @@ export default function PersonelYetkileriPage() {
     "/dashboard/stok",
     "/dashboard/stok-sayim",
     "/dashboard/receteler",
+    "/dashboard/siparis",
+    "/dashboard/tum-bolgeler-stok",
     "/dashboard/aylik-stok-takibi",
     "/dashboard/ayarlar"
   ]);
@@ -140,6 +142,8 @@ export default function PersonelYetkileriPage() {
         "/dashboard/stok",
         "/dashboard/stok-sayim",
         "/dashboard/receteler",
+        "/dashboard/siparis",
+        "/dashboard/tum-bolgeler-stok",
         "/dashboard/aylik-stok-takibi",
         "/dashboard/ayarlar"
       ]);
@@ -170,6 +174,8 @@ export default function PersonelYetkileriPage() {
       "/dashboard/stok",
       "/dashboard/stok-sayim",
       "/dashboard/receteler",
+      "/dashboard/siparis",
+      "/dashboard/tum-bolgeler-stok",
       "/dashboard/aylik-stok-takibi",
       "/dashboard/ayarlar"
     ];
@@ -371,6 +377,8 @@ export default function PersonelYetkileriPage() {
                   { label: "Stok Kontrolü", path: "/dashboard/stok" },
                   { label: "Stok Sayım", path: "/dashboard/stok-sayim" },
                   { label: "Reçeteler", path: "/dashboard/receteler" },
+                  { label: "Sipariş Ver", path: "/dashboard/siparis" },
+                  { label: "Tüm Şube Stokları", path: "/dashboard/tum-bolgeler-stok" },
                   { label: "Aylık Stok Takibi", path: "/dashboard/aylik-stok-takibi" },
                   { label: "Ayarlar", path: "/dashboard/ayarlar" },
                 ].map((menu) => {
@@ -557,6 +565,8 @@ export default function PersonelYetkileriPage() {
                             { label: "Stok", path: "/dashboard/stok" },
                             { label: "Sayım", path: "/dashboard/stok-sayim" },
                             { label: "Reçete", path: "/dashboard/receteler" },
+                            { label: "Sipariş", path: "/dashboard/siparis" },
+                            { label: "Tüm Şubeler", path: "/dashboard/tum-bolgeler-stok" },
                             { label: "Aylık", path: "/dashboard/aylik-stok-takibi" },
                             { label: "Ayarlar", path: "/dashboard/ayarlar" },
                           ].map((m) => {

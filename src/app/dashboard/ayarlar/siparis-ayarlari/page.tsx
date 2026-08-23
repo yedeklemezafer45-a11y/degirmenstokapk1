@@ -15,9 +15,10 @@ import {
   ShoppingCart,
   CheckCircle2,
   Plus,
-  X
+  X,
+  Trash2
 } from "lucide-react";
-import { subscribeToStocks, saveAllStocks, saveStockItem } from "@/lib/stockService";
+import { subscribeToStocks, saveAllStocks, saveStockItem, deleteStockItem } from "@/lib/stockService";
 import { StockItem, StockCategory } from "@/lib/stockStore";
 import { useRouter } from "next/navigation";
 import { logUserAction } from "@/lib/auditLogService";
@@ -480,6 +481,36 @@ export default function SiparisAyarlariPage() {
                       }`}>
                         <div className="w-5 h-5 rounded-full bg-white shadow-md"></div>
                       </div>
+                      
+                      <button
+                        type="button"
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          if (!window.confirm(`"${item.name}" ürününü tamamen silmek istediğinizden emin misiniz?`)) return;
+                          try {
+                            setIsSaving(true);
+                            await deleteStockItem(selectedRegion, item.id);
+                            
+                            // Log the delete action
+                            await logUserAction(
+                              "Ürün Silindi",
+                              "STOK",
+                              `[${selectedRegionName}] "${item.name}" ürünü sipariş ayarlarından tamamen silindi.`
+                            );
+                            
+                            triggerToast("Ürün başarıyla silindi!");
+                          } catch (err) {
+                            console.error("Silme hatası:", err);
+                            triggerToast("Ürün silinirken hata oluştu!");
+                          } finally {
+                            setIsSaving(false);
+                          }
+                        }}
+                        className="p-1.5 rounded-lg text-zinc-500 hover:text-red-500 hover:bg-red-500/10 transition-colors cursor-pointer"
+                        title="Ürünü Tamamen Sil"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
                   </div>
                 );

@@ -26,7 +26,7 @@ interface OrderItem {
   id: string;
   name: string;
   quantity: number;
-  unit: "Adet" | "Kg" | "Koli";
+  unit: "Adet" | "Kg" | "Koli" | "Kutu";
 }
 
 export default function SiparisPage() {
@@ -45,7 +45,7 @@ export default function SiparisPage() {
 
   // Sipariş Draft State (ID -> { quantity, unit })
   const [quantities, setQuantities] = useState<Record<string, number>>({});
-  const [units, setUnits] = useState<Record<string, "Adet" | "Kg" | "Koli">>({});
+  const [units, setUnits] = useState<Record<string, "Adet" | "Kg" | "Koli" | "Kutu">>({});
 
   // Sepetteki Sipariş Listesi
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
@@ -333,9 +333,9 @@ export default function SiparisPage() {
                         {/* Miktar ve Birim Belirleme Arayüzü */}
                         <div className="space-y-3 pt-2">
                           
-                          {/* Paket Türü Seçiciler (Adet / Kg / Koli) */}
-                          <div className="grid grid-cols-3 gap-1.5">
-                            {(["Adet", "Kg", "Koli"] as const).map((u) => (
+                          {/* Paket Türü Seçiciler (Adet / Kg / Koli / Kutu) */}
+                          <div className="grid grid-cols-4 gap-1.5">
+                            {(["Adet", "Kg", "Koli", "Kutu"] as const).map((u) => (
                               <button
                                 key={u}
                                 onClick={() => setUnits(prev => ({ ...prev, [item.id]: u }))}
