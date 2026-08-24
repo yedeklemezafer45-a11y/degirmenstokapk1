@@ -201,7 +201,7 @@ export default function TumBolgelerStokPage() {
         <div className="flex items-center gap-4">
           <button
             onClick={exportToCSV}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#FE8254] hover:bg-[#ff956b] dark:bg-[#d46537] dark:hover:bg-[#e67545] text-[#3F5A62] dark:text-zinc-950 text-[10px] font-extrabold rounded-lg shadow-md transition-all uppercase tracking-wider cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#e76f51] hover:bg-[#eb8870] dark:bg-[#a6442d] dark:hover:bg-[#c25137] text-[#264653] dark:text-zinc-950 text-[10px] font-extrabold rounded-lg shadow-md transition-all uppercase tracking-wider cursor-pointer"
             title="Excel/CSV İndir"
           >
             <Download className="w-3.5 h-3.5" />

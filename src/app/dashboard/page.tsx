@@ -477,25 +477,25 @@ export default function DashboardPage() {
             const isSteel = idx % 2 === 0;
             
             if (isSteel) {
-              // Deep Steel Blue Card layout with Neon Glow (No borders)
+              // Deep Charcoal Blue Card layout with Neon Glow (No borders)
               return (
                 <div 
                   key={idx}
                   onClick={() => {
                     if (item.path !== "#") router.push(item.path);
                   }}
-                  className="relative w-full max-w-[290px] h-[190px] bg-[#3F5A62] hover:bg-[#4d6b75] dark:bg-[#253645] dark:hover:bg-[#2e4354] rounded-3xl p-6 flex flex-col items-center justify-center cursor-pointer transition-all duration-300 shadow-[0_0_15px_rgba(254,130,84,0.12)] hover:shadow-[0_0_30px_rgba(254,130,84,0.45)] hover:-translate-y-1 select-none overflow-hidden group"
+                  className="relative w-full max-w-[290px] h-[190px] bg-[#264653] hover:bg-[#345e70] dark:bg-[#1a3039] dark:hover:bg-[#203c48] rounded-3xl p-6 flex flex-col items-center justify-center cursor-pointer transition-all duration-300 shadow-[0_0_15px_rgba(231,111,81,0.12)] hover:shadow-[0_0_30px_rgba(231,111,81,0.45)] hover:-translate-y-1 select-none overflow-hidden group"
                 >
                   {/* Top-Left Cutout (Concave Corner for Arrow Button) */}
                   <div className="absolute top-0 left-0 w-14 h-14 bg-[var(--background)] rounded-br-[2rem] transition-colors duration-300">
-                    <div className="absolute top-0 left-0 w-9 h-9 bg-[#3F5A62] group-hover:bg-[#4d6b75] dark:bg-[#253645] dark:group-hover:bg-[#2e4354] text-[#FE8254] flex items-center justify-center rounded-xl shadow-sm transition-colors duration-300">
+                    <div className="absolute top-0 left-0 w-9 h-9 bg-[#264653] group-hover:bg-[#345e70] dark:bg-[#1a3039] dark:group-hover:bg-[#203c48] text-[#e76f51] flex items-center justify-center rounded-xl shadow-sm transition-colors duration-300">
                       <ArrowUpRight className="w-4 h-4 -rotate-90" />
                     </div>
                   </div>
 
                   {/* Bottom-Right Cutout (Concave Corner for Text Label) */}
                   <div className="absolute bottom-0 right-0 w-28 h-10 bg-[var(--background)] rounded-tl-[1.5rem] transition-colors duration-300">
-                    <div className="absolute bottom-0 right-0 px-3 py-1.5 bg-[#3F5A62] group-hover:bg-[#4d6b75] dark:bg-[#253645] dark:group-hover:bg-[#2e4354] text-[9px] font-black uppercase text-[#FE8254] tracking-widest rounded-lg transition-colors duration-300">
+                    <div className="absolute bottom-0 right-0 px-3 py-1.5 bg-[#264653] group-hover:bg-[#345e70] dark:bg-[#1a3039] dark:group-hover:bg-[#203c48] text-[9px] font-black uppercase text-[#e76f51] tracking-widest rounded-lg transition-colors duration-300">
                       DEĞİRMEN
                     </div>
                   </div>
@@ -504,7 +504,7 @@ export default function DashboardPage() {
                   <div className="text-center z-10 px-4 mt-2">
                     <span 
                       style={{ fontFamily: "'Getai Grotesk', sans-serif" }}
-                      className="text-xl sm:text-2xl font-black uppercase tracking-tighter text-[#FE8254] leading-tight block drop-shadow-sm"
+                      className="text-xl sm:text-2xl font-black uppercase tracking-tighter text-[#e76f51] leading-tight block drop-shadow-sm"
                     >
                       {item.label}
                     </span>
@@ -513,25 +513,25 @@ export default function DashboardPage() {
                 </div>
               );
             } else {
-              // Burnt Peach Card layout with Neon Glow (No borders)
+              // Yanmış Şeftali Card layout with Neon Glow (No borders)
               return (
                 <div 
                   key={idx}
                   onClick={() => {
                     if (item.path !== "#") router.push(item.path);
                   }}
-                  className="relative w-full max-w-[290px] h-[190px] bg-[#FE8254] hover:bg-[#ff956b] dark:bg-[#d46537] dark:hover:bg-[#e67545] rounded-3xl p-6 flex flex-col items-center justify-center cursor-pointer transition-all duration-300 shadow-[0_0_15px_rgba(254,130,84,0.12)] hover:shadow-[0_0_30px_rgba(254,130,84,0.45)] hover:-translate-y-1 select-none overflow-hidden group"
+                  className="relative w-full max-w-[290px] h-[190px] bg-[#e76f51] hover:bg-[#eb8870] dark:bg-[#a6442d] dark:hover:bg-[#c25137] rounded-3xl p-6 flex flex-col items-center justify-center cursor-pointer transition-all duration-300 shadow-[0_0_15px_rgba(231,111,81,0.12)] hover:shadow-[0_0_30px_rgba(231,111,81,0.45)] hover:-translate-y-1 select-none overflow-hidden group"
                 >
                   {/* Top-Right Cutout (Concave Corner for Arrow Button) */}
                   <div className="absolute top-0 right-0 w-14 h-14 bg-[var(--background)] rounded-bl-[2rem] transition-colors duration-300">
-                    <div className="absolute top-0 right-0 w-9 h-9 bg-[#FE8254] group-hover:bg-[#ff956b] dark:bg-[#d46537] dark:group-hover:bg-[#e67545] text-[#3F5A62] dark:text-zinc-950 flex items-center justify-center rounded-xl shadow-sm transition-colors duration-300">
+                    <div className="absolute top-0 right-0 w-9 h-9 bg-[#e76f51] group-hover:bg-[#eb8870] dark:bg-[#a6442d] dark:group-hover:bg-[#c25137] text-[#264653] dark:text-zinc-950 flex items-center justify-center rounded-xl shadow-sm transition-colors duration-300">
                       <ArrowUpRight className="w-4 h-4" />
                     </div>
                   </div>
 
                   {/* Bottom-Left Cutout (Concave Corner for Text Label) */}
                   <div className="absolute bottom-0 left-0 w-28 h-10 bg-[var(--background)] rounded-tr-[1.5rem] transition-colors duration-300">
-                    <div className="absolute bottom-0 left-0 px-3 py-1.5 bg-[#FE8254] group-hover:bg-[#ff956b] dark:bg-[#d46537] dark:group-hover:bg-[#e67545] text-[9px] font-black uppercase text-[#3F5A62] dark:text-zinc-950 tracking-widest rounded-lg transition-colors duration-300">
+                    <div className="absolute bottom-0 left-0 px-3 py-1.5 bg-[#e76f51] group-hover:bg-[#eb8870] dark:bg-[#a6442d] dark:group-hover:bg-[#c25137] text-[9px] font-black uppercase text-[#264653] dark:text-zinc-950 tracking-widest rounded-lg transition-colors duration-300">
                       {item.label === "Sipariş Ver" ? "SİPARİŞ" : item.label === "Tüm Şube Stokları" ? "ANALİZ" : "CAFE"}
                     </div>
                   </div>
@@ -540,7 +540,7 @@ export default function DashboardPage() {
                   <div className="text-center z-10 px-4 mt-2">
                     <span 
                       style={{ fontFamily: "'Getai Grotesk', sans-serif" }}
-                      className="text-xl sm:text-2xl font-black uppercase tracking-tighter text-[#3F5A62] dark:text-zinc-950 leading-tight block drop-shadow-sm"
+                      className="text-xl sm:text-2xl font-black uppercase tracking-tighter text-[#264653] dark:text-zinc-950 leading-tight block drop-shadow-sm"
                     >
                       {item.label}
                     </span>

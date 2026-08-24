@@ -382,7 +382,7 @@ export default function SiparisPage() {
 
                             <button
                               onClick={() => handleAddToOrder(item)}
-                              className="flex-1 flex items-center justify-center gap-1.5 bg-[#FE8254] hover:bg-[#ff956b] dark:bg-[#d46537] dark:hover:bg-[#e67545] text-[#3F5A62] dark:text-zinc-950 text-[10px] font-black rounded-xl py-2.5 transition-colors cursor-pointer uppercase tracking-wider"
+                              className="flex-1 flex items-center justify-center gap-1.5 bg-[#e76f51] hover:bg-[#eb8870] dark:bg-[#a6442d] dark:hover:bg-[#c25137] text-[#264653] dark:text-zinc-950 text-[10px] font-black rounded-xl py-2.5 transition-colors cursor-pointer uppercase tracking-wider"
                             >
                               <Plus className="w-3.5 h-3.5" />
                               Sepete Ekle

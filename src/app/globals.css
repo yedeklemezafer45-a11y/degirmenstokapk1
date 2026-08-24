@@ -15,10 +15,16 @@
   --foreground: #0f172a;
   --card: #ffffff;
   --card-foreground: #0f172a;
-  --primary: #c2410c;
+  --primary: #e76f51;
   --primary-foreground: #ffffff;
   --border: #e2e8f0;
-  --ring: rgba(194, 65, 12, 0.2);
+  --ring: rgba(231, 111, 81, 0.2);
+  
+  --komur-mavisi: #264653;
+  --yesil-pas: #2a9d8f;
+  --yasemin: #e9c46a;
+  --sandy-brown: #f4a261;
+  --yanmis-seftali: #e76f51;
 }
 
 .dark {
@@ -26,10 +32,10 @@
   --foreground: #f8fafc;
   --card: #151f32;
   --card-foreground: #f8fafc;
-  --primary: #ea580c;
+  --primary: #e76f51;
   --primary-foreground: #ffffff;
   --border: #1e293b;
-  --ring: rgba(234, 88, 12, 0.3);
+  --ring: rgba(231, 111, 81, 0.3);
 }
 
 body {
