@@ -14,7 +14,7 @@ import {
   AlertTriangle,
   Clock
 } from "lucide-react";
-import { StockItem } from "@/lib/stockStore";
+import { StockItem, isProductAllowedForRegion } from "@/lib/stockStore";
 import { subscribeToStocks, saveAllStocks } from "@/lib/stockService";
 import { logUserAction } from "@/lib/auditLogService";
 
@@ -133,9 +133,12 @@ export default function SktKontroluPage() {
     triggerToast("Değişiklikler geri alındı.");
   };
 
-  const displayedStockList = selectedRegion === "degirmen-kafe"
-    ? stockList.filter(item => item.category !== "Soft İçecek Ürünleri" && item.category !== "Pastalar")
-    : stockList;
+  const displayedStockList = stockList.filter(item => {
+    if (selectedRegion === "degirmen-kafe" && (item.category === "Soft İçecek Ürünleri" || item.category === "Pastalar")) {
+      return false;
+    }
+    return isProductAllowedForRegion(selectedRegion, item);
+  });
 
   const categories = ["Tümü", ...Array.from(new Set(displayedStockList.map(i => i.category)))];
 

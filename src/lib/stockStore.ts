@@ -145,3 +145,59 @@ export const mockStockItems: StockItem[] = [
   { id: "cake7", name: "HM-MAGNOLYA YABAN MERSİNLİ", category: "Pastalar", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Adet", minLimit: 5, price: 80, weightInfo: "1 Adet" },
   { id: "cake8", name: "HM-MAGNOLYA ORMAN MEYVELİ", category: "Pastalar", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Adet", minLimit: 5, price: 80, weightInfo: "1 Adet" }
 ];
+
+export function isProductAllowedForRegion(regionId: string, item: { name: string; category: string }): boolean {
+  if (regionId !== "degirmen-kafe") {
+    // Çay Ve Bitki Çayları kısıtlaması (Sadece HM-DEMLİK POŞET ÇAY 30 GR 30'LU kalacak)
+    if (item.category === "Çay Ve Bitki Çayları" && item.name !== "HM-DEMLİK POŞET ÇAY 30 GR 30'LU") {
+      return false;
+    }
+    // Yan Ürünler kısıtlaması
+    if (item.category === "Yan Ürünler" && item.name === "HM-ANTEP FISTIKLI LOKUM") {
+      return false;
+    }
+    // Şuruplar kısıtlaması
+    const forbiddenSyrups = [
+      "HM-ÇARKIFELEK (PASSION FRUIT) AROMALI KOKTEYL ŞURUBU",
+      "HM-MUZ AROMALI KOKTEYL ŞURUBU",
+      "HM-NAR AROMALI KOKTEYL ŞURUBU",
+      "HM-PECAN CEVİZİ AROMALI KOKTEYL ŞURUBU",
+      "HM-ŞEKER AROMALI KOKTEYL ŞURUBU"
+    ];
+    if (item.category === "Şuruplar" && forbiddenSyrups.includes(item.name)) {
+      return false;
+    }
+    // Toz Grubu kısıtlaması
+    const forbiddenPowders = [
+      "HM-BAL BADEM SALEP",
+      "HM-DAMLA SAKIZLI SALEP",
+      "HM-SICAK BEYAZ ÇİKOLATA",
+      "HM-MUZ AROMALI MİLKSHAKE TOZU"
+    ];
+    if (item.category === "Toz Grubu" && forbiddenPowders.includes(item.name)) {
+      return false;
+    }
+    // Püreler kısıtlaması (tamamı kalkacak)
+    if (item.category === "Püreler") {
+      return false;
+    }
+    // Ek Ürünler kısıtlaması
+    const forbiddenEkUrunler = [
+      "HM-CİCİ BEBE",
+      "HM-KATLA BALLA SÜZME ÇİÇEK BALI (STİCK)"
+    ];
+    if (item.category === "Ek Ürünler" && forbiddenEkUrunler.includes(item.name)) {
+      return false;
+    }
+    // Kahveler kısıtlaması
+    const forbiddenCoffees = [
+      "HM-MENENGİÇ KAHVESİ",
+      "HM-DAMLA SAKIZLI TÜRK KAHVESİ",
+      "HM-OSMANLI DİBEK KAHVESİ"
+    ];
+    if (item.category === "Kahveler" && forbiddenCoffees.includes(item.name)) {
+      return false;
+    }
+  }
+  return true;
+}

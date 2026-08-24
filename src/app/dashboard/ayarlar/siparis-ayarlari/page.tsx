@@ -19,7 +19,7 @@ import {
   Trash2
 } from "lucide-react";
 import { subscribeToStocks, saveAllStocks, saveStockItem, deleteStockItem } from "@/lib/stockService";
-import { StockItem, StockCategory } from "@/lib/stockStore";
+import { StockItem, StockCategory, isProductAllowedForRegion } from "@/lib/stockStore";
 import { useRouter } from "next/navigation";
 import { logUserAction } from "@/lib/auditLogService";
 
@@ -211,9 +211,12 @@ export default function SiparisAyarlariPage() {
     }
   };
 
-  const displayedStockList = selectedRegion === "degirmen-kafe"
-    ? stockList.filter(item => item.category !== "Soft İçecek Ürünleri" && item.category !== "Pastalar")
-    : stockList;
+  const displayedStockList = stockList.filter(item => {
+    if (selectedRegion === "degirmen-kafe" && (item.category === "Soft İçecek Ürünleri" || item.category === "Pastalar")) {
+      return false;
+    }
+    return isProductAllowedForRegion(selectedRegion, item);
+  });
 
   const categories = ["Tümü", ...Array.from(new Set(displayedStockList.map(i => i.category)))];
 

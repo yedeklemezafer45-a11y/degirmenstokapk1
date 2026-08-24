@@ -19,7 +19,7 @@ import {
   Layers
 } from "lucide-react";
 import { subscribeToStocks } from "@/lib/stockService";
-import { StockItem } from "@/lib/stockStore";
+import { StockItem, isProductAllowedForRegion } from "@/lib/stockStore";
 import { useRouter } from "next/navigation";
 
 interface OrderItem {
@@ -174,9 +174,12 @@ export default function SiparisPage() {
     triggerToast("WhatsApp'a yönlendiriliyorsunuz... 💬");
   };
 
-  const displayedStockList = selectedRegion === "degirmen-kafe"
-    ? stockList.filter(item => item.category !== "Soft İçecek Ürünleri" && item.category !== "Pastalar")
-    : stockList;
+  const displayedStockList = stockList.filter(item => {
+    if (selectedRegion === "degirmen-kafe" && (item.category === "Soft İçecek Ürünleri" || item.category === "Pastalar")) {
+      return false;
+    }
+    return isProductAllowedForRegion(selectedRegion, item);
+  });
 
   const orderableStock = displayedStockList.filter(item => item.orderable !== false);
 
