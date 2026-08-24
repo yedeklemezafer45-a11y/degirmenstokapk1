@@ -333,11 +333,9 @@ export default function LoginPage() {
       {/* Cam Efektli (Glassmorphism) Giriş Kartı */}
       <div className="w-full max-w-[400px] bg-[var(--card)]/10 dark:bg-white/5 light:bg-white/80 border border-[var(--border)] rounded-[32px] p-10 shadow-[0_8px_32px_0_rgba(0,0,0,0.15)] backdrop-blur-xl transition-all duration-300 relative z-10 flex flex-col items-center">
         
-        {/* Kullanıcı Profil İkonu */}
-        <div className="w-16 h-16 rounded-2xl border border-[var(--border)] flex items-center justify-center mb-6">
-          <svg className="w-8 h-8 text-[var(--foreground)]/80" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
-          </svg>
+        {/* Logo */}
+        <div className="w-28 h-28 flex items-center justify-center mb-6">
+          <img src="/logo.png" alt="Değirmen Logo" className="w-full h-full object-contain" />
         </div>
 
         {/* Başlık */}
@@ -541,7 +539,7 @@ export default function LoginPage() {
             </button>
 
             <div className="text-center space-y-2">
-              <div className="w-16 h-16 mx-auto flex items-center justify-center">
+              <div className="w-28 h-28 mx-auto flex items-center justify-center">
                 <img src="/logo.png" alt="Değirmen Logo" className="w-full h-full object-contain" />
               </div>
               <h2 className="text-lg font-black tracking-tight text-[var(--foreground)]">Çalışma Bölgesi Seçin</h2>

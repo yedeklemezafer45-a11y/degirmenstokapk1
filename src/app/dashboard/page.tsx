@@ -409,7 +409,7 @@ export default function DashboardPage() {
         {/* Karşılama Alanı */}
         <div className="text-center flex flex-col items-center gap-4 animate-fadeIn -mt-10">
           {/* Logo size increased and dark mode invert-adjustment applied */}
-          <div className="w-80 h-80 flex items-center justify-center">
+          <div className="w-[30rem] h-[30rem] flex items-center justify-center">
             <img src="/logo.png" alt="Değirmen Cafe Logo" className="w-full h-full object-contain logo-invert-dark" />
           </div>
           
