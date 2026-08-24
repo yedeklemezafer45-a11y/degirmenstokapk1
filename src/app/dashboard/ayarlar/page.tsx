@@ -15,8 +15,7 @@ import {
   Music,
   ArrowUpRight,
   Share2,
-  ShoppingCart,
-  Check
+  ShoppingCart
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -86,16 +85,6 @@ export default function AyarlarPage() {
     return <div className="min-h-screen bg-[var(--background)] flex items-center justify-center">Yetkilendiriliyor...</div>;
   }
 
-  const settingsModules = [
-    { label: "Stok Listesi Kontrolü", path: "/dashboard/ayarlar/stok-kontrolu", icon: <Package className="w-5 h-5" />, tag: "ENVANTER" },
-    { label: "Reçeteler Listesi Kontrolü", path: "/dashboard/ayarlar/recete-kontrolu", icon: <BookOpen className="w-5 h-5" />, tag: "REÇETE" },
-    { label: "SKT Takip Kontrolü", path: "/dashboard/ayarlar/skt-kontrolu", icon: <Calendar className="w-5 h-5" />, tag: "TAKİP" },
-    { label: "Yetki & Personel Ayarları", path: "/dashboard/ayarlar/personel-yetkileri", icon: <ShieldAlert className="w-5 h-5" />, tag: "YETKİ" },
-    { label: "Kullanıcı İşlem Geçmişi", path: "/dashboard/ayarlar/islem-gecmisi", icon: <History className="w-5 h-5" />, tag: "GÜNLÜK" },
-    { label: "Duyuru Yönetimi", path: "/dashboard/ayarlar/duyuru-yonetimi", icon: <Megaphone className="w-5 h-5" />, tag: "DUYURU" },
-    { label: "Sipariş Menüsü Ayarları", path: "/dashboard/ayarlar/siparis-ayarlari", icon: <ShoppingCart className="w-5 h-5" />, tag: "SİPARİŞ" },
-  ];
-
   return (
     <div className="min-h-screen flex flex-col bg-[var(--background)] text-[var(--foreground)] transition-colors duration-300">
       
@@ -148,68 +137,234 @@ export default function AyarlarPage() {
           <p className="text-sm text-zinc-500">Yapılandırmak istediğiniz ayar grubunu seçin.</p>
         </div>
 
-        {/* Ayarlar İçindeki Özel Modül Kartları (Evernote Tasarımı) */}
+        {/* Ayarlar İçindeki Özel Modül Kartları */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 w-full justify-items-center py-6 max-w-4xl">
-          {settingsModules.map((item, idx) => (
-            <div 
-              key={idx}
-              onClick={() => router.push(item.path)}
-              className="relative w-full max-w-[280px] bg-zinc-950/85 border border-zinc-800 hover:border-zinc-700/80 rounded-[2.5rem] p-6 flex flex-col justify-between cursor-pointer transition-all duration-300 shadow-[0_12px_36px_rgba(0,0,0,0.6)] hover:-translate-y-1.5 select-none group animate-fadeIn"
-            >
-              {/* Floating Top-Right Notched Badge */}
-              <span className="absolute -top-3 right-6 px-3.5 py-1 bg-zinc-900 border border-zinc-800 rounded-full text-[8px] font-black uppercase tracking-widest text-zinc-400 shadow-md">
-                {item.tag}
+          
+          {/* Kart 1: Stok Listesi Kontrolü */}
+          <div 
+            onClick={() => router.push("/dashboard/ayarlar/stok-kontrolu")}
+            className="custom-border-card"
+            style={{
+              boxShadow: "0 10px 30px -10px rgba(234, 88, 12, 0.3), inset 0 0 0 1px rgba(234, 88, 12, 0.2)"
+            }}
+          >
+            <svg className="custom-card-border-svg">
+              <rect style={{ stroke: "#ea580c", strokeDashoffset: "0" }} />
+            </svg>
+
+            <div className="card-logo flex flex-col items-center justify-center text-center px-6">
+              <span className="text-base font-extrabold tracking-wide text-zinc-300">
+                Stok Listesi Kontrolü
               </span>
+            </div>
 
-              {/* Header: Icon Box & Brand */}
-              <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-2xl flex items-center justify-center bg-orange-500/10 text-orange-400 shadow-inner">
-                  {item.icon}
+            <div className="card-text flex flex-col items-center gap-3">
+              <span className="text-white text-sm font-black truncate max-w-[180px]">Stok Listesi Kontrolü</span>
+              <div className="flex items-center gap-2 bg-white text-zinc-950 pl-1.5 pr-4 py-1.5 rounded-2xl shadow-xl">
+                <div className="w-7 h-7 rounded-lg bg-zinc-950 flex items-center justify-center text-white shrink-0">
+                  <ArrowUpRight className="w-4 h-4" />
                 </div>
-                <div>
-                  <div className="flex items-center gap-1">
-                    <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest leading-none">AYARLAR</span>
-                    <div className="w-3 h-3 rounded-full bg-blue-500 flex items-center justify-center">
-                      <Check className="w-1.5 h-1.5 text-white" strokeWidth={3} />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Body Title */}
-              <div className="mt-4">
-                <h3 className="text-base font-black text-white uppercase tracking-tight leading-tight group-hover:text-orange-400 transition-colors duration-300">
-                  {item.label}
-                </h3>
-              </div>
-
-              {/* Body Metrics Grid */}
-              <div className="grid grid-cols-3 gap-1 py-3 my-2 border-t border-b border-zinc-900/80 text-center">
-                <div>
-                  <div className="text-[7px] text-zinc-500 uppercase font-black tracking-wider">Erişim</div>
-                  <div className="text-[10px] font-extrabold text-zinc-300 mt-1">Yönetici</div>
-                </div>
-                <div className="border-l border-zinc-900/80">
-                  <div className="text-[7px] text-zinc-500 uppercase font-black tracking-wider">Tür</div>
-                  <div className="text-[10px] font-extrabold text-zinc-300 mt-1">Sistem</div>
-                </div>
-                <div className="border-l border-zinc-900/80">
-                  <div className="text-[7px] text-zinc-500 uppercase font-black tracking-wider">Kapsam</div>
-                  <div className="text-[10px] font-extrabold text-emerald-400 mt-1">Global</div>
-                </div>
-              </div>
-
-              {/* Footer Content: CTA Button */}
-              <div className="flex items-center justify-between mt-1 gap-2">
-                <span className="text-[8px] font-black uppercase tracking-wider text-zinc-500 leading-none">
-                  YÖNETİCİ MODU
+                <span className="text-[10px] font-black uppercase tracking-wider text-zinc-800">
+                  Ayara Git
                 </span>
-                <button className="bg-gradient-to-r from-orange-400 to-orange-600 hover:from-orange-500 hover:to-orange-750 text-zinc-950 font-black uppercase tracking-wider text-[8px] px-4.5 py-2 rounded-full transition-all duration-300 hover:scale-[1.03] cursor-pointer shadow-[0_0_15px_rgba(249,115,22,0.25)]">
-                  Yapılandır
-                </button>
               </div>
             </div>
-          ))}
+          </div>
+
+          {/* Kart 2: Reçeteler Listesi Kontrolü */}
+          <div 
+            onClick={() => router.push("/dashboard/ayarlar/recete-kontrolu")}
+            className="custom-border-card"
+            style={{
+              boxShadow: "0 10px 30px -10px rgba(234, 88, 12, 0.3), inset 0 0 0 1px rgba(234, 88, 12, 0.2)"
+            }}
+          >
+            <svg className="custom-card-border-svg">
+              <rect style={{ stroke: "#ea580c", strokeDashoffset: "0" }} />
+            </svg>
+
+            <div className="card-logo flex flex-col items-center justify-center text-center px-6 gap-2">
+              <BookOpen className="w-5 h-5 text-orange-500" />
+              <span className="text-base font-extrabold tracking-wide text-zinc-300">
+                Reçeteler Listesi Kontrolü
+              </span>
+            </div>
+
+            <div className="card-text flex flex-col items-center gap-3">
+              <span className="text-white text-sm font-black truncate max-w-[180px]">Reçeteler Listesi Kontrolü</span>
+              <div className="flex items-center gap-2 bg-white text-zinc-950 pl-1.5 pr-4 py-1.5 rounded-2xl shadow-xl">
+                <div className="w-7 h-7 rounded-lg bg-zinc-950 flex items-center justify-center text-white shrink-0">
+                  <ArrowUpRight className="w-4 h-4" />
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-wider text-zinc-800">
+                  Ayara Git
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Kart 3: SKT (Son Tüketim Tarihi) Kontrolü */}
+          <div 
+            onClick={() => router.push("/dashboard/ayarlar/skt-kontrolu")}
+            className="custom-border-card"
+            style={{
+              boxShadow: "0 10px 30px -10px rgba(234, 88, 12, 0.3), inset 0 0 0 1px rgba(234, 88, 12, 0.2)"
+            }}
+          >
+            <svg className="custom-card-border-svg">
+              <rect style={{ stroke: "#ea580c", strokeDashoffset: "0" }} />
+            </svg>
+
+            <div className="card-logo flex flex-col items-center justify-center text-center px-6 gap-2">
+              <Calendar className="w-5 h-5 text-orange-500" />
+              <span className="text-base font-extrabold tracking-wide text-zinc-300">
+                SKT Takip Kontrolü
+              </span>
+            </div>
+
+            <div className="card-text flex flex-col items-center gap-3">
+              <span className="text-white text-sm font-black truncate max-w-[180px]">SKT Takip Kontrolü</span>
+              <div className="flex items-center gap-2 bg-white text-zinc-950 pl-1.5 pr-4 py-1.5 rounded-2xl shadow-xl">
+                <div className="w-7 h-7 rounded-lg bg-zinc-950 flex items-center justify-center text-white shrink-0">
+                  <ArrowUpRight className="w-4 h-4" />
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-wider text-zinc-800">
+                  Ayara Git
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Kart 4: Yetki & Personel Ayarları */}
+          <div 
+            onClick={() => router.push("/dashboard/ayarlar/personel-yetkileri")}
+            className="custom-border-card"
+            style={{
+              boxShadow: "0 10px 30px -10px rgba(234, 88, 12, 0.3), inset 0 0 0 1px rgba(234, 88, 12, 0.2)"
+            }}
+          >
+            <svg className="custom-card-border-svg">
+              <rect style={{ stroke: "#ea580c", strokeDashoffset: "0" }} />
+            </svg>
+
+            <div className="card-logo flex flex-col items-center justify-center text-center px-6 gap-2">
+              <ShieldAlert className="w-5 h-5 text-orange-500" />
+              <span className="text-base font-extrabold tracking-wide text-zinc-300">
+                Yetki & Personel Ayarları
+              </span>
+            </div>
+
+            <div className="card-text flex flex-col items-center gap-3">
+              <span className="text-white text-sm font-black truncate max-w-[180px]">Yetki & Personel Ayarları</span>
+              <div className="flex items-center gap-2 bg-white text-zinc-950 pl-1.5 pr-4 py-1.5 rounded-2xl shadow-xl">
+                <div className="w-7 h-7 rounded-lg bg-zinc-950 flex items-center justify-center text-white shrink-0">
+                  <ArrowUpRight className="w-4 h-4" />
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-wider text-zinc-800">
+                  Ayara Git
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Kart 5: İşlem Geçmişi & Loglar */}
+          <div 
+            onClick={() => router.push("/dashboard/ayarlar/islem-gecmisi")}
+            className="custom-border-card"
+            style={{
+              boxShadow: "0 10px 30px -10px rgba(234, 88, 12, 0.3), inset 0 0 0 1px rgba(234, 88, 12, 0.2)"
+            }}
+          >
+            <svg className="custom-card-border-svg">
+              <rect style={{ stroke: "#ea580c", strokeDashoffset: "0" }} />
+            </svg>
+
+            <div className="card-logo flex flex-col items-center justify-center text-center px-6 gap-2">
+              <History className="w-5 h-5 text-orange-500" />
+              <span className="text-base font-extrabold tracking-wide text-zinc-300">
+                Kullanıcı İşlem Geçmişi
+              </span>
+            </div>
+
+            <div className="card-text flex flex-col items-center gap-3">
+              <span className="text-white text-sm font-black truncate max-w-[180px]">Kullanıcı İşlem Geçmişi</span>
+              <div className="flex items-center gap-2 bg-white text-zinc-950 pl-1.5 pr-4 py-1.5 rounded-2xl shadow-xl">
+                <div className="w-7 h-7 rounded-lg bg-zinc-950 flex items-center justify-center text-white shrink-0">
+                  <ArrowUpRight className="w-4 h-4" />
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-wider text-zinc-800">
+                  Ayara Git
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Kart 6: Duyuru Yönetimi */}
+          <div 
+            onClick={() => router.push("/dashboard/ayarlar/duyuru-yonetimi")}
+            className="custom-border-card"
+            style={{
+              boxShadow: "0 10px 30px -10px rgba(234, 88, 12, 0.3), inset 0 0 0 1px rgba(234, 88, 12, 0.2)"
+            }}
+          >
+            <svg className="custom-card-border-svg">
+              <rect style={{ stroke: "#ea580c", strokeDashoffset: "0" }} />
+            </svg>
+
+            <div className="card-logo flex flex-col items-center justify-center text-center px-6 gap-2">
+              <Megaphone className="w-5 h-5 text-orange-500" />
+              <span className="text-base font-extrabold tracking-wide text-zinc-300">
+                Duyuru Yönetimi
+              </span>
+            </div>
+
+            <div className="card-text flex flex-col items-center gap-3">
+              <span className="text-white text-sm font-black truncate max-w-[180px]">Duyuru Yönetimi</span>
+              <div className="flex items-center gap-2 bg-white text-zinc-950 pl-1.5 pr-4 py-1.5 rounded-2xl shadow-xl">
+                <div className="w-7 h-7 rounded-lg bg-zinc-950 flex items-center justify-center text-white shrink-0">
+                  <ArrowUpRight className="w-4 h-4" />
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-wider text-zinc-800">
+                  Ayara Git
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Kart 7: Sipariş Listesi Ayarları */}
+          <div 
+            onClick={() => router.push("/dashboard/ayarlar/siparis-ayarlari")}
+            className="custom-border-card"
+            style={{
+              boxShadow: "0 10px 30px -10px rgba(234, 88, 12, 0.3), inset 0 0 0 1px rgba(234, 88, 12, 0.2)"
+            }}
+          >
+            <svg className="custom-card-border-svg">
+              <rect style={{ stroke: "#ea580c", strokeDashoffset: "0" }} />
+            </svg>
+
+            <div className="card-logo flex flex-col items-center justify-center text-center px-6 gap-2">
+              <ShoppingCart className="w-5 h-5 text-orange-500" />
+              <span className="text-base font-extrabold tracking-wide text-zinc-300">
+                Sipariş Menüsü Ayarları
+              </span>
+            </div>
+
+            <div className="card-text flex flex-col items-center gap-3">
+              <span className="text-white text-sm font-black truncate max-w-[180px]">Sipariş Menüsü Ayarları</span>
+              <div className="flex items-center gap-2 bg-white text-zinc-950 pl-1.5 pr-4 py-1.5 rounded-2xl shadow-xl">
+                <div className="w-7 h-7 rounded-lg bg-zinc-950 flex items-center justify-center text-white shrink-0">
+                  <ArrowUpRight className="w-4 h-4" />
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-wider text-zinc-800">
+                  Ayara Git
+                </span>
+              </div>
+            </div>
+          </div>
+
+
+
         </div>
       </main>
 

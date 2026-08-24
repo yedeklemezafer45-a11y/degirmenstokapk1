@@ -16,14 +16,7 @@ import {
   X,
   ArrowUpRight,
   Power,
-  Share2,
-  ShoppingCart,
-  Scale,
-  Calendar,
-  Globe,
-  Check,
-  Layers,
-  FileSpreadsheet
+  Share2
 } from "lucide-react";
 import { getAnnouncement, Announcement } from "@/lib/announcementService";
 import { subscribeToStocks } from "@/lib/stockService";
@@ -477,99 +470,85 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Dinamik Kartlar Grid (Görseldeki Evernote Tasarımı) */}
+        {/* Dinamik Kartlar Grid (Görseldeki Asimetrik Cutout Tasarımı) */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 w-full justify-items-center py-6 max-w-5xl">
           {visibleModules.map((item, idx) => {
-            const getModuleIcon = (label: string) => {
-              switch (label) {
-                case "Stok Kontrolü": return <Package className="w-5 h-5" />;
-                case "Stok Sayım": return <Scale className="w-5 h-5" />;
-                case "Reçeteler": return <Layers className="w-5 h-5" />;
-                case "Sipariş Ver": return <ShoppingCart className="w-5 h-5" />;
-                case "Tüm Şube Stokları": return <Globe className="w-5 h-5" />;
-                case "Aylık Stok Takibi": return <Calendar className="w-5 h-5" />;
-                case "Ayarlar": return <Settings className="w-5 h-5" />;
-                default: return <Coffee className="w-5 h-5" />;
-              }
-            };
+            // Alternate styles: steel (index 0, 2, 4...) and peach (index 1, 3...)
+            const isSteel = idx % 2 === 0;
             
-            const getModuleAccentClass = (label: string) => {
-              switch (label) {
-                case "Stok Kontrolü": return { bg: "bg-emerald-500/10", text: "text-emerald-400", border: "border-emerald-500/20", btn: "from-emerald-400 to-emerald-600 hover:from-emerald-500 hover:to-emerald-700 shadow-[0_0_20px_rgba(16,185,129,0.25)]", tag: "ENVANTER" };
-                case "Stok Sayım": return { bg: "bg-sky-500/10", text: "text-sky-400", border: "border-sky-500/20", btn: "from-sky-400 to-sky-600 hover:from-sky-500 hover:to-sky-700 shadow-[0_0_20px_rgba(56,189,248,0.25)]", tag: "SAYIM" };
-                case "Reçeteler": return { bg: "bg-pink-500/10", text: "text-pink-400", border: "border-pink-500/20", btn: "from-pink-400 to-pink-600 hover:from-pink-500 hover:to-pink-700 shadow-[0_0_20px_rgba(244,63,94,0.25)]", tag: "REÇETE" };
-                case "Sipariş Ver": return { bg: "bg-orange-500/10", text: "text-orange-400", border: "border-orange-500/20", btn: "from-orange-400 to-orange-600 hover:from-orange-500 hover:to-orange-700 shadow-[0_0_20px_rgba(249,115,22,0.25)]", tag: "SİPARİŞ" };
-                case "Tüm Şube Stokları": return { bg: "bg-violet-500/10", text: "text-violet-400", border: "border-violet-500/20", btn: "from-violet-400 to-violet-600 hover:from-violet-500 hover:to-violet-700 shadow-[0_0_20px_rgba(139,92,246,0.25)]", tag: "ANALİZ" };
-                case "Aylık Stok Takibi": return { bg: "bg-amber-500/10", text: "text-amber-400", border: "border-amber-500/20", btn: "from-amber-400 to-amber-600 hover:from-amber-500 hover:to-amber-700 shadow-[0_0_20px_rgba(245,158,11,0.25)]", tag: "TAKİP" };
-                case "Ayarlar": return { bg: "bg-zinc-500/10", text: "text-zinc-400", border: "border-zinc-500/20", btn: "from-zinc-400 to-zinc-600 hover:from-zinc-500 hover:to-zinc-700 shadow-[0_0_20px_rgba(113,113,122,0.25)]", tag: "YÖNETİM" };
-                default: return { bg: "bg-zinc-500/10", text: "text-zinc-400", border: "border-zinc-500/20", btn: "from-zinc-400 to-zinc-600", tag: "MODÜL" };
-              }
-            };
-
-            const accent = getModuleAccentClass(item.label);
-
-            return (
-              <div 
-                key={idx}
-                onClick={() => {
-                  if (item.path !== "#") router.push(item.path);
-                }}
-                className="relative w-full max-w-[310px] bg-zinc-950/85 border border-zinc-800 hover:border-zinc-700/80 rounded-[2.5rem] p-7 flex flex-col justify-between cursor-pointer transition-all duration-300 shadow-[0_12px_36px_rgba(0,0,0,0.6)] hover:-translate-y-1.5 select-none group"
-              >
-                {/* Floating Top-Right Notched Badge */}
-                <span className="absolute -top-3 right-7 px-3.5 py-1 bg-zinc-900 border border-zinc-800 rounded-full text-[8px] font-black uppercase tracking-widest text-zinc-400 shadow-md">
-                  {accent.tag}
-                </span>
-
-                {/* Header: Icon Box & Verified Brand */}
-                <div className="flex items-center gap-3.5">
-                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-inner ${accent.bg} ${accent.text}`}>
-                    {getModuleIcon(item.label)}
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-1">
-                      <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest leading-none">DEĞİRMEN</span>
-                      <div className="w-3.5 h-3.5 rounded-full bg-blue-500 flex items-center justify-center">
-                        <Check className="w-2 h-2 text-white" strokeWidth={3} />
-                      </div>
+            if (isSteel) {
+              // Deep Steel Blue Card layout with Neon Glow (No borders)
+              return (
+                <div 
+                  key={idx}
+                  onClick={() => {
+                    if (item.path !== "#") router.push(item.path);
+                  }}
+                  className="relative w-full max-w-[290px] h-[190px] bg-[#3F5A62] hover:bg-[#4d6b75] dark:bg-[#253645] dark:hover:bg-[#2e4354] rounded-3xl p-6 flex flex-col items-center justify-center cursor-pointer transition-all duration-300 shadow-[0_0_15px_rgba(254,130,84,0.12)] hover:shadow-[0_0_30px_rgba(254,130,84,0.45)] hover:-translate-y-1 select-none overflow-hidden group"
+                >
+                  {/* Top-Left Cutout (Concave Corner for Arrow Button) */}
+                  <div className="absolute top-0 left-0 w-14 h-14 bg-[var(--background)] rounded-br-[2rem] transition-colors duration-300">
+                    <div className="absolute top-0 left-0 w-9 h-9 bg-[#3F5A62] group-hover:bg-[#4d6b75] dark:bg-[#253645] dark:group-hover:bg-[#2e4354] text-[#FE8254] flex items-center justify-center rounded-xl shadow-sm transition-colors duration-300">
+                      <ArrowUpRight className="w-4 h-4 -rotate-90" />
                     </div>
                   </div>
-                </div>
 
-                {/* Body Title */}
-                <div className="mt-5">
-                  <h3 className="text-lg font-black text-white uppercase tracking-tight leading-none group-hover:text-orange-400 transition-colors duration-300">
-                    {item.label}
-                  </h3>
-                </div>
+                  {/* Bottom-Right Cutout (Concave Corner for Text Label) */}
+                  <div className="absolute bottom-0 right-0 w-28 h-10 bg-[var(--background)] rounded-tl-[1.5rem] transition-colors duration-300">
+                    <div className="absolute bottom-0 right-0 px-3 py-1.5 bg-[#3F5A62] group-hover:bg-[#4d6b75] dark:bg-[#253645] dark:group-hover:bg-[#2e4354] text-[9px] font-black uppercase text-[#FE8254] tracking-widest rounded-lg transition-colors duration-300">
+                      DEĞİRMEN
+                    </div>
+                  </div>
 
-                {/* Body Metrics Grid */}
-                <div className="grid grid-cols-3 gap-1 py-4 my-3 border-t border-b border-zinc-900/80 text-center">
-                  <div>
-                    <div className="text-[8px] text-zinc-500 uppercase font-black tracking-wider">Erişim</div>
-                    <div className="text-[11px] font-extrabold text-zinc-300 mt-1">Personel</div>
+                  {/* Centered Large Menu Title */}
+                  <div className="text-center z-10 px-4 mt-2">
+                    <span 
+                      style={{ fontFamily: "'Getai Grotesk', sans-serif" }}
+                      className="text-xl sm:text-2xl font-black uppercase tracking-tighter text-[#FE8254] leading-tight block drop-shadow-sm"
+                    >
+                      {item.label}
+                    </span>
                   </div>
-                  <div className="border-l border-zinc-900/80">
-                    <div className="text-[8px] text-zinc-500 uppercase font-black tracking-wider">Cihaz</div>
-                    <div className="text-[11px] font-extrabold text-zinc-300 mt-1">Mobil/Web</div>
-                  </div>
-                  <div className="border-l border-zinc-900/80">
-                    <div className="text-[8px] text-zinc-500 uppercase font-black tracking-wider">Durum</div>
-                    <div className="text-[11px] font-extrabold text-emerald-400 mt-1">Aktif</div>
-                  </div>
-                </div>
 
-                {/* Footer Content: Description & CTA Button */}
-                <div className="flex items-center justify-between mt-1 gap-2">
-                  <span className="text-[9px] font-black uppercase tracking-wider text-zinc-500 leading-none">
-                    KULLANIMA HAZIR
-                  </span>
-                  <button className={`bg-gradient-to-r text-zinc-950 font-black uppercase tracking-wider text-[9px] px-5 py-2.5 rounded-full transition-all duration-300 hover:scale-[1.03] cursor-pointer ${accent.btn}`}>
-                    Modüle Git
-                  </button>
                 </div>
-              </div>
-            );
+              );
+            } else {
+              // Burnt Peach Card layout with Neon Glow (No borders)
+              return (
+                <div 
+                  key={idx}
+                  onClick={() => {
+                    if (item.path !== "#") router.push(item.path);
+                  }}
+                  className="relative w-full max-w-[290px] h-[190px] bg-[#FE8254] hover:bg-[#ff956b] dark:bg-[#d46537] dark:hover:bg-[#e67545] rounded-3xl p-6 flex flex-col items-center justify-center cursor-pointer transition-all duration-300 shadow-[0_0_15px_rgba(254,130,84,0.12)] hover:shadow-[0_0_30px_rgba(254,130,84,0.45)] hover:-translate-y-1 select-none overflow-hidden group"
+                >
+                  {/* Top-Right Cutout (Concave Corner for Arrow Button) */}
+                  <div className="absolute top-0 right-0 w-14 h-14 bg-[var(--background)] rounded-bl-[2rem] transition-colors duration-300">
+                    <div className="absolute top-0 right-0 w-9 h-9 bg-[#FE8254] group-hover:bg-[#ff956b] dark:bg-[#d46537] dark:group-hover:bg-[#e67545] text-[#3F5A62] dark:text-zinc-950 flex items-center justify-center rounded-xl shadow-sm transition-colors duration-300">
+                      <ArrowUpRight className="w-4 h-4" />
+                    </div>
+                  </div>
+
+                  {/* Bottom-Left Cutout (Concave Corner for Text Label) */}
+                  <div className="absolute bottom-0 left-0 w-28 h-10 bg-[var(--background)] rounded-tr-[1.5rem] transition-colors duration-300">
+                    <div className="absolute bottom-0 left-0 px-3 py-1.5 bg-[#FE8254] group-hover:bg-[#ff956b] dark:bg-[#d46537] dark:group-hover:bg-[#e67545] text-[9px] font-black uppercase text-[#3F5A62] dark:text-zinc-950 tracking-widest rounded-lg transition-colors duration-300">
+                      {item.label === "Sipariş Ver" ? "SİPARİŞ" : item.label === "Tüm Şube Stokları" ? "ANALİZ" : "CAFE"}
+                    </div>
+                  </div>
+
+                  {/* Centered Large Menu Title */}
+                  <div className="text-center z-10 px-4 mt-2">
+                    <span 
+                      style={{ fontFamily: "'Getai Grotesk', sans-serif" }}
+                      className="text-xl sm:text-2xl font-black uppercase tracking-tighter text-[#3F5A62] dark:text-zinc-950 leading-tight block drop-shadow-sm"
+                    >
+                      {item.label}
+                    </span>
+                  </div>
+
+                </div>
+              );
+            }
           })}
         </div>
 
