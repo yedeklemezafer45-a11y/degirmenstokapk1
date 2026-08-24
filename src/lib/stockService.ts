@@ -45,10 +45,10 @@ export async function seedDefaultStocksForRegion(regionId: string): Promise<void
   }
 
   // Göçün tamamlandığını işaretlemek için özel dokümanı yaz
-  const migrationRef = doc(db, path, "_migration_v2");
+  const migrationRef = doc(db, path, "_migration_v3");
   const migrationDoc: StockItem = {
-    id: "_migration_v2",
-    name: "MIGRATION_V2_METADATA",
+    id: "_migration_v3",
+    name: "MIGRATION_V3_METADATA",
     category: "Yan Ürünler",
     depodaBulunan: 0,
     depodanAlinan: 0,
@@ -66,8 +66,8 @@ export async function seedDefaultStocksForRegion(regionId: string): Promise<void
 
 // Eksik varsayılan ürünleri Firestore'a yükle (Yeni kategori/ürün güncellemeleri için)
 export async function ensureAllDefaultStocksExist(regionId: string, currentItems: StockItem[]): Promise<void> {
-  const hasMigrationV2 = currentItems.some(i => i.id === "_migration_v2");
-  if (hasMigrationV2) {
+  const hasMigrationV3 = currentItems.some(i => i.id === "_migration_v3");
+  if (hasMigrationV3) {
     // Göç zaten yapılmış, silinen ürünleri geri yükleme
     return;
   }
@@ -94,11 +94,11 @@ export async function ensureAllDefaultStocksExist(regionId: string, currentItems
     }
   }
 
-  // Göç v2 tamamlandı işaretle
-  const migrationRef = doc(db, path, "_migration_v2");
+  // Göç v3 tamamlandı işaretle
+  const migrationRef = doc(db, path, "_migration_v3");
   const migrationDoc: StockItem = {
-    id: "_migration_v2",
-    name: "MIGRATION_V2_METADATA",
+    id: "_migration_v3",
+    name: "MIGRATION_V3_METADATA",
     category: "Yan Ürünler",
     depodaBulunan: 0,
     depodanAlinan: 0,
@@ -123,12 +123,12 @@ export async function getAllStocks(regionId: string): Promise<StockItem[]> {
       await seedDefaultStocksForRegion(regionId);
       const freshSnap = await getDocs(collection(db, path));
       const rawItems = freshSnap.docs.map(d => d.data() as StockItem);
-      const items = rawItems.filter(item => item.id !== "_migration_v2");
+      const items = rawItems.filter(item => item.id !== "_migration_v3" && item.id !== "_migration_v2");
       return [...items].sort((a, b) => a.name.localeCompare(b.name, "tr"));
     }
     const rawItems = snapshot.docs.map(d => d.data() as StockItem);
     await ensureAllDefaultStocksExist(regionId, rawItems);
-    const items = rawItems.filter(item => item.id !== "_migration_v2");
+    const items = rawItems.filter(item => item.id !== "_migration_v3" && item.id !== "_migration_v2");
     return [...items].sort((a, b) => a.name.localeCompare(b.name, "tr"));
   } catch (err) {
     console.error(`getAllStocks (${regionId}) hatası:`, err);
@@ -157,7 +157,7 @@ export function subscribeToStocks(
       const rawItems = snapshot.docs.map(d => d.data() as StockItem);
       // Arka planda eksik olanları ekle
       ensureAllDefaultStocksExist(regionId, rawItems).then(() => {
-        const items = rawItems.filter(item => item.id !== "_migration_v2");
+        const items = rawItems.filter(item => item.id !== "_migration_v3" && item.id !== "_migration_v2");
         const sorted = [...items].sort((a, b) => a.name.localeCompare(b.name, "tr"));
         callback(sorted);
       });

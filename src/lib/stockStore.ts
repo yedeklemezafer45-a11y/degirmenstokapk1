@@ -143,7 +143,12 @@ export const mockStockItems: StockItem[] = [
   { id: "cake5", name: "HM-DEVİLS PASTA", category: "Pastalar", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Adet", minLimit: 5, price: 100, weightInfo: "1 Dilim" },
   { id: "cake6", name: "HM-MAGNOLYA LOTUS", category: "Pastalar", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Adet", minLimit: 5, price: 80, weightInfo: "1 Adet" },
   { id: "cake7", name: "HM-MAGNOLYA YABAN MERSİNLİ", category: "Pastalar", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Adet", minLimit: 5, price: 80, weightInfo: "1 Adet" },
-  { id: "cake8", name: "HM-MAGNOLYA ORMAN MEYVELİ", category: "Pastalar", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Adet", minLimit: 5, price: 80, weightInfo: "1 Adet" }
+  { id: "cake8", name: "HM-MAGNOLYA ORMAN MEYVELİ", category: "Pastalar", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Adet", minLimit: 5, price: 80, weightInfo: "1 Adet" },
+  { id: "cake9", name: "HM-DAĞ MEYVELİ PASTA", category: "Pastalar", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Adet", minLimit: 5, price: 100, weightInfo: "1 Dilim" },
+  { id: "cake10", name: "HM-KREMALI TARÇINLI PASTA", category: "Pastalar", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Adet", minLimit: 5, price: 100, weightInfo: "1 Dilim" },
+  { id: "cake11", name: "HM-SPONFULL", category: "Pastalar", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Adet", minLimit: 5, price: 100, weightInfo: "1 Adet" },
+  { id: "cake12", name: "HM-LOTUS CHEESECAKE", category: "Pastalar", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Adet", minLimit: 5, price: 100, weightInfo: "1 Dilim" },
+  { id: "cake13", name: "HM-BOOMCAKE", category: "Pastalar", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Adet", minLimit: 5, price: 100, weightInfo: "1 Adet" }
 ];
 
 export function isProductAllowedForRegion(regionId: string, item: { name: string; category: string }): boolean {
@@ -197,6 +202,23 @@ export function isProductAllowedForRegion(regionId: string, item: { name: string
     ];
     if (item.category === "Kahveler" && forbiddenCoffees.includes(item.name)) {
       return false;
+    }
+    // Pastalar kısıtlaması (13 Eylül Vargel ve Millet Bahçesi Vargel'de sadece bu 9 pasta olacak, diğer şubelerde hepsi kalabilir)
+    if (regionId === "13-eylul-vargel-kafe" || regionId === "millet-bahcesi-vargel-kafe") {
+      const allowedCakes = [
+        "HM-DEVİLS PASTA",
+        "HM-DAĞ MEYVELİ PASTA",
+        "HM-KREMALI TARÇINLI PASTA",
+        "HM-TRAMİSU",
+        "HM-FRAMBUAZ CHESECAKE",
+        "HM-LATTE KARE PASTA",
+        "HM-SPONFULL",
+        "HM-LOTUS CHEESECAKE",
+        "HM-BOOMCAKE"
+      ];
+      if (item.category === "Pastalar" && !allowedCakes.includes(item.name)) {
+        return false;
+      }
     }
   }
   return true;
