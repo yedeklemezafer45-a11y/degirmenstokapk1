@@ -265,72 +265,47 @@ export default function StokPage() {
           )}
         </div>
 
-        {/* EKRAN 1: KATEGORİ SEÇİM EKRANI */}
         {!selectedCategory ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 justify-items-center py-4">
-            {categories.map((category, idx) => {
-              const isSteel = idx % 2 === 0;
-              
-              if (isSteel) {
-                return (
-                  <div 
-                    key={category}
-                    onClick={() => setSelectedCategory(category)}
-                    className="relative w-full max-w-[240px] h-[170px] bg-[#3F5A62] hover:bg-[#4d6b75] dark:bg-[#253645] dark:hover:bg-[#2e4354] rounded-3xl p-5 flex flex-col items-center justify-center cursor-pointer transition-all duration-300 shadow-[0_0_12px_rgba(254,130,84,0.12)] hover:shadow-[0_0_25px_rgba(254,130,84,0.45)] hover:-translate-y-1 select-none overflow-hidden group"
-                  >
-                    {/* Top-Left Cutout (Concave Corner for Arrow Button) */}
-                    <div className="absolute top-0 left-0 w-12 h-12 bg-[var(--background)] rounded-br-[1.5rem] transition-colors duration-300">
-                      <div className="absolute top-0 left-0 w-8 h-8 bg-[#3F5A62] group-hover:bg-[#4d6b75] dark:bg-[#253645] dark:group-hover:bg-[#2e4354] text-[#FE8254] flex items-center justify-center rounded-lg shadow-sm transition-colors duration-300">
-                        <ArrowUpRight className="w-3.5 h-3.5 -rotate-90" />
-                      </div>
-                    </div>
+            {categories.map((category) => (
+              <div 
+                key={category}
+                onClick={() => setSelectedCategory(category)}
+                className="relative w-full max-w-[240px] bg-zinc-950/85 border border-zinc-800 hover:border-zinc-700/80 rounded-[2rem] p-6 flex flex-col justify-between cursor-pointer transition-all duration-300 shadow-[0_10px_25px_rgba(0,0,0,0.5)] hover:-translate-y-1 select-none group animate-fadeIn"
+              >
+                {/* Floating Top-Right Notched Badge */}
+                <span className="absolute -top-2.5 right-5 px-3 py-1 bg-zinc-900 border border-zinc-800 rounded-full text-[7px] font-black uppercase tracking-widest text-zinc-400 shadow-md">
+                  KATEGORİ
+                </span>
 
-                    {/* Bottom-Right Cutout (Concave Corner for Text Label) */}
-                    <div className="absolute bottom-0 right-0 w-24 h-9 bg-[var(--background)] rounded-tl-[1.2rem] transition-colors duration-300">
-                      <div className="absolute bottom-0 right-0 px-2 py-1.5 bg-[#3F5A62] group-hover:bg-[#4d6b75] dark:bg-[#253645] dark:group-hover:bg-[#2e4354] text-[8px] font-black uppercase text-[#FE8254] tracking-widest rounded-md transition-colors duration-300">
-                        DEĞİRMEN
-                      </div>
-                    </div>
-
-                    {/* Centered Menu Title */}
-                    <div className="text-center z-10 px-3 mt-2">
-                      <span className="text-sm sm:text-base font-black uppercase tracking-tighter text-[#FE8254] leading-tight block drop-shadow-sm truncate max-w-[160px]">
-                        {category}
-                      </span>
-                    </div>
+                {/* Header: Icon Box & Brand */}
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-orange-500/10 text-orange-400 shadow-inner">
+                    <Coffee className="w-4 h-4" />
                   </div>
-                );
-              } else {
-                return (
-                  <div 
-                    key={category}
-                    onClick={() => setSelectedCategory(category)}
-                    className="relative w-full max-w-[240px] h-[170px] bg-[#FE8254] hover:bg-[#ff956b] dark:bg-[#d46537] dark:hover:bg-[#e67545] rounded-3xl p-5 flex flex-col items-center justify-center cursor-pointer transition-all duration-300 shadow-[0_0_12px_rgba(254,130,84,0.12)] hover:shadow-[0_0_25px_rgba(254,130,84,0.45)] hover:-translate-y-1 select-none overflow-hidden group"
-                  >
-                    {/* Top-Right Cutout (Concave Corner for Arrow Button) */}
-                    <div className="absolute top-0 right-0 w-12 h-12 bg-[var(--background)] rounded-bl-[1.5rem] transition-colors duration-300">
-                      <div className="absolute top-0 right-0 w-8 h-8 bg-[#FE8254] group-hover:bg-[#ff956b] dark:bg-[#d46537] dark:group-hover:bg-[#e67545] text-[#3F5A62] dark:text-zinc-950 flex items-center justify-center rounded-lg shadow-sm transition-colors duration-300">
-                        <ArrowUpRight className="w-3.5 h-3.5" />
-                      </div>
-                    </div>
-
-                    {/* Bottom-Left Cutout (Concave Corner for Text Label) */}
-                    <div className="absolute bottom-0 left-0 w-24 h-9 bg-[var(--background)] rounded-tr-[1.2rem] transition-colors duration-300">
-                      <div className="absolute bottom-0 left-0 px-2 py-1 bg-[#FE8254] group-hover:bg-[#ff956b] dark:bg-[#d46537] dark:group-hover:bg-[#e67545] text-[8px] font-black uppercase text-[#3F5A62] dark:text-zinc-950 tracking-widest rounded-md transition-colors duration-300">
-                        CAFE
-                      </div>
-                    </div>
-
-                    {/* Centered Menu Title */}
-                    <div className="text-center z-10 px-3 mt-2">
-                      <span className="text-sm sm:text-base font-black uppercase tracking-tighter text-[#3F5A62] dark:text-zinc-950 leading-tight block drop-shadow-sm truncate max-w-[160px]">
-                        {category}
-                      </span>
-                    </div>
+                  <div>
+                    <span className="text-[8px] font-black text-zinc-500 uppercase tracking-widest leading-none">STOK</span>
                   </div>
-                );
-              }
-            })}
+                </div>
+
+                {/* Body Title */}
+                <div className="mt-4">
+                  <h3 className="text-sm font-black text-white uppercase tracking-tight leading-tight group-hover:text-orange-400 transition-colors duration-300">
+                    {category}
+                  </h3>
+                </div>
+
+                {/* Footer Content */}
+                <div className="flex items-center justify-between mt-4 gap-2 pt-2 border-t border-zinc-900/60">
+                  <span className="text-[8px] font-bold text-zinc-500 uppercase">
+                    Ürünleri Gör
+                  </span>
+                  <div className="w-6 h-6 rounded-lg bg-orange-500/10 flex items-center justify-center text-orange-400">
+                    <ArrowUpRight className="w-3.5 h-3.5" />
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         ) : (
           /* EKRAN 2: SEÇİLİ KATEGORİYE AİT ÜRÜN LİSTESİ */
@@ -358,55 +333,72 @@ export default function StokPage() {
                   return (
                     <div 
                       key={item.id}
-                      className={`bg-[var(--card)] border rounded-3xl p-5 shadow-sm transition-all duration-300 relative overflow-hidden flex flex-col justify-between ${
-                        isCritical 
-                          ? "border-red-500/30 bg-red-500/[0.02]" 
-                          : "border-[var(--border)]"
+                      className={`relative w-full bg-zinc-950/85 border rounded-[2rem] p-6 flex flex-col justify-between transition-all duration-300 shadow-[0_12px_36px_rgba(0,0,0,0.6)] hover:-translate-y-1 select-none group ${
+                        isCritical ? "border-red-500/30" : "border-zinc-800 hover:border-zinc-700/80"
                       }`}
                     >
-                      {isCritical && (
-                        <div className="absolute top-0 right-0 bg-red-500 text-white px-3 py-1 text-[9px] font-bold rounded-bl-xl uppercase tracking-wider flex items-center gap-1">
-                          <AlertTriangle className="w-3 h-3" /> Kritik Limit
-                        </div>
-                      )}
+                      {/* Floating Top-Right Notched Badge */}
+                      <span className={`absolute -top-3 right-6 px-3 py-1 bg-zinc-900 border rounded-full text-[8px] font-black uppercase tracking-widest shadow-md ${
+                        isCritical ? "border-red-500/30 text-red-400" : "border-zinc-800 text-zinc-400"
+                      }`}>
+                        {isCritical ? "LİMİT ALTI" : "NORMAL"}
+                      </span>
 
-                      <div className="space-y-1">
-                        <div className="flex items-center justify-between">
-                          <span className="text-[10px] uppercase font-semibold tracking-wider text-zinc-400">
-                            {item.category}
-                          </span>
-                          {item.weightInfo && (
-                            <span className="text-[9px] bg-zinc-500/10 text-zinc-400 px-2 py-0.5 rounded font-black border border-zinc-500/10">
-                              {item.weightInfo}
-                            </span>
-                          )}
+                      {/* Header: Icon Box & Brand */}
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-inner ${
+                            isCritical ? "bg-red-500/10 text-red-400" : "bg-emerald-500/10 text-emerald-400"
+                          }`}>
+                            <Package className="w-4.5 h-4.5" />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-1">
+                              <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest leading-none">
+                                {item.category}
+                              </span>
+                              <div className="w-3 h-3 rounded-full bg-blue-500 flex items-center justify-center">
+                                <Check className="w-1.5 h-1.5 text-white" strokeWidth={3} />
+                              </div>
+                            </div>
+                          </div>
                         </div>
-                        <h4 className="font-bold text-base tracking-tight pr-16">{item.name}</h4>
+
+                        {item.weightInfo && (
+                          <span className="text-[8px] bg-zinc-900 border border-zinc-800 text-zinc-400 px-2 py-0.5 rounded font-black">
+                            {item.weightInfo}
+                          </span>
+                        )}
                       </div>
 
-                      {/* Bilgi Grid Alanı */}
-                      <div className="grid grid-cols-3 gap-2 mt-4 text-center bg-[var(--background)] p-3 rounded-2xl border border-[var(--border)]">
+                      {/* Body Title */}
+                      <div className="mt-4">
+                        <h4 className="text-sm font-black text-white uppercase tracking-tight leading-tight truncate">
+                          {item.name}
+                        </h4>
+                      </div>
+
+                      {/* Body Metrics Grid */}
+                      <div className="grid grid-cols-3 gap-1 py-3 my-2 border-t border-b border-zinc-900/80 text-center bg-zinc-950/40 rounded-xl px-1">
                         <div>
-                          <span className="text-[9px] text-zinc-500 block uppercase">Depoda</span>
-                          <span className="text-sm font-bold text-zinc-300">{item.depodaBulunan}</span>
+                          <div className="text-[7px] text-zinc-500 uppercase font-black tracking-wider">Depoda</div>
+                          <div className="text-xs font-bold text-zinc-300 mt-1">{item.depodaBulunan}</div>
                         </div>
-                        <div>
-                          <span className="text-[9px] text-zinc-500 block uppercase">Alınan</span>
-                          <span className="text-sm font-bold text-orange-500">{item.depodanAlinan}</span>
+                        <div className="border-l border-zinc-900/80">
+                          <div className="text-[7px] text-zinc-500 uppercase font-black tracking-wider">Alınan</div>
+                          <div className="text-xs font-bold text-orange-500 mt-1">{item.depodanAlinan}</div>
                         </div>
-                        <div>
-                          <span className="text-[9px] text-zinc-500 block uppercase font-bold text-emerald-500">Kalan</span>
-                          <span className={`text-sm font-bold ${isCritical ? "text-red-500 font-extrabold" : "text-emerald-500"}`}>
-                            {item.quantity}
-                          </span>
+                        <div className="border-l border-zinc-900/80">
+                          <div className="text-[7px] text-zinc-500 uppercase font-black tracking-wider">Kalan</div>
+                          <div className={`text-xs font-bold mt-1 ${isCritical ? "text-red-500 font-black animate-pulse" : "text-emerald-500"}`}>{item.quantity}</div>
                         </div>
                       </div>
 
-                      {/* İşlem Kontrolleri */}
-                      <div className="flex items-center justify-between mt-6 pt-4 border-t border-[var(--border)]/60 gap-4">
+                      {/* Footer Content: Description & CTA Buttons */}
+                      <div className="flex items-center justify-between mt-3 pt-3 border-t border-zinc-900/60 gap-4">
                         <div>
-                          <span className="text-[9px] text-zinc-500 block">Birim</span>
-                          <span className="text-xs font-semibold text-zinc-400">{item.unit}</span>
+                          <span className="text-[8px] text-zinc-500 block">BİRİM</span>
+                          <span className="text-[10px] font-black uppercase text-zinc-400">{item.unit}</span>
                         </div>
 
                         <div className="flex items-center gap-3">
@@ -418,11 +410,11 @@ export default function StokPage() {
                                 placeholder="+ Ekle"
                                 value={tempInputs[item.id] || ""}
                                 onChange={(e) => setTempInputs({ ...tempInputs, [item.id]: e.target.value })}
-                                className="w-16 px-2 py-1 text-xs text-center border border-[var(--border)] bg-[var(--background)] rounded-xl focus:outline-none"
+                                className="w-12 px-2 py-1 text-[10px] text-center border border-zinc-800 bg-zinc-900 rounded-lg text-white focus:outline-none"
                               />
                               <button
                                 onClick={() => handleSaveBulkQuantity(item.id)}
-                                className="p-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500 text-emerald-500 hover:text-white transition-colors cursor-pointer border border-emerald-500/20"
+                                className="p-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500 text-emerald-400 hover:text-zinc-950 transition-colors cursor-pointer border border-emerald-500/20"
                                 title="Stoka İlave Et"
                               >
                                 <Check className="w-3.5 h-3.5" />
@@ -434,11 +426,11 @@ export default function StokPage() {
                           <button
                             onClick={() => handleDecreaseQuantity(item.id)}
                             disabled={item.quantity <= 0}
-                            className="h-9 px-3.5 rounded-xl border border-red-500/20 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white transition-colors cursor-pointer flex items-center gap-1.5 disabled:opacity-40"
+                            className="h-8 px-3 rounded-xl border border-red-500/20 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-zinc-950 transition-all duration-300 hover:scale-[1.03] cursor-pointer flex items-center gap-1 disabled:opacity-40"
                             title="1 Adet Düş"
                           >
-                            <Minus className="w-3.5 h-3.5" />
-                            <span className="text-xs font-bold">1 Düş</span>
+                            <Minus className="w-3 h-3" />
+                            <span className="text-[10px] font-black uppercase">1 Düş</span>
                           </button>
                         </div>
                       </div>
