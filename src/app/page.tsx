@@ -334,7 +334,7 @@ export default function LoginPage() {
       <div className="w-full max-w-[400px] bg-[var(--card)]/10 dark:bg-white/5 light:bg-white/80 border border-[var(--border)] rounded-[32px] p-10 shadow-[0_8px_32px_0_rgba(0,0,0,0.15)] backdrop-blur-xl transition-all duration-300 relative z-10 flex flex-col items-center">
         
         {/* Logo */}
-        <div className="w-28 h-28 flex items-center justify-center mb-6">
+        <div className="w-36 h-36 flex items-center justify-center mb-6">
           <img src="/logo.png" alt="Değirmen Logo" className="w-full h-full object-contain" />
         </div>
 
@@ -539,7 +539,7 @@ export default function LoginPage() {
             </button>
 
             <div className="text-center space-y-2">
-              <div className="w-28 h-28 mx-auto flex items-center justify-center">
+              <div className="w-36 h-36 mx-auto flex items-center justify-center">
                 <img src="/logo.png" alt="Değirmen Logo" className="w-full h-full object-contain" />
               </div>
               <h2 className="text-lg font-black tracking-tight text-[var(--foreground)]">Çalışma Bölgesi Seçin</h2>
