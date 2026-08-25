@@ -21,6 +21,7 @@ import { useRouter } from "next/navigation";
 import { StockItem, isProductAllowedForRegion } from "@/lib/stockStore";
 import { subscribeToStocks, saveStockItem } from "@/lib/stockService";
 import { logUserAction } from "@/lib/auditLogService";
+import { updateActiveShiftDataEntry } from "@/lib/shiftService";
 
 export default function StokPage() {
   const router = useRouter();
@@ -113,6 +114,7 @@ export default function StokPage() {
 
     try {
       await saveStockItem(selectedRegion, updatedItem);
+      await updateActiveShiftDataEntry(selectedRegion, true);
       await logUserAction(
         "Depodan Ürün Alındı",
         "STOK",

@@ -22,13 +22,28 @@ import { getAnnouncement, Announcement } from "@/lib/announcementService";
 import { subscribeToStocks } from "@/lib/stockService";
 import { BRANCH_REGIONS } from "@/lib/userService";
 import { useRouter } from "next/navigation";
+import { 
+  getLatestShiftHandover, 
+  getActiveShiftStatus, 
+  saveShiftHandover, 
+  ShiftHandover, 
+  ActiveShiftStatus 
+} from "@/lib/shiftService";
 
 export default function DashboardPage() {
   const router = useRouter();
   const [theme, setTheme] = useState<"light" | "dark">("dark");
   const [userRole, setUserRole] = useState<string>("waiter");
   const [userFullName, setUserFullName] = useState<string>("Personel");
+  const [username, setUsername] = useState<string>("");
   const [allowedMenus, setAllowedMenus] = useState<string[] | null>(null);
+
+  // Vardiya (Shift) Handover State'leri
+  const [latestHandover, setLatestHandover] = useState<ShiftHandover | null>(null);
+  const [activeShiftStatus, setActiveShiftStatus] = useState<ActiveShiftStatus | null>(null);
+  const [showBlurWarning, setShowBlurWarning] = useState(false);
+  const [handoverNote, setHandoverNote] = useState("");
+  const [isSubmittingHandover, setIsSubmittingHandover] = useState(false);
 
   // Bölge State'leri
   const [selectedRegion, setSelectedRegion] = useState("degirmen-kafe");
@@ -89,6 +104,56 @@ export default function DashboardPage() {
     }
   };
 
+  const fetchShiftInfo = async (regionId: string, currentUsername: string) => {
+    try {
+      const latest = await getLatestShiftHandover(regionId);
+      setLatestHandover(latest);
+
+      // Önceki vardiyayı kapatan kişi mevcut kullanıcı değilse ve veri girişi yapmadıysa blur uyarısı
+      if (latest && !latest.hasDataEntry && latest.closedBy !== currentUsername) {
+        setShowBlurWarning(true);
+      } else {
+        setShowBlurWarning(false);
+      }
+
+      const activeStatus = await getActiveShiftStatus(regionId);
+      setActiveShiftStatus(activeStatus);
+    } catch (err) {
+      console.error("fetchShiftInfo error:", err);
+    }
+  };
+
+  const handleCloseShift = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!handoverNote.trim()) {
+      alert("Lütfen bir sonraki vardiyadaki arkadaşınız için bir not bırakın.");
+      return;
+    }
+
+    setIsSubmittingHandover(true);
+    try {
+      const hasEntry = activeShiftStatus ? activeShiftStatus.hasDataEntry : false;
+      await saveShiftHandover(
+        selectedRegion,
+        username,
+        userFullName,
+        handoverNote.trim(),
+        hasEntry
+      );
+
+      setHandoverNote("");
+      setToastMessage("Vardiya başarıyla kapatıldı! 📋");
+      setTimeout(() => setToastMessage(null), 3000);
+
+      await fetchShiftInfo(selectedRegion, username);
+    } catch (err) {
+      console.error("handleCloseShift error:", err);
+      alert("Vardiya kapatılırken hata oldu!");
+    } finally {
+      setIsSubmittingHandover(false);
+    }
+  };
+
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme") as "light" | "dark" | null;
     if (savedTheme) {
@@ -99,10 +164,12 @@ export default function DashboardPage() {
     // Giriş yapan kullanıcının bilgilerini al
     const activeUser = sessionStorage.getItem("activeUser");
     let activeRegion = "degirmen-kafe";
+    let activeUsername = "";
     if (activeUser) {
       const parsed = JSON.parse(activeUser);
       setUserRole(parsed.role || "waiter");
       setUserFullName(parsed.fullName || parsed.name || parsed.username || "Personel");
+      setUsername(parsed.username || "");
       setAllowedMenus(parsed.allowedMenus || null);
       
       const reg = parsed.selectedRegion || "degirmen-kafe";
@@ -110,7 +177,10 @@ export default function DashboardPage() {
       setSelectedRegion(reg);
       setSelectedRegionName(parsed.selectedRegionName || "Değirmen Kafe");
       setAllowedRegions(parsed.allowedRegions || null);
+      activeUsername = parsed.username || "";
     }
+
+    fetchShiftInfo(activeRegion, activeUsername);
 
     // Gerçek zamanlı saat ve tarih güncelleyici
     const updateClock = () => {
@@ -200,10 +270,38 @@ export default function DashboardPage() {
     : modules;
 
   return (
-    <div className="min-h-screen flex flex-col bg-[var(--background)] text-[var(--foreground)] transition-colors duration-300">
+    <div className="min-h-screen flex flex-col bg-[var(--background)] text-[var(--foreground)] transition-colors duration-300 relative">
       
-      {/* 1. ÜST BÖLGE (HEADER) */}
-      <header className="sticky top-0 z-40 w-full border-b border-[var(--border)] bg-[var(--card)]/80 backdrop-blur-md px-6 py-4 flex items-center justify-between shadow-sm">
+      {/* Blur warning modal outside the main layout container */}
+      {showBlurWarning && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
+          <div className="w-full max-w-md bg-zinc-950/95 border border-red-500/30 rounded-[2.5rem] p-8 shadow-2xl space-y-6 text-center">
+            <div className="w-16 h-16 bg-red-500/10 border border-red-500/20 text-red-500 rounded-full flex items-center justify-center mx-auto animate-bounce">
+              <AlertTriangle className="w-8 h-8 text-red-500 shrink-0" />
+            </div>
+            <div className="space-y-2">
+              <h2 className="text-xl font-black text-red-500 tracking-tight">UYARI: Nöbet Devir Hatası!</h2>
+              <p className="text-sm text-zinc-300 leading-relaxed font-semibold">
+                Önceki vardiyadaki personel, vardiya sonunda **depodan alınan ürünlerin veri girişini yapmadı!**
+              </p>
+              <p className="text-xs text-zinc-500">
+                Lütfen sisteme devam etmeden önce bu durumu not edin ve gerekiyorsa yöneticinize bildirin.
+              </p>
+            </div>
+            <button
+              onClick={() => setShowBlurWarning(false)}
+              className="w-full py-3.5 bg-red-600 hover:bg-red-700 text-white font-extrabold rounded-2xl shadow-lg transition-all duration-300 hover:scale-[1.02] active:scale-95 cursor-pointer uppercase tracking-wider text-xs"
+            >
+              Anladım, Devam Et
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Main page content wrapped in blur styling if warning active */}
+      <div className={`flex-1 flex flex-col transition-all duration-500 ${showBlurWarning ? "filter blur-md pointer-events-none" : ""}`}>
+        {/* 1. ÜST BÖLGE (HEADER) */}
+        <header className="sticky top-0 z-40 w-full border-b border-[var(--border)] bg-[var(--card)]/80 backdrop-blur-md px-6 py-4 flex items-center justify-between shadow-sm">
         
         {/* Sol Taraf: Marka */}
         <div className="flex items-center gap-3 w-1/2">
@@ -470,6 +568,98 @@ export default function DashboardPage() {
           </div>
         )}
 
+        {/* Vardiya Notları & Nöbet Devri Paneli */}
+        <div className="w-full max-w-4xl bg-[var(--card)] border border-[var(--border)] rounded-[2rem] p-6 shadow-sm space-y-6">
+          <div className="flex flex-col md:flex-row gap-6 divide-y md:divide-y-0 md:divide-x divide-[var(--border)]">
+            
+            {/* Sol Kolon: Son Vardiya Notu */}
+            <div className="flex-1 pb-6 md:pb-0 md:pr-6 space-y-4">
+              <div className="flex items-center gap-2">
+                <Megaphone className="w-5 h-5 text-orange-500" />
+                <h3 className="font-extrabold text-sm uppercase tracking-wider text-zinc-800 dark:text-zinc-200">
+                  Son Vardiya Notu
+                </h3>
+              </div>
+
+              {latestHandover ? (
+                <div className="bg-[var(--background)]/60 border border-[var(--border)] rounded-2xl p-4 space-y-3">
+                  <p className="text-xs italic text-zinc-750 dark:text-zinc-300 font-medium">
+                    "{latestHandover.note}"
+                  </p>
+                  
+                  <div className="flex flex-col gap-1.5 pt-2 border-t border-[var(--border)]/65 text-[10px] text-zinc-500 font-semibold">
+                    <div className="flex justify-between">
+                      <span>Kapatan:</span>
+                      <span className="text-zinc-700 dark:text-zinc-300 font-bold">{latestHandover.closedByName} (@{latestHandover.closedBy})</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Kapatma Zamanı:</span>
+                      <span className="text-zinc-700 dark:text-zinc-300 font-bold">{latestHandover.closedAt}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span>Vardiya Sonu Veri Girişi:</span>
+                      {latestHandover.hasDataEntry ? (
+                        <span className="text-emerald-500 font-extrabold flex items-center gap-1">
+                          ✓ Yapıldı
+                        </span>
+                      ) : (
+                        <span className="text-red-500 font-extrabold flex items-center gap-1">
+                          ✗ Yapılmadı!
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-xs text-zinc-500 italic">Henüz kaydedilmiş bir vardiya notu bulunmamaktadır.</p>
+              )}
+            </div>
+
+            {/* Sağ Kolon: Vardiyayı Kapat */}
+            <form onSubmit={handleCloseShift} className="flex-1 pt-6 md:pt-0 md:pl-6 space-y-4">
+              <div className="flex items-center gap-2 justify-between">
+                <div className="flex items-center gap-2">
+                  <Power className="w-5 h-5 text-red-500" />
+                  <h3 className="font-extrabold text-sm uppercase tracking-wider text-zinc-800 dark:text-zinc-200">
+                    Vardiyayı Kapat (Nöbet Devri)
+                  </h3>
+                </div>
+                
+                {/* Mevcut Vardiya Durumu */}
+                <div className="text-[10px] font-bold">
+                  {activeShiftStatus?.hasDataEntry ? (
+                    <span className="text-emerald-500 bg-emerald-500/10 px-2 py-1 rounded-xl border border-emerald-500/20">
+                      ✓ Veri Girişi Yapıldı
+                    </span>
+                  ) : (
+                    <span className="text-orange-500 bg-orange-500/10 px-2 py-1 rounded-xl border border-orange-500/20">
+                      ⚠️ Depodan Giriş Yapılmadı
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <textarea
+                  placeholder="Bir sonraki vardiyadaki arkadaşınız için not bırakın... (Örn: 'Yulaf sütü bitti, 2. değirmenin ince ayarı biraz kaçıyor')"
+                  value={handoverNote}
+                  onChange={(e) => setHandoverNote(e.target.value)}
+                  className="w-full bg-[var(--background)] border border-[var(--border)] rounded-2xl p-3 text-xs focus:outline-none focus:ring-1 focus:ring-orange-500 h-20 resize-none font-medium placeholder-zinc-500"
+                />
+
+                <button
+                  type="submit"
+                  disabled={isSubmittingHandover}
+                  className="w-full py-2.5 bg-orange-600 hover:bg-orange-700 disabled:bg-zinc-700 text-white text-xs font-bold rounded-2xl shadow-md transition-all duration-300 hover:scale-[1.01] active:scale-95 cursor-pointer uppercase tracking-wider"
+                >
+                  {isSubmittingHandover ? "Kaydediliyor..." : "Vardiyayı Kapat ve Devret"}
+                </button>
+              </div>
+            </form>
+
+          </div>
+        </div>
+
         {/* Dinamik Kartlar Grid (Görseldeki Asimetrik Cutout Tasarımı) */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 w-full justify-items-center py-6 max-w-5xl">
           {visibleModules.map((item, idx) => {
@@ -560,6 +750,8 @@ export default function DashboardPage() {
           <span>© 2026 Değirmen Cafe. Tüm hakları saklıdır.</span>
         </div>
       </footer>
+
+      </div>
 
       {/* Bölge Değiştirici Modalı */}
       {showRegionSwitcher && (

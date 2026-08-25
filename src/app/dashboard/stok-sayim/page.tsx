@@ -18,7 +18,8 @@ import {
   CheckSquare,
   Square,
   Check,
-  Share2
+  Share2,
+  Calculator
 } from "lucide-react";
 import { StockItem, isProductAllowedForRegion } from "@/lib/stockStore";
 import { subscribeToStocks, saveAllStocks } from "@/lib/stockService";
@@ -50,6 +51,54 @@ export default function StokSayimPage() {
 
   // Yetkili Karşılaştırma Raporu (Sadece admin/yonetici görecek)
   const [showReport, setShowReport] = useState(false);
+
+  // Hesap Makinesi State'leri
+  const [showCalc, setShowCalc] = useState(false);
+  const [calcDisplay, setCalcDisplay] = useState("");
+  const [calcWarning, setCalcWarning] = useState("");
+
+  // Input Değeri Temizleme & Dönüştürme Yardımcısı (Virgülü Noktaya Çevirir)
+  const parseInputValue = (val: any): number => {
+    if (val === undefined || val === null) return 0;
+    const str = String(val).trim();
+    if (!str) return 0;
+    const clean = str.replace(",", ".");
+    const parsed = parseFloat(clean);
+    return isNaN(parsed) ? 0 : parsed;
+  };
+
+  const handleCalcKeyPress = (key: string) => {
+    if (key === "C") {
+      setCalcDisplay("");
+      setCalcWarning("");
+    } else if (key === "=") {
+      try {
+        let expr = calcDisplay.replace(/,/g, ".");
+        if (!/^[0-9+\-*/.]*$/.test(expr)) {
+          throw new Error("Geçersiz");
+        }
+        const result = Function(`"use strict"; return (${expr})`)();
+        if (result === undefined || isNaN(result) || !isFinite(result)) {
+          setCalcDisplay("Hata");
+        } else {
+          const resultStr = String(Number(result.toFixed(4))).replace(".", ",");
+          setCalcDisplay(resultStr);
+        }
+      } catch (err) {
+        setCalcDisplay("Hata");
+      }
+    } else {
+      setCalcDisplay(prev => prev + key);
+    }
+  };
+
+  useEffect(() => {
+    if (calcDisplay.includes(".")) {
+      setCalcWarning("⚠️ Ondalıklar için lütfen virgül (,) kullanın!");
+    } else {
+      setCalcWarning("");
+    }
+  }, [calcDisplay]);
 
   // Toast Bildirim State
   const [showToast, setShowToast] = useState(false);
@@ -241,6 +290,9 @@ export default function StokSayimPage() {
   };
 
   const displayedStockList = stockList.filter(item => {
+    if (item.category === "Kutu Ve Plastik Ürünler") {
+      return false;
+    }
     if (selectedRegion === "degirmen-kafe" && (item.category === "Soft İçecek Ürünleri" || item.category === "Pastalar")) {
       return false;
     }
@@ -377,8 +429,8 @@ export default function StokSayimPage() {
           const isLiquid = isLiquidItem(item);
           const openLabel = isLiquid ? "ml" : "gr";
 
-          const countedVal = parseFloat(sayilanValues[item.id]) || 0;
-          const openVal = parseFloat(aciktaValues[item.id]) || 0;
+          const countedVal = parseInputValue(sayilanValues[item.id]) || 0;
+          const openVal = parseInputValue(aciktaValues[item.id]) || 0;
           const totalValText = formatTotalDisplay(item, countedVal, openVal);
 
           content += `
@@ -433,8 +485,8 @@ export default function StokSayimPage() {
     setIsSaving(true);
     try {
       const updatedStock = stockList.map(item => {
-        const countedQty = parseFloat(sayilanValues[item.id]) || 0;
-        const openUnits = parseFloat(aciktaValues[item.id]) || 0;
+        const countedQty = parseInputValue(sayilanValues[item.id]) || 0;
+        const openUnits = parseInputValue(aciktaValues[item.id]) || 0;
         const totalQty = calculateTotalQuantityInUnit(item, countedQty, openUnits);
 
         return {
@@ -485,8 +537,8 @@ export default function StokSayimPage() {
       let totalGramsAcc = 0;
       const reportSnapshot = stockList.map(item => {
         const { parsedWeight } = extractWeightAndUnit(item);
-        const countedQty = parseFloat(sayilanValues[item.id]) || 0;
-        const openGrams = parseFloat(aciktaValues[item.id]) || 0;
+        const countedQty = parseInputValue(sayilanValues[item.id]) || 0;
+        const openGrams = parseInputValue(aciktaValues[item.id]) || 0;
         const totalQty = calculateTotalQuantityInUnit(item, countedQty, openGrams);
 
         const unitLower = item.unit.toLowerCase();
@@ -525,8 +577,8 @@ export default function StokSayimPage() {
       await saveReport(selectedRegion, newArchiveReport);
 
       const resetStock = stockList.map(item => {
-        const countedQty = parseFloat(sayilanValues[item.id]) || 0;
-        const openGrams = parseFloat(aciktaValues[item.id]) || 0;
+        const countedQty = parseInputValue(sayilanValues[item.id]) || 0;
+        const openGrams = parseInputValue(aciktaValues[item.id]) || 0;
         const totalQty = calculateTotalQuantityInUnit(item, countedQty, openGrams);
 
         return {
@@ -814,9 +866,15 @@ export default function StokSayimPage() {
                     const openLabel = isLiquid ? "ml" : "gr";
 
                     const isChecked = !!checkedItemIds[item.id];
-                    const countedQty = parseFloat(sayilanValues[item.id]) || 0;
-                    const openUnits = parseFloat(aciktaValues[item.id]) || 0;
+                    const countedQty = parseInputValue(sayilanValues[item.id]) || 0;
+                    const openUnits = parseInputValue(aciktaValues[item.id]) || 0;
                     const totalCalculated = calculateTotalQuantityInUnit(item, countedQty, openUnits);
+
+                    const sayilanVal = sayilanValues[item.id] !== undefined ? sayilanValues[item.id] : getInitialSayilan(item);
+                    const aciktaVal = aciktaValues[item.id] || "";
+
+                    const sayilanHasDot = String(sayilanVal).includes(".");
+                    const aciktaHasDot = String(aciktaVal).includes(".");
 
                     return (
                       <tr 
@@ -873,12 +931,15 @@ export default function StokSayimPage() {
                         {/* Sayılan Adet Input */}
                         <td className="py-4 px-4 text-center">
                           <input
-                            type="number"
-                            step="1"
-                            min="0"
-                            value={sayilanValues[item.id] !== undefined ? sayilanValues[item.id] : getInitialSayilan(item)}
+                            type="text"
+                            value={sayilanVal}
                             onChange={(e) => handleSayilanChange(item.id, e.target.value)}
-                            className="w-24 bg-[var(--background)] border border-[var(--border)] rounded-xl px-3 py-1.5 text-center font-mono font-bold text-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                            className={`w-24 bg-[var(--background)] border rounded-xl px-3 py-1.5 text-center font-mono font-bold focus:outline-none focus:ring-1 focus:ring-orange-500 ${
+                              sayilanHasDot 
+                                ? "text-red-500 border-red-500/50 focus:ring-red-500" 
+                                : "text-orange-500 border-[var(--border)]"
+                            }`}
+                            title={sayilanHasDot ? "Ondalıklar için lütfen virgül (,) kullanın!" : ""}
                           />
                         </td>
 
@@ -886,13 +947,16 @@ export default function StokSayimPage() {
                         <td className="py-4 px-4 text-center">
                           <div className="relative inline-block w-28">
                             <input
-                              type="number"
-                              step="10"
-                              min="0"
+                              type="text"
                               placeholder="0"
-                              value={aciktaValues[item.id] || ""}
+                              value={aciktaVal}
                               onChange={(e) => handleAciktaChange(item.id, e.target.value)}
-                              className="w-full bg-[var(--background)] border border-[var(--border)] rounded-xl px-3 py-1.5 text-center font-mono text-zinc-300 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                              className={`w-full bg-[var(--background)] border rounded-xl px-3 py-1.5 text-center font-mono focus:outline-none focus:ring-1 focus:ring-orange-500 ${
+                                aciktaHasDot 
+                                  ? "text-red-500 border-red-500/50 font-bold focus:ring-red-500" 
+                                  : "text-zinc-350 border-[var(--border)]"
+                              }`}
+                              title={aciktaHasDot ? "Ondalıklar için lütfen virgül (,) kullanın!" : ""}
                             />
                             <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-zinc-500 font-bold pointer-events-none">
                               {openLabel}
@@ -914,6 +978,155 @@ export default function StokSayimPage() {
         </div>
 
       </main>
+
+      {/* Floating 3D Calculator Trigger Button */}
+      <button
+        onClick={() => setShowCalc(!showCalc)}
+        className="fixed bottom-6 right-6 z-50 w-14 h-14 bg-[#e76f51] hover:bg-[#eb8870] text-white rounded-full flex items-center justify-center shadow-xl border border-white/10 transition-all duration-300 hover:scale-110 active:scale-95 cursor-pointer"
+        title="Hesap Makinesi"
+      >
+        <Calculator className="w-6 h-6" />
+      </button>
+
+      {/* Draggable/Floating Embossed 3D Calculator Panel */}
+      {showCalc && (
+        <div className="fixed bottom-24 right-6 z-50 w-80 bg-[#264653]/95 dark:bg-[#1a3039]/95 border border-white/10 backdrop-blur-xl rounded-[2.5rem] p-6 shadow-2xl space-y-4 animate-fadeIn">
+          <div className="flex items-center justify-between border-b border-white/10 pb-3">
+            <div className="flex items-center gap-2">
+              <Calculator className="w-5 h-5 text-[#e76f51]" />
+              <span className="text-xs font-black uppercase tracking-wider text-zinc-100">Hızlı Hesap Makinesi</span>
+            </div>
+            <button 
+              onClick={() => setShowCalc(false)}
+              className="text-[10px] text-zinc-400 hover:text-white font-bold transition-colors cursor-pointer"
+            >
+              Kapat
+            </button>
+          </div>
+
+          {/* Calculator Screen */}
+          <div className="bg-zinc-950/80 rounded-2xl p-4 text-right space-y-1 border border-white/5 relative overflow-hidden">
+            {/* Warning indicator */}
+            {calcWarning && (
+              <div className="text-[9px] text-red-400 font-extrabold text-left animate-pulse">
+                {calcWarning}
+              </div>
+            )}
+            <div className={`text-2xl font-mono font-black tracking-tight truncate ${calcWarning ? "text-red-500" : "text-emerald-400"}`}>
+              {calcDisplay || "0"}
+            </div>
+          </div>
+
+          {/* 3D Embossed Keys Grid */}
+          <div className="grid grid-cols-4 gap-3">
+            {/* Row 1 */}
+            <button
+              type="button"
+              onClick={() => handleCalcKeyPress("C")}
+              className="col-span-2 py-3.5 bg-zinc-800 hover:bg-zinc-700 text-red-400 text-xs font-black rounded-2xl cursor-pointer transition-all active:translate-y-[2px] shadow-[inset_0_2px_4px_rgba(255,255,255,0.05),_0_4px_6px_rgba(0,0,0,0.4)] active:shadow-[inset_0_1px_2px_rgba(0,0,0,0.4)] text-center"
+            >
+              C
+            </button>
+            <button
+              type="button"
+              onClick={() => handleCalcKeyPress("/")}
+              className="py-3.5 bg-[#e76f51] hover:bg-[#eb8870] text-white text-xs font-black rounded-2xl cursor-pointer transition-all active:translate-y-[2px] shadow-[inset_0_2px_4px_rgba(255,255,255,0.2),_0_4px_6px_rgba(0,0,0,0.4)] active:shadow-[inset_0_1px_2px_rgba(0,0,0,0.4)] text-center"
+            >
+              /
+            </button>
+            <button
+              type="button"
+              onClick={() => handleCalcKeyPress("*")}
+              className="py-3.5 bg-[#e76f51] hover:bg-[#eb8870] text-white text-xs font-black rounded-2xl cursor-pointer transition-all active:translate-y-[2px] shadow-[inset_0_2px_4px_rgba(255,255,255,0.2),_0_4px_6px_rgba(0,0,0,0.4)] active:shadow-[inset_0_1px_2px_rgba(0,0,0,0.4)] text-center"
+            >
+              *
+            </button>
+
+            {/* Row 2 */}
+            {["7", "8", "9"].map(n => (
+              <button
+                key={n}
+                type="button"
+                onClick={() => handleCalcKeyPress(n)}
+                className="py-3.5 bg-zinc-800/80 hover:bg-zinc-700 text-zinc-100 text-xs font-bold rounded-2xl cursor-pointer transition-all active:translate-y-[2px] shadow-[inset_0_2px_4px_rgba(255,255,255,0.05),_0_4px_6px_rgba(0,0,0,0.4)] active:shadow-[inset_0_1px_2px_rgba(0,0,0,0.4)] text-center"
+              >
+                {n}
+              </button>
+            ))}
+            <button
+              type="button"
+              onClick={() => handleCalcKeyPress("-")}
+              className="py-3.5 bg-[#e76f51] hover:bg-[#eb8870] text-white text-xs font-black rounded-2xl cursor-pointer transition-all active:translate-y-[2px] shadow-[inset_0_2px_4px_rgba(255,255,255,0.2),_0_4px_6px_rgba(0,0,0,0.4)] active:shadow-[inset_0_1px_2px_rgba(0,0,0,0.4)] text-center"
+            >
+              -
+            </button>
+
+            {/* Row 3 */}
+            {["4", "5", "6"].map(n => (
+              <button
+                key={n}
+                type="button"
+                onClick={() => handleCalcKeyPress(n)}
+                className="py-3.5 bg-zinc-800/80 hover:bg-zinc-700 text-zinc-100 text-xs font-bold rounded-2xl cursor-pointer transition-all active:translate-y-[2px] shadow-[inset_0_2px_4px_rgba(255,255,255,0.05),_0_4px_6px_rgba(0,0,0,0.4)] active:shadow-[inset_0_1px_2px_rgba(0,0,0,0.4)] text-center"
+              >
+                {n}
+              </button>
+            ))}
+            <button
+              type="button"
+              onClick={() => handleCalcKeyPress("+")}
+              className="py-3.5 bg-[#e76f51] hover:bg-[#eb8870] text-white text-xs font-black rounded-2xl cursor-pointer transition-all active:translate-y-[2px] shadow-[inset_0_2px_4px_rgba(255,255,255,0.2),_0_4px_6px_rgba(0,0,0,0.4)] active:shadow-[inset_0_1px_2px_rgba(0,0,0,0.4)] text-center"
+            >
+              +
+            </button>
+
+            {/* Row 4 */}
+            {["1", "2", "3"].map(n => (
+              <button
+                key={n}
+                type="button"
+                onClick={() => handleCalcKeyPress(n)}
+                className="py-3.5 bg-zinc-800/80 hover:bg-zinc-700 text-zinc-100 text-xs font-bold rounded-2xl cursor-pointer transition-all active:translate-y-[2px] shadow-[inset_0_2px_4px_rgba(255,255,255,0.05),_0_4px_6px_rgba(0,0,0,0.4)] active:shadow-[inset_0_1px_2px_rgba(0,0,0,0.4)] text-center"
+              >
+                {n}
+              </button>
+            ))}
+            <button
+              type="button"
+              onClick={() => handleCalcKeyPress("=")}
+              className="row-span-2 py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black rounded-2xl cursor-pointer transition-all active:translate-y-[2px] shadow-[inset_0_2px_4px_rgba(255,255,255,0.2),_0_4px_6px_rgba(0,0,0,0.4)] active:shadow-[inset_0_1px_2px_rgba(0,0,0,0.4)] flex items-center justify-center text-center animate-pulse"
+            >
+              =
+            </button>
+
+            {/* Row 5 */}
+            <button
+              type="button"
+              onClick={() => handleCalcKeyPress("0")}
+              className="col-span-2 py-3.5 bg-zinc-800/80 hover:bg-zinc-700 text-zinc-100 text-xs font-bold rounded-2xl cursor-pointer transition-all active:translate-y-[2px] shadow-[inset_0_2px_4px_rgba(255,255,255,0.05),_0_4px_6px_rgba(0,0,0,0.4)] active:shadow-[inset_0_1px_2px_rgba(0,0,0,0.4)] text-center"
+            >
+              0
+            </button>
+            <button
+              type="button"
+              onClick={() => handleCalcKeyPress(".")}
+              className="py-3.5 bg-zinc-800/80 hover:bg-zinc-700 text-zinc-100 text-xs font-extrabold rounded-2xl cursor-pointer transition-all active:translate-y-[2px] shadow-[inset_0_2px_4px_rgba(255,255,255,0.05),_0_4px_6px_rgba(0,0,0,0.4)] active:shadow-[inset_0_1px_2px_rgba(0,0,0,0.4)] text-center"
+            >
+              .
+            </button>
+          </div>
+          
+          <div className="flex justify-center">
+            <button
+              type="button"
+              onClick={() => handleCalcKeyPress(",")}
+              className="px-6 py-2.5 bg-zinc-900/80 hover:bg-zinc-850 text-emerald-400 border border-emerald-500/20 text-[10px] font-black rounded-xl cursor-pointer transition-all active:translate-y-[1px] shadow-sm text-center"
+            >
+              Virgül (,) Ekle
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Footer */}
       <footer className="w-full border-t border-[var(--border)] bg-[var(--card)] py-4 px-6 flex items-center justify-between text-xs text-zinc-500">
