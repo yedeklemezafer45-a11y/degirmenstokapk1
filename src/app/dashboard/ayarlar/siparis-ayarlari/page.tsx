@@ -218,7 +218,7 @@ export default function SiparisAyarlariPage() {
     return isProductAllowedForRegion(selectedRegion, item);
   });
 
-  const categories = ["Tümü", ...Array.from(new Set(displayedStockList.map(i => i.category)))];
+  const categories = ["Tümü", ...Array.from(new Set(displayedStockList.map(i => i.category))).sort((a, b) => a.localeCompare(b, "tr"))];
 
   const filteredStock = displayedStockList.filter(item => {
     const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());

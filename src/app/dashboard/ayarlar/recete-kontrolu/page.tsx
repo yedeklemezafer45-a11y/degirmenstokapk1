@@ -122,7 +122,7 @@ export default function ReceteKontroluPage() {
     "FRAPPE ÇEŞİTLERİ", 
     "MİLKSHAKE ÇEŞİTLERİ",
     "ALTERNATİF FREŞHLER"
-  ];
+  ].sort((a, b) => a.localeCompare(b, "tr"));
 
   // Malzeme Formu Geçici Ekleme
   const addTempIngredient = () => {

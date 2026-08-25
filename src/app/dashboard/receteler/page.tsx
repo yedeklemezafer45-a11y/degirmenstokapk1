@@ -103,7 +103,7 @@ export default function RecetelerPage() {
     "FRAPPE ÇEŞİTLERİ", 
     "MİLKSHAKE ÇEŞİTLERİ",
     "ALTERNATİF FREŞHLER"
-  ];
+  ].sort((a, b) => a.localeCompare(b, "tr"));
 
   // Pop-up engeline takılmayan HTML5 Blob tabanlı yazdır / PDF İndir fonksiyonu
   const handleDownloadPDF = async () => {

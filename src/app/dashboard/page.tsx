@@ -182,15 +182,11 @@ export default function DashboardPage() {
 
     fetchShiftInfo(activeRegion, activeUsername);
 
-    // Gerçek zamanlı saat ve tarih güncelleyici
     const updateClock = () => {
       const now = new Date();
-      let hours = now.getHours();
+      const hours = now.getHours().toString().padStart(2, "0");
       const minutes = now.getMinutes().toString().padStart(2, "0");
-      const ampm = hours >= 12 ? "PM" : "AM";
-      hours = hours % 12;
-      hours = hours ? hours : 12;
-      setTimeStr(`${hours}:${minutes} ${ampm}`);
+      setTimeStr(`${hours}:${minutes}`);
 
       const months = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
       setDateStr(`${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`);
@@ -264,10 +260,9 @@ export default function DashboardPage() {
 
   const totalWarnings = criticalCount + sktWarnings.length;
 
-  // Kısıtlı menü filtrelemesi (allowedMenus tanımlı ise sadece listedeki menüleri göster)
-  const visibleModules = allowedMenus && allowedMenus.length > 0
+  const visibleModules = (allowedMenus && allowedMenus.length > 0
     ? modules.filter(m => allowedMenus.includes(m.path))
-    : modules;
+    : modules).sort((a, b) => a.label.localeCompare(b.label, "tr"));
 
   return (
     <div className="min-h-screen flex flex-col bg-[var(--background)] text-[var(--foreground)] transition-colors duration-300 relative">

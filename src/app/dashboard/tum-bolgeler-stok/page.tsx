@@ -44,7 +44,7 @@ export default function TumBolgelerStokPage() {
     { id: "vargel-kitap-kafe", name: "Vargel Kitap" }
   ];
 
-  const categories = ["Tümü", ...Array.from(new Set(regionStocks.flatMap(rs => rs.items.map(i => i.category))))];
+  const categories = ["Tümü", ...Array.from(new Set(regionStocks.flatMap(rs => rs.items.map(i => i.category)))).sort((a, b) => a.localeCompare(b, "tr"))];
 
   const triggerToast = (msg: string) => {
     setToastMessage(msg);

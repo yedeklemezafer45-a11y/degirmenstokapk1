@@ -173,7 +173,7 @@ export default function StokPage() {
 
   const criticalCount = displayedStockList.filter(item => item.quantity <= item.minLimit).length;
 
-  const categories = ["Tümü", ...Array.from(new Set(displayedStockList.map(i => i.category)))];
+  const categories = ["Tümü", ...Array.from(new Set(displayedStockList.map(i => i.category))).sort((a, b) => a.localeCompare(b, "tr"))];
 
   return (
     <div className="min-h-screen flex flex-col bg-[var(--background)] text-[var(--foreground)] transition-colors duration-300">

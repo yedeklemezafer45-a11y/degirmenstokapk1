@@ -140,7 +140,7 @@ export default function SktKontroluPage() {
     return isProductAllowedForRegion(selectedRegion, item);
   });
 
-  const categories = ["Tümü", ...Array.from(new Set(displayedStockList.map(i => i.category)))];
+  const categories = ["Tümü", ...Array.from(new Set(displayedStockList.map(i => i.category))).sort((a, b) => a.localeCompare(b, "tr"))];
 
   // Filtreler
   const filteredStock = displayedStockList.filter(item => {

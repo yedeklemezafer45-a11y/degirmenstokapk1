@@ -183,7 +183,7 @@ export default function SiparisPage() {
 
   const orderableStock = displayedStockList.filter(item => item.orderable !== false);
 
-  const categories = ["Tümü", ...Array.from(new Set(orderableStock.map(i => i.category)))];
+  const categories = ["Tümü", ...Array.from(new Set(orderableStock.map(i => i.category))).sort((a, b) => a.localeCompare(b, "tr"))];
 
   const filteredStock = orderableStock.filter(item => {
     const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());

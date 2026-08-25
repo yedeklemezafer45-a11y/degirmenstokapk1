@@ -299,7 +299,7 @@ export default function StokSayimPage() {
     return isProductAllowedForRegion(selectedRegion, item);
   });
 
-  const categories = ["Tümü", ...Array.from(new Set(displayedStockList.map((i) => i.category)))];
+  const categories = ["Tümü", ...Array.from(new Set(displayedStockList.map((i) => i.category))).sort((a, b) => a.localeCompare(b, "tr"))];
 
   const filteredStocks = displayedStockList.filter((item) => {
     const matchesCategory = selectedCategory === "Tümü" || item.category === selectedCategory;
