@@ -304,19 +304,19 @@ export default function DashboardPage() {
         <header className="sticky top-0 z-40 w-full border-b border-[var(--border)] bg-[var(--card)]/80 backdrop-blur-md px-6 py-4 flex items-center justify-between shadow-sm">
         
         {/* Sol Taraf: Marka */}
-        <div className="flex items-center gap-3 w-1/2">
-          <div>
-            <h1 className="font-black text-base tracking-tight leading-none text-[var(--foreground)]">
+        <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+          <div className="min-w-0">
+            <h1 className="font-black text-xs sm:text-base tracking-tight leading-none text-[var(--foreground)] truncate" title={selectedRegionName}>
               {selectedRegionName}
             </h1>
-            <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest mt-1.5 block">Kontrol Paneli</span>
+            <span className="text-[8px] sm:text-[9px] font-bold text-zinc-500 uppercase tracking-widest mt-1 sm:mt-1.5 block">Kontrol Paneli</span>
           </div>
 
           {/* Bölge Değiştirici Buton */}
           {(userRole === "admin" || userRole === "yonetici" || (allowedRegions && allowedRegions.length > 1)) && (
             <button
               onClick={() => setShowRegionSwitcher(true)}
-              className="ml-2 px-3 py-1.5 bg-orange-600 hover:bg-orange-700 text-white text-[10px] font-extrabold rounded-lg shadow-md transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer uppercase tracking-wider"
+              className="ml-1 sm:ml-2 px-2 py-1 sm:px-3 sm:py-1.5 bg-orange-600 hover:bg-orange-700 text-white text-[9px] sm:text-[10px] font-extrabold rounded-lg shadow-md transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer uppercase tracking-wider shrink-0"
             >
               Bölge Değiştir
             </button>
@@ -324,7 +324,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Sağ Taraf: Aksiyon Butonları, Saat Dilimi & Çıkış */}
-        <div className="flex items-center justify-end gap-4 w-1/2 relative">
+        <div className="flex items-center justify-end gap-1.5 sm:gap-4 shrink-0 relative">
           
           {/* Bildirim Çanı */}
           <div className="relative">
@@ -445,10 +445,10 @@ export default function DashboardPage() {
             {theme === "dark" ? <Sun className="w-5 h-5 text-amber-500" /> : <Moon className="w-5 h-5" />}
           </button>
 
-          <div className="h-6 w-[1px] bg-[var(--border)]"></div>
+          <div className="hidden sm:block h-6 w-[1px] bg-[var(--border)]"></div>
 
           {/* Görsel 2 Saat Dilimi */}
-          <div className="text-right select-none pr-1">
+          <div className="hidden sm:block text-right select-none pr-1">
             <div className="text-xs font-black tracking-tight text-[var(--foreground)] leading-none">
               {timeStr}
             </div>
