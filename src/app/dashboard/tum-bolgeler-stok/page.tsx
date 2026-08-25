@@ -34,6 +34,7 @@ export default function TumBolgelerStokPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>("Tümü");
   const [isLoading, setIsLoading] = useState(true);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [hoveredBar, setHoveredBar] = useState<{ region: string; type: string; value: number } | null>(null);
 
   const regions = [
     { id: "degirmen-kafe", name: "Değirmen Kafe" },
@@ -152,6 +153,39 @@ export default function TumBolgelerStokPage() {
 
   const uniqueItems = getUniqueItemKeys();
 
+  // Grafik verisi hesaplayıcıları
+  const getChartData = () => {
+    return regions.map(reg => {
+      const rs = regionStocks.find(x => x.regionId === reg.id);
+      let totalGirdi = 0;
+      let totalCikti = 0;
+      let totalKalan = 0;
+
+      if (rs) {
+        rs.items.forEach(item => {
+          const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
+          const matchesCategory = selectedCategory === "Tümü" || item.category === selectedCategory;
+          if (matchesSearch && matchesCategory) {
+            totalGirdi += item.depodaBulunan || 0;
+            totalCikti += item.depodanAlinan || 0;
+            totalKalan += item.quantity || 0;
+          }
+        });
+      }
+
+      return {
+        id: reg.id,
+        name: reg.name,
+        girdi: totalGirdi,
+        cikti: totalCikti,
+        kalan: totalKalan
+      };
+    });
+  };
+
+  const chartData = getChartData();
+  const maxVal = Math.max(...chartData.flatMap(d => [d.girdi, d.cikti, d.kalan]), 10);
+
   // Excel/CSV Dışa Aktarım
   const exportToCSV = () => {
     if (regionStocks.length === 0) return;
@@ -268,6 +302,160 @@ export default function TumBolgelerStokPage() {
             </div>
           </div>
         </div>
+
+        {/* Grafik Analiz Paneli */}
+        {!isLoading && regionStocks.length > 0 && (
+          <div className="bg-[var(--card)] border border-[var(--border)] rounded-[2.5rem] p-6 shadow-sm space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-[var(--border)] pb-3 gap-2">
+              <div>
+                <h3 
+                  style={{ fontFamily: "'Getai Grotesk', sans-serif" }}
+                  className="text-base font-black uppercase text-zinc-800 dark:text-zinc-200 tracking-tight flex items-center gap-2"
+                >
+                  <TrendingUp className="w-5 h-5 text-[#e76f51]" />
+                  ŞUBE BAZLI STOK & TÜKETİM GRAFİK ANALİZİ
+                </h3>
+                <p className="text-[10px] text-zinc-500 uppercase font-black mt-0.5">
+                  Filtre ve aramalara göre otomatik güncellenen dinamik envanter göstergeleri
+                </p>
+              </div>
+
+              {/* Grafik Renk Açıklamaları */}
+              <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-wider">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-3 h-3 rounded-full bg-[#2a9d8f]" />
+                  <span className="text-zinc-500">Siparişten Gelen (Girdi)</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-3 h-3 rounded-full bg-[#e76f51]" />
+                  <span className="text-zinc-500">Çıkış Yapan (Çıktı)</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-3 h-3 rounded-full bg-[#e9c46a]" />
+                  <span className="text-zinc-500">Stokta Bulunan (Kalan)</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Kümelenmiş Çubuk Grafik (Grouped Bar Chart) */}
+              <div className="lg:col-span-2 space-y-4">
+                <div className="h-64 relative border border-[var(--border)]/40 rounded-3xl p-4 bg-[var(--background)]/35 overflow-hidden flex flex-col justify-end">
+                  {/* Grid Lines */}
+                  <div className="absolute inset-0 flex flex-col justify-between p-4 py-8 pointer-events-none">
+                    {[0, 1, 2, 3].map((i) => (
+                      <div key={i} className="w-full border-t border-[var(--border)]/30 relative">
+                        <span className="absolute -top-2.5 right-0 text-[8px] font-mono font-bold text-zinc-500 bg-[var(--card)] px-1 py-0.5 rounded border border-[var(--border)]/20">
+                          {Math.round(maxVal - (maxVal / 3) * i).toLocaleString("tr-TR")}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Bars Container */}
+                  <div className="w-full h-full flex items-end justify-between px-6 pt-4 pb-2 z-10">
+                    {chartData.map((data) => {
+                      // Calculate height percentages
+                      const girdiHeight = (data.girdi / maxVal) * 80; // max 80% to leave space for labels
+                      const ciktiHeight = (data.cikti / maxVal) * 80;
+                      const kalanHeight = (data.kalan / maxVal) * 80;
+
+                      return (
+                        <div key={data.id} className="flex flex-col items-center w-1/5 space-y-2">
+                          <div className="flex items-end justify-center gap-1.5 h-44 w-full">
+                            {/* Girdi Bar */}
+                            <div
+                              onMouseEnter={() => setHoveredBar({ region: data.name, type: "Siparişten Gelen (Girdi)", value: data.girdi })}
+                              onMouseLeave={() => setHoveredBar(null)}
+                              style={{ height: `${Math.max(girdiHeight, 2)}%` }}
+                              className="w-3 bg-[#2a9d8f] hover:bg-[#34b5a6] rounded-t-lg transition-all duration-300 shadow-sm cursor-help relative group"
+                            />
+                            {/* Çıktı Bar */}
+                            <div
+                              onMouseEnter={() => setHoveredBar({ region: data.name, type: "Çıkış Yapan (Çıktı)", value: data.cikti })}
+                              onMouseLeave={() => setHoveredBar(null)}
+                              style={{ height: `${Math.max(ciktiHeight, 2)}%` }}
+                              className="w-3 bg-[#e76f51] hover:bg-[#eb8870] rounded-t-lg transition-all duration-300 shadow-sm cursor-help relative group"
+                            />
+                            {/* Kalan Bar */}
+                            <div
+                              onMouseEnter={() => setHoveredBar({ region: data.name, type: "Stokta Bulunan (Kalan)", value: data.kalan })}
+                              onMouseLeave={() => setHoveredBar(null)}
+                              style={{ height: `${Math.max(kalanHeight, 2)}%` }}
+                              className="w-3 bg-[#e9c46a] hover:bg-[#f0d48f] rounded-t-lg transition-all duration-300 shadow-sm cursor-help relative group"
+                            />
+                          </div>
+                          <span className="text-[9px] font-black uppercase text-zinc-500 tracking-wider truncate max-w-full text-center">
+                            {data.name.replace("Kafe", "")}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Tooltip Overlay */}
+                  {hoveredBar && (
+                    <div className="absolute top-4 left-4 z-20 bg-zinc-950/90 border border-white/10 rounded-2xl p-3 shadow-xl backdrop-blur-md animate-fadeIn text-[10px] space-y-0.5 animate-slideUp">
+                      <div className="font-extrabold text-orange-500">{hoveredBar.region}</div>
+                      <div className="text-zinc-400 font-semibold">{hoveredBar.type}</div>
+                      <div className="text-emerald-400 font-black font-mono text-xs">{hoveredBar.value.toLocaleString("tr-TR")} Birim</div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Konsolide Oranlar (Pie-Ratio Analizi) */}
+              <div className="border border-[var(--border)]/40 rounded-3xl p-5 bg-[var(--background)]/35 flex flex-col justify-between">
+                <div>
+                  <h4 className="text-[11px] font-black uppercase text-zinc-400 tracking-wider mb-3">
+                    GENEL STOK DURUM ORANLARI
+                  </h4>
+                  {(() => {
+                    const totalG = chartData.reduce((acc, curr) => acc + curr.girdi, 0);
+                    const totalC = chartData.reduce((acc, curr) => acc + curr.cikti, 0);
+                    const totalK = chartData.reduce((acc, curr) => acc + curr.kalan, 0);
+                    const totalSum = totalG + totalC + totalK || 1;
+
+                    const pG = (totalG / totalSum) * 100;
+                    const pC = (totalC / totalSum) * 100;
+                    const pK = (totalK / totalSum) * 100;
+
+                    return (
+                      <div className="space-y-4">
+                        {/* Bar Oran */}
+                        <div className="h-6 w-full rounded-2xl bg-zinc-800 overflow-hidden flex shadow-inner">
+                          {totalG > 0 && <div style={{ width: `${pG}%` }} className="h-full bg-[#2a9d8f] transition-all" title="Girdi" />}
+                          {totalC > 0 && <div style={{ width: `${pC}%` }} className="h-full bg-[#e76f51] transition-all" title="Çıktı" />}
+                          {totalK > 0 && <div style={{ width: `${pK}%` }} className="h-full bg-[#e9c46a] transition-all" title="Kalan" />}
+                        </div>
+
+                        {/* Detaylar */}
+                        <div className="space-y-2.5">
+                          <div className="flex items-center justify-between border-b border-[var(--border)]/20 pb-1.5">
+                            <span className="text-[10px] text-zinc-500 font-bold uppercase">Siparişten Gelen (Girdi)</span>
+                            <span className="text-[11px] font-bold font-mono text-[#2a9d8f]">%{pG.toFixed(1)}</span>
+                          </div>
+                          <div className="flex items-center justify-between border-b border-[var(--border)]/20 pb-1.5">
+                            <span className="text-[10px] text-zinc-500 font-bold uppercase">Çıkış Yapan (Çıktı)</span>
+                            <span className="text-[11px] font-bold font-mono text-[#e76f51]">%{pC.toFixed(1)}</span>
+                          </div>
+                          <div className="flex items-center justify-between pb-1">
+                            <span className="text-[10px] text-zinc-500 font-bold uppercase">Stokta Bulunan (Kalan)</span>
+                            <span className="text-[11px] font-bold font-mono text-[#e9c46a]">%{pK.toFixed(1)}</span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+
+                <div className="text-[9px] text-zinc-500 font-semibold bg-[var(--card)] p-2.5 rounded-2xl border border-[var(--border)]/20 text-center uppercase tracking-wider mt-4">
+                  {selectedCategory === "Tümü" ? "Tüm Kategoriler Dahil" : `${selectedCategory} Kategorisi Verileri`}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Filtre ve Arama Çubuğu */}
         <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-[var(--card)] border border-[var(--border)] rounded-[2rem] p-4 shadow-sm">
