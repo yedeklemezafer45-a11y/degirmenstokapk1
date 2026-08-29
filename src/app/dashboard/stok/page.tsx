@@ -35,6 +35,7 @@ export default function StokPage() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [selectedRegion, setSelectedRegion] = useState("degirmen-kafe");
   const [selectedRegionName, setSelectedRegionName] = useState("Değirmen Kafe");
+  const [isCorrectionMode, setIsCorrectionMode] = useState(false);
 
   const handleSharePage = async () => {
     const shareData = {
@@ -122,6 +123,38 @@ export default function StokPage() {
       );
     } catch (err) {
       console.error("Düşürme hatası:", err);
+    }
+  };
+
+  // Hatalı girişi düzeltmek için stoka geri ekleme
+  const handleIncreaseQuantityCorrection = async (id: string) => {
+    const item = stockList.find(i => i.id === id);
+    if (!item || item.depodanAlinan <= 0) {
+      setToastMessage("⚠️ Depodan alınmış miktar sıfır olduğu için düzeltme yapılamaz!");
+      setTimeout(() => setToastMessage(null), 3000);
+      return;
+    }
+
+    const newQty = Number((item.quantity + 1).toFixed(3));
+    const newAlinan = Number((item.depodanAlinan - 1).toFixed(3));
+
+    const updatedItem: StockItem = {
+      ...item,
+      quantity: newQty,
+      depodanAlinan: newAlinan
+    };
+
+    try {
+      await saveStockItem(selectedRegion, updatedItem);
+      await logUserAction(
+        "Depo Girişi Düzeltildi",
+        "STOK",
+        `"${item.name}" hatalı düşümü geri alındı (1 adet eklendi). Yeni kalan: ${newQty} ${item.unit}`
+      );
+      setToastMessage("🔄 Hatalı düşüm geri alındı, envanter düzeltildi!");
+      setTimeout(() => setToastMessage(null), 3000);
+    } catch (err) {
+      console.error("Düzeltme hatası:", err);
     }
   };
 
@@ -337,16 +370,32 @@ export default function StokPage() {
         ) : (
           /* EKRAN 2: SEÇİLİ KATEGORİYE AİT ÜRÜN LİSTESİ */
           <div className="space-y-6 animate-fadeIn">
-            <div className="flex">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <button
                 onClick={() => {
                   setSelectedCategory(null);
                   setSearchQuery("");
+                  setIsCorrectionMode(false);
                 }}
                 className="px-4 py-2 text-xs font-bold border border-[var(--border)] rounded-xl bg-[var(--card)] hover:bg-[var(--foreground)]/5 transition-all cursor-pointer flex items-center gap-2"
               >
                 ← Kategorilere Geri Dön
               </button>
+
+              {/* Düzeltme Modu Aktivasyon Butonu */}
+              <div className="flex items-center gap-3 bg-[var(--card)] border border-[var(--border)] rounded-2xl px-4 py-2 shadow-sm shrink-0">
+                <span className="text-[10px] font-black uppercase text-zinc-500 tracking-wider">Hatalı Giriş Düzeltme</span>
+                <button
+                  onClick={() => setIsCorrectionMode(!isCorrectionMode)}
+                  className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase transition-all cursor-pointer ${
+                    isCorrectionMode 
+                      ? "bg-[#e76f51] text-[#264653] shadow-md animate-pulse" 
+                      : "bg-[var(--background)] border border-[var(--border)] text-zinc-400 hover:text-zinc-200"
+                  }`}
+                >
+                  {isCorrectionMode ? "AÇIK (Düzeltme)" : "KAPALI"}
+                </button>
+              </div>
             </div>
 
             {filteredStock.length === 0 ? (
@@ -432,16 +481,28 @@ export default function StokPage() {
                             </div>
                           )}
 
-                          {/* KULLANICI / BARISTA GİRİŞİ: Stok Düşürme */}
-                          <button
-                            onClick={() => handleDecreaseQuantity(item.id)}
-                            disabled={item.quantity <= 0}
-                            className="h-9 px-3.5 rounded-xl border border-red-500/20 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white transition-colors cursor-pointer flex items-center gap-1.5 disabled:opacity-40"
-                            title="1 Adet Düş"
-                          >
-                            <Minus className="w-3.5 h-3.5" />
-                            <span className="text-xs font-bold">1 Düş</span>
-                          </button>
+                          {/* KULLANICI / BARISTA GİRİŞİ: Stok Düşürme veya Düzeltme */}
+                          {isCorrectionMode ? (
+                            <button
+                              onClick={() => handleIncreaseQuantityCorrection(item.id)}
+                              disabled={item.depodanAlinan <= 0}
+                              className="h-9 px-3.5 rounded-xl border border-[#e76f51]/20 bg-[#e76f51]/10 hover:bg-[#e76f51] text-[#e76f51] hover:text-[#264653] transition-colors cursor-pointer flex items-center gap-1.5 disabled:opacity-40"
+                              title="Hatalı Girişi Geri Al (1 Adet Ekle)"
+                            >
+                              <Plus className="w-3.5 h-3.5" />
+                              <span className="text-xs font-black">1 Geri Ekle</span>
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => handleDecreaseQuantity(item.id)}
+                              disabled={item.quantity <= 0}
+                              className="h-9 px-3.5 rounded-xl border border-red-500/20 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white transition-colors cursor-pointer flex items-center gap-1.5 disabled:opacity-40"
+                              title="1 Adet Düş"
+                            >
+                              <Minus className="w-3.5 h-3.5" />
+                              <span className="text-xs font-bold">1 Düş</span>
+                            </button>
+                          )}
                         </div>
                       </div>
                     </div>
