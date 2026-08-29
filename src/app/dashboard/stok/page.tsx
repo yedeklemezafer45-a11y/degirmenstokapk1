@@ -36,6 +36,7 @@ export default function StokPage() {
   const [selectedRegion, setSelectedRegion] = useState("degirmen-kafe");
   const [selectedRegionName, setSelectedRegionName] = useState("Değirmen Kafe");
   const [isCorrectionMode, setIsCorrectionMode] = useState(false);
+  const [tempDepoInputs, setTempDepoInputs] = useState<Record<string, string>>({});
 
   const handleSharePage = async () => {
     const shareData = {
@@ -165,6 +166,48 @@ export default function StokPage() {
       });
     } catch (err) {
       console.error("Miktar güncelleme hatası:", err);
+    }
+  };
+
+  // Hatalı girişi düzeltmek için depodaki toplam miktarı doğrudan güncelleme
+  const handleUpdateDepoQuantity = async (id: string) => {
+    const item = stockList.find(i => i.id === id);
+    if (!item) return;
+
+    const inputVal = tempDepoInputs[id];
+    if (inputVal === undefined || inputVal === "") return;
+
+    const newDepoda = Number(parseFloat(inputVal).toFixed(3));
+    if (isNaN(newDepoda) || newDepoda < 0) {
+      setToastMessage("⚠️ Geçersiz bir miktar girdiniz!");
+      setTimeout(() => setToastMessage(null), 3000);
+      return;
+    }
+
+    const newQty = Math.max(0, Number((newDepoda - item.depodanAlinan).toFixed(3)));
+
+    const updatedItem: StockItem = {
+      ...item,
+      depodaBulunan: newDepoda,
+      quantity: newQty
+    };
+
+    try {
+      await saveStockItem(selectedRegion, updatedItem);
+      await logUserAction(
+        "Depodaki Miktar Düzeltildi",
+        "STOK",
+        `"${item.name}" için depodaki toplam miktar ${item.depodaBulunan} -> ${newDepoda} olarak düzeltildi. Yeni kalan: ${newQty} ${item.unit}`
+      );
+      setToastMessage("🔄 Depo stok miktarı düzeltildi ve kalan hesaplandı!");
+      setTimeout(() => setToastMessage(null), 3000);
+      setTempDepoInputs(prev => {
+        const copy = { ...prev };
+        delete copy[id];
+        return copy;
+      });
+    } catch (err) {
+      console.error("Depo güncelleme hatası:", err);
     }
   };
 
@@ -449,7 +492,25 @@ export default function StokPage() {
                       <div className="grid grid-cols-3 gap-2 mt-4 text-center bg-[var(--background)] p-3 rounded-2xl border border-[var(--border)]">
                         <div>
                           <span className="text-[9px] text-zinc-500 block uppercase">Depoda</span>
-                          <span className="text-sm font-bold text-zinc-300">{item.depodaBulunan}</span>
+                          {isCorrectionMode ? (
+                            <div className="flex items-center justify-center gap-1 mt-0.5">
+                              <input
+                                type="number"
+                                value={tempDepoInputs[item.id] !== undefined ? tempDepoInputs[item.id] : item.depodaBulunan}
+                                onChange={(e) => setTempDepoInputs({ ...tempDepoInputs, [item.id]: e.target.value })}
+                                className="w-12 px-1 py-0.5 text-[10px] text-center border border-emerald-500/50 bg-[var(--background)] rounded focus:outline-none focus:ring-1 focus:ring-emerald-500 font-bold"
+                              />
+                              <button
+                                onClick={() => handleUpdateDepoQuantity(item.id)}
+                                className="p-1 rounded bg-emerald-500 text-white hover:bg-emerald-600 transition-colors cursor-pointer flex items-center justify-center shrink-0"
+                                title="Değeri Kaydet"
+                              >
+                                <Check className="w-3 h-3 text-zinc-950" />
+                              </button>
+                            </div>
+                          ) : (
+                            <span className="text-sm font-bold text-zinc-300">{item.depodaBulunan}</span>
+                          )}
                         </div>
                         <div>
                           <span className="text-[9px] text-zinc-500 block uppercase">Alınan</span>
