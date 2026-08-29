@@ -337,92 +337,6 @@ export default function DashboardPage() {
                 <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 border border-[var(--card)] rounded-full animate-pulse"></span>
               )}
             </button>
-
-            {/* Bildirim Açılır Kapanır Kutusu (Dropdown) - Sınıflandırılmış / Kategorisel Model */}
-            {showNotifDropdown && (
-              <div className="absolute right-0 top-12 w-80 bg-zinc-950/95 border border-white/10 backdrop-blur-xl rounded-2xl p-4 shadow-2xl z-50 text-left animate-fadeIn">
-                <div className="flex items-center justify-between border-b border-white/10 pb-2 mb-3">
-                  <span className="text-xs font-black text-zinc-200 uppercase tracking-wider">Bildirim Paneli</span>
-                  <button 
-                    onClick={() => setShowNotifDropdown(false)}
-                    className="text-[10px] text-zinc-500 hover:text-white font-bold"
-                  >
-                    Kapat
-                  </button>
-                </div>
-
-                <div className="space-y-4 max-h-80 overflow-y-auto no-scrollbar pr-1">
-                  
-                  {/* KATEGORİ 1: ÜRÜN BİLDİRİMLERİ (Kritik Stok & SKT) */}
-                  <div className="space-y-1.5">
-                    <div className="flex items-center gap-1.5 text-[9px] font-black uppercase text-orange-500 tracking-widest border-b border-white/5 pb-1">
-                      <span>📦 ÜRÜN BİLDİRİMLERİ</span>
-                      <span className="ml-auto px-1.5 py-0.2 bg-orange-500/10 text-orange-400 rounded-md">
-                        {criticalItems.length + sktWarnings.length}
-                      </span>
-                    </div>
-                    {criticalItems.length === 0 && sktWarnings.length === 0 ? (
-                      <p className="text-[9px] text-zinc-500 italic pl-1 py-1">Kritik stok veya SKT uyarısı yok.</p>
-                    ) : (
-                      <div className="space-y-1.5">
-                        {criticalItems.map(item => (
-                          <div key={`crit-${item.id}`} className="flex items-start gap-2 p-2 rounded-xl bg-red-500/10 border border-red-500/20">
-                            <AlertTriangle className="w-3.5 h-3.5 text-red-500 shrink-0 mt-0.5" />
-                            <div className="text-[10px]">
-                              <p className="font-bold text-zinc-200">{item.name}</p>
-                              <p className="text-red-400 mt-0.5">Kritik sınırda! Kalan: {item.quantity} {item.unit}</p>
-                            </div>
-                          </div>
-                        ))}
-                        {sktWarnings.map(item => (
-                          <div key={`skt-${item.id}`} className="flex items-start gap-2 p-2 rounded-xl bg-amber-500/10 border border-amber-500/20">
-                            <AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5" />
-                            <div className="text-[10px]">
-                              <p className="font-bold text-zinc-200">{item.name}</p>
-                              <p className="text-amber-400 mt-0.5">Son kullanma tarihine {item.daysLeft} gün kaldı!</p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* KATEGORİ 2: DUYURU BİLDİRİMLERİ */}
-                  <div className="space-y-1.5">
-                    <div className="flex items-center gap-1.5 text-[9px] font-black uppercase text-blue-500 tracking-widest border-b border-white/5 pb-1">
-                      <span>📢 DUYURU BİLDİRİMLERİ</span>
-                      <span className="ml-auto px-1.5 py-0.2 bg-blue-500/10 text-blue-400 rounded-md">
-                        {announcement ? 1 : 0}
-                      </span>
-                    </div>
-                    {announcement ? (
-                      <div className="p-2 rounded-xl bg-blue-500/10 border border-blue-500/20 text-[10px]">
-                        <p className="font-black text-zinc-200">{announcement.title}</p>
-                        <p className="text-zinc-400 mt-0.5">{announcement.message}</p>
-                      </div>
-                    ) : (
-                      <p className="text-[9px] text-zinc-500 italic pl-1 py-1">Yeni duyuru bulunmuyor.</p>
-                    )}
-                  </div>
-
-                  {/* KATEGORİ 3: SİSTEM VE BAKIM BİLDİRİMLERİ */}
-                  <div className="space-y-1.5">
-                    <div className="flex items-center gap-1.5 text-[9px] font-black uppercase text-emerald-500 tracking-widest border-b border-white/5 pb-1">
-                      <span>🛠️ SİSTEM VE BAKIM BİLDİRİMLERİ</span>
-                      <span className="ml-auto px-1.5 py-0.2 bg-emerald-500/10 text-emerald-400 rounded-md">1</span>
-                    </div>
-                    <div className="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-[10px] flex items-start gap-2">
-                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1 shrink-0 animate-ping" />
-                      <div>
-                        <p className="font-black text-zinc-200">Tüm Servisler Aktif</p>
-                        <p className="text-zinc-400 mt-0.5">Sistem sorunsuz çalışıyor. Planlı bir bakım çalışması bulunmamaktadır.</p>
-                      </div>
-                    </div>
-                  </div>
-
-                </div>
-              </div>
-            )}
           </div>
           
           <button
@@ -460,6 +374,92 @@ export default function DashboardPage() {
           >
             <Power className="w-4 h-4" />
           </button>
+
+          {/* Bildirim Açılır Kapanır Kutusu (Dropdown) - Sınıflandırılmış / Kategorisel Model */}
+          {showNotifDropdown && (
+            <div className="absolute right-0 top-14 w-80 bg-zinc-950/95 border border-white/10 backdrop-blur-xl rounded-2xl p-4 shadow-2xl z-50 text-left animate-fadeIn">
+              <div className="flex items-center justify-between border-b border-white/10 pb-2 mb-3">
+                <span className="text-xs font-black text-zinc-200 uppercase tracking-wider">Bildirim Paneli</span>
+                <button 
+                  onClick={() => setShowNotifDropdown(false)}
+                  className="text-[10px] text-zinc-500 hover:text-white font-bold"
+                >
+                  Kapat
+                </button>
+              </div>
+
+              <div className="space-y-4 max-h-80 overflow-y-auto no-scrollbar pr-1">
+                
+                {/* KATEGORİ 1: ÜRÜN BİLDİRİMLERİ (Kritik Stok & SKT) */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center gap-1.5 text-[9px] font-black uppercase text-orange-500 tracking-widest border-b border-white/5 pb-1">
+                    <span>📦 ÜRÜN BİLDİRİMLERİ</span>
+                    <span className="ml-auto px-1.5 py-0.2 bg-orange-500/10 text-orange-400 rounded-md">
+                      {criticalItems.length + sktWarnings.length}
+                    </span>
+                  </div>
+                  {criticalItems.length === 0 && sktWarnings.length === 0 ? (
+                    <p className="text-[9px] text-zinc-500 italic pl-1 py-1">Kritik stok veya SKT uyarısı yok.</p>
+                  ) : (
+                    <div className="space-y-1.5">
+                      {criticalItems.map(item => (
+                        <div key={`crit-${item.id}`} className="flex items-start gap-2 p-2 rounded-xl bg-red-500/10 border border-red-500/20">
+                          <AlertTriangle className="w-3.5 h-3.5 text-red-500 shrink-0 mt-0.5" />
+                          <div className="text-[10px]">
+                            <p className="font-bold text-zinc-200">{item.name}</p>
+                            <p className="text-red-400 mt-0.5">Kritik sınırda! Kalan: {item.quantity} {item.unit}</p>
+                          </div>
+                        </div>
+                      ))}
+                      {sktWarnings.map(item => (
+                        <div key={`skt-${item.id}`} className="flex items-start gap-2 p-2 rounded-xl bg-amber-500/10 border border-amber-500/20">
+                          <AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5" />
+                          <div className="text-[10px]">
+                            <p className="font-bold text-zinc-200">{item.name}</p>
+                            <p className="text-amber-400 mt-0.5">Son kullanma tarihine {item.daysLeft} gün kaldı!</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* KATEGORİ 2: DUYURU BİLDİRİMLERİ */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center gap-1.5 text-[9px] font-black uppercase text-blue-500 tracking-widest border-b border-white/5 pb-1">
+                    <span>📢 DUYURU BİLDİRİMLERİ</span>
+                    <span className="ml-auto px-1.5 py-0.2 bg-blue-500/10 text-blue-400 rounded-md">
+                      {announcement ? 1 : 0}
+                    </span>
+                  </div>
+                  {announcement ? (
+                    <div className="p-2 rounded-xl bg-blue-500/10 border border-blue-500/20 text-[10px]">
+                      <p className="font-black text-zinc-200">{announcement.title}</p>
+                      <p className="text-zinc-400 mt-0.5">{announcement.message}</p>
+                    </div>
+                  ) : (
+                    <p className="text-[9px] text-zinc-500 italic pl-1 py-1">Yeni duyuru bulunmuyor.</p>
+                  )}
+                </div>
+
+                {/* KATEGORİ 3: SİSTEM VE BAKIM BİLDİRİMLERİ */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center gap-1.5 text-[9px] font-black uppercase text-emerald-500 tracking-widest border-b border-white/5 pb-1">
+                    <span>🛠️ SİSTEM VE BAKIM BİLDİRİMLERİ</span>
+                    <span className="ml-auto px-1.5 py-0.2 bg-emerald-500/10 text-emerald-400 rounded-md">1</span>
+                  </div>
+                  <div className="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-[10px] flex items-start gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1 shrink-0 animate-ping" />
+                    <div>
+                      <p className="font-black text-zinc-200">Tüm Servisler Aktif</p>
+                      <p className="text-zinc-400 mt-0.5">Sistem sorunsuz çalışıyor. Planlı bir bakım çalışması bulunmamaktadır.</p>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          )}
         </div>
       </header>
 
