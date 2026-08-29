@@ -217,6 +217,26 @@ export default function TumBolgelerStokPage() {
     return products.sort((a, b) => b.totalConsumed - a.totalConsumed);
   };
 
+  const getCategoryBadgeStyle = (category: string) => {
+    const cat = category.toUpperCase();
+    if (cat.includes("SICAK") || cat.includes("WARM") || cat.includes("KAHVE")) {
+      return "bg-orange-500/10 text-orange-500 border-orange-500/25";
+    }
+    if (cat.includes("SOĞUK") || cat.includes("COLD") || cat.includes("BUZ")) {
+      return "bg-blue-500/10 text-blue-500 border-blue-500/25";
+    }
+    if (cat.includes("ALTERNATİF")) {
+      return "bg-teal-500/10 text-teal-500 border-teal-500/25";
+    }
+    if (cat.includes("FREŞ") || cat.includes("FRESH")) {
+      return "bg-emerald-500/10 text-emerald-500 border-emerald-500/25";
+    }
+    if (cat.includes("YEMEK") || cat.includes("TATLI") || cat.includes("PASTA")) {
+      return "bg-pink-500/10 text-pink-500 border-pink-500/25";
+    }
+    return "bg-purple-500/10 text-purple-500 border-purple-500/25";
+  };
+
   const productsConsumption = getProductsConsumption();
   const topMovingProducts = productsConsumption.slice(0, 5);
   const activeProduct = selectedProductForAnalysis || (topMovingProducts.length > 0 ? topMovingProducts[0].name : null);
@@ -279,7 +299,7 @@ export default function TumBolgelerStokPage() {
             <img src="/logo.png" alt="Değirmen Cafe Logo" className="w-full h-full object-contain" />
           </div>
           <div>
-            <h1 className="font-bold text-lg tracking-tight">Konsolide Şube Stok Takip</h1>
+            <h1 className="font-extrabold text-lg tracking-tight bg-gradient-to-r from-orange-400 via-amber-500 to-emerald-400 bg-clip-text text-transparent">Konsolide Şube Stok Takip</h1>
             <p className="text-xs text-zinc-500">Tüm Bölgelerin Stok Durumunu Yan Yana Görün & Değerlendirin</p>
           </div>
         </div>
@@ -315,12 +335,12 @@ export default function TumBolgelerStokPage() {
         {/* Özet Bilgi Kartları */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="bg-[var(--card)] border border-[var(--border)] rounded-[2rem] p-6 flex items-center gap-4 shadow-sm">
-            <div className="w-12 h-12 rounded-2xl bg-orange-500/10 flex items-center justify-center text-orange-500">
+            <div className="w-12 h-12 rounded-2xl bg-orange-500/10 flex items-center justify-center text-orange-500 animate-pulse">
               <Building2 className="w-6 h-6" />
             </div>
             <div>
               <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider block">Toplam Şube Sayısı</span>
-              <span className="text-xl font-black mt-0.5 block">{regionsList.length} Bölge</span>
+              <span className="text-xl font-extrabold mt-0.5 block text-orange-400">{regionsList.length} Bölge</span>
             </div>
           </div>
           <div className="bg-[var(--card)] border border-[var(--border)] rounded-[2rem] p-6 flex items-center gap-4 shadow-sm">
@@ -329,7 +349,7 @@ export default function TumBolgelerStokPage() {
             </div>
             <div>
               <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider block">Envanterdeki Çeşit</span>
-              <span className="text-xl font-black mt-0.5 block">{uniqueItems.length} Ürün Kalemi</span>
+              <span className="text-xl font-extrabold mt-0.5 block text-amber-400">{uniqueItems.length} Ürün Kalemi</span>
             </div>
           </div>
           <div className="bg-[var(--card)] border border-[var(--border)] rounded-[2rem] p-6 flex items-center gap-4 shadow-sm">
@@ -338,7 +358,7 @@ export default function TumBolgelerStokPage() {
             </div>
             <div>
               <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider block">Konsolide Adet</span>
-              <span className="text-xl font-black mt-0.5 block">
+              <span className="text-xl font-extrabold mt-0.5 block text-emerald-400">
                 {(() => {
                   let total = 0;
                   regionStocks.forEach(rs => {
@@ -364,13 +384,13 @@ export default function TumBolgelerStokPage() {
               <div>
                 <div className="flex items-center justify-between mb-4">
                   <span className="text-[10px] font-black uppercase text-zinc-500 tracking-wider">TÜKETİM ANALİZİ</span>
-                  <span className="text-[9px] bg-orange-500/10 text-orange-500 font-extrabold uppercase px-2.5 py-1 rounded-full border border-orange-500/20">En Hızlı Gidenler</span>
+                  <span className="text-[9px] bg-orange-500/10 text-orange-500 font-extrabold uppercase px-2.5 py-1 rounded-full border border-orange-500/20 animate-pulse">En Hızlı Gidenler</span>
                 </div>
                 
                 {/* Highlight/Summary */}
                 <div className="space-y-1 mb-6">
                   <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest block">Lider Tüketim</span>
-                  <h4 className="text-xl font-extrabold tracking-tight truncate text-[var(--foreground)]">{activeProductData?.name || "Yükleniyor..."}</h4>
+                  <h4 className="text-xl font-extrabold tracking-tight truncate text-orange-500 dark:text-orange-400">{activeProductData?.name || "Yükleniyor..."}</h4>
                   <div className="flex items-baseline gap-1.5">
                     <span className="text-2xl font-black font-mono text-orange-500">{activeProductData?.totalConsumed || 0}</span>
                     <span className="text-[10px] font-bold text-zinc-500 uppercase">{activeProductData?.unit || "Birim"}</span>
@@ -422,7 +442,7 @@ export default function TumBolgelerStokPage() {
                   </h3>
                   <p className="text-[9px] text-zinc-500 uppercase font-bold mt-0.5">Seçili ürünün tüketim bölgeleri</p>
                 </div>
-                <span className="text-[9px] font-extrabold text-zinc-400 border border-[var(--border)] px-2.5 py-1 rounded-full uppercase bg-[var(--background)]/40 truncate max-w-[120px]">
+                <span className="text-[9px] font-extrabold text-orange-500 border border-orange-500/25 px-2.5 py-1 rounded-full uppercase bg-orange-500/5 truncate max-w-[120px] animate-pulse">
                   {activeProduct || "Seçim Yok"}
                 </span>
               </div>
@@ -475,7 +495,7 @@ export default function TumBolgelerStokPage() {
                 {/* Central Labels inside Doughnut */}
                 <div className="absolute inset-0 flex flex-col items-center justify-center text-center space-y-0.5 pointer-events-none">
                   <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider">TOPLAM</span>
-                  <span className="text-xl font-black font-mono text-[var(--foreground)]">{totalActiveProductConsumed}</span>
+                  <span className="text-xl font-black font-mono text-orange-500">{totalActiveProductConsumed}</span>
                   <span className="text-[8px] font-bold text-zinc-400 uppercase tracking-widest">{activeProductData?.unit || "Birim"}</span>
                 </div>
               </div>
@@ -488,7 +508,7 @@ export default function TumBolgelerStokPage() {
                     <div key={regData.id} className="flex items-start gap-1.5 text-[9px]">
                       <span style={{ backgroundColor: regData.color }} className="w-2 h-2 rounded-full mt-1 shrink-0" />
                       <div className="min-w-0">
-                        <span className="text-zinc-500 font-bold block truncate uppercase">{regData.name.replace("Kafe", "")}</span>
+                        <span style={{ color: regData.color }} className="font-bold block truncate uppercase">{regData.name.replace("Kafe", "")}</span>
                         <span className="font-extrabold text-zinc-850 dark:text-zinc-300 font-mono">
                           {regData.value} {activeProductData?.unit} (%{percent.toFixed(0)})
                         </span>
@@ -518,7 +538,7 @@ export default function TumBolgelerStokPage() {
                       onClick={() => setSelectedProductForAnalysis(p.name)}
                       className={`flex items-center justify-between p-2.5 rounded-2xl border transition-all duration-150 cursor-pointer ${
                         isSelected 
-                          ? "bg-orange-500/10 border-orange-500/35 text-orange-400 animate-pulse" 
+                          ? "bg-orange-500/10 border-orange-500/35 text-orange-400" 
                           : "bg-[var(--background)]/30 border-[var(--border)]/40 hover:bg-[var(--foreground)]/5 hover:border-orange-500/20 text-zinc-300"
                       }`}
                     >
@@ -529,11 +549,11 @@ export default function TumBolgelerStokPage() {
                           <Layers className="w-4 h-4" />
                         </div>
                         <div className="min-w-0">
-                          <span className="font-extrabold text-[10px] block truncate text-zinc-200 group-hover:text-orange-500">
+                          <span className={`font-extrabold text-[10px] block truncate ${isSelected ? "text-orange-400" : "text-zinc-250"}`}>
                             {p.name}
                           </span>
-                          <span className="text-[8px] text-zinc-500 uppercase font-bold block truncate">
-                            {p.category.slice(0, 15)}
+                          <span className={`inline-block px-1.5 py-0.5 rounded text-[7px] font-extrabold uppercase border mt-0.5 ${getCategoryBadgeStyle(p.category)}`}>
+                            {p.category.replace("Ve Bitki Çayları", "").replace("Çeşitleri", "")}
                           </span>
                         </div>
                       </div>
@@ -616,8 +636,8 @@ export default function TumBolgelerStokPage() {
                       <th className="py-4 pr-4">Ürün Adı</th>
                       <th className="py-4 px-4">Kategori</th>
                       <th className="py-4 px-4">Birim</th>
-                      {regionsList.map((r: BranchRegion) => (
-                        <th key={r.id} className="py-4 px-4 text-center">{r.name}</th>
+                      {regionsList.map((r: BranchRegion, idx: number) => (
+                        <th key={r.id} style={{ color: regionColors[idx % regionColors.length] }} className="py-4 px-4 text-center">{r.name}</th>
                       ))}
                       <th className="py-4 pl-4 text-right">Toplam Stok</th>
                     </tr>
@@ -640,8 +660,10 @@ export default function TumBolgelerStokPage() {
                           <td className="py-3.5 pr-4 font-black text-zinc-800 dark:text-zinc-200">
                             {item.name}
                           </td>
-                          <td className="py-3.5 px-4 font-bold text-zinc-500 uppercase tracking-wider text-[10px]">
-                            {item.category.replace("Ve Bitki Çayları", "").replace("Çeşitleri", "")}
+                          <td className="py-3.5 px-4">
+                            <span className={`inline-block px-2.5 py-1 rounded-xl text-[9px] font-black uppercase tracking-wider border ${getCategoryBadgeStyle(item.category)}`}>
+                              {item.category.replace("Ve Bitki Çayları", "").replace("Çeşitleri", "")}
+                            </span>
                           </td>
                           <td className="py-3.5 px-4 text-zinc-500 font-semibold font-mono">
                             {item.unit}
