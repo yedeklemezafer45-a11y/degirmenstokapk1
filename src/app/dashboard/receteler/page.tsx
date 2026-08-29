@@ -16,13 +16,14 @@ import {
   CheckCircle2,
   Share2
 } from "lucide-react";
-import { mockRecipes, Recipe } from "@/lib/recipeStore";
+import { mockRecipes, Recipe, RECIPE_CATEGORY_PRIORITY, sortRecipeCategories } from "@/lib/recipeStore";
 import { logUserAction } from "@/lib/auditLogService";
 import { useRouter } from "next/navigation";
 
 export default function RecetelerPage() {
   const router = useRouter();
   const [theme, setTheme] = useState<"light" | "dark">("dark");
+  const [categories, setCategories] = useState<string[]>([]);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -86,6 +87,19 @@ export default function RecetelerPage() {
     } else {
       setRecipes(mockRecipes);
     }
+
+    const savedCategories = localStorage.getItem("recipe_categories");
+    let cats = RECIPE_CATEGORY_PRIORITY;
+    if (savedCategories) {
+      try {
+        cats = JSON.parse(savedCategories);
+      } catch {
+        cats = RECIPE_CATEGORY_PRIORITY;
+      }
+    } else {
+      localStorage.setItem("recipe_categories", JSON.stringify(RECIPE_CATEGORY_PRIORITY));
+    }
+    setCategories(sortRecipeCategories(cats));
   }, []);
 
   const toggleTheme = () => {
@@ -95,15 +109,7 @@ export default function RecetelerPage() {
     document.documentElement.className = newTheme;
   };
 
-  const categories = [
-    "SICAK KAHVELER", 
-    "SOĞUK KAHVELER", 
-    "FREŞHLER", 
-    "FROZEN ÇEŞİTLERİ", 
-    "FRAPPE ÇEŞİTLERİ", 
-    "MİLKSHAKE ÇEŞİTLERİ",
-    "ALTERNATİF FREŞHLER"
-  ].sort((a, b) => a.localeCompare(b, "tr"));
+
 
   // Pop-up engeline takılmayan HTML5 Blob tabanlı yazdır / PDF İndir fonksiyonu
   const handleDownloadPDF = async () => {

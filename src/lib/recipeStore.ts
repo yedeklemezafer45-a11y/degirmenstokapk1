@@ -10,7 +10,30 @@ export interface Recipe {
   ingredients: RecipeIngredient[];
   instructions: string;
   gramaj: string;
-  category: "SICAK KAHVELER" | "SOĞUK KAHVELER" | "FREŞHLER" | "FROZEN ÇEŞİTLERİ" | "FRAPPE ÇEŞİTLERİ" | "MİLKSHAKE ÇEŞİTLERİ" | "ALTERNATİF FREŞHLER";
+  category: string;
+}
+
+export const RECIPE_CATEGORY_PRIORITY = [
+  "SICAK KAHVELER",
+  "SOĞUK KAHVELER",
+  "FREŞHLER",
+  "ALTERNATİF FREŞHLER",
+  "FROZEN ÇEŞİTLERİ",
+  "FRAPPE ÇEŞİTLERİ",
+  "MİLKSHAKE ÇEŞİTLERİ"
+];
+
+export function sortRecipeCategories(categories: string[]): string[] {
+  return [...categories].sort((a, b) => {
+    const indexA = RECIPE_CATEGORY_PRIORITY.indexOf(a);
+    const indexB = RECIPE_CATEGORY_PRIORITY.indexOf(b);
+    if (indexA !== -1 && indexB !== -1) {
+      return indexA - indexB;
+    }
+    if (indexA !== -1) return -1;
+    if (indexB !== -1) return 1;
+    return a.localeCompare(b, "tr");
+  });
 }
 
 export const mockRecipes: Recipe[] = [

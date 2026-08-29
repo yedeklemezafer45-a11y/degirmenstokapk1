@@ -18,7 +18,7 @@ import {
   Layers,
   Flame
 } from "lucide-react";
-import { mockRecipes, Recipe, RecipeIngredient } from "@/lib/recipeStore";
+import { mockRecipes, Recipe, RecipeIngredient, RECIPE_CATEGORY_PRIORITY, sortRecipeCategories } from "@/lib/recipeStore";
 import { StockItem } from "@/lib/stockStore";
 import { subscribeToStocks } from "@/lib/stockService";
 
@@ -26,6 +26,8 @@ export default function ReceteKontroluPage() {
   const [theme, setTheme] = useState<"light" | "dark">("dark");
   const [recipesList, setRecipesList] = useState<Recipe[]>([]);
   const [dbRecipesList, setDbRecipesList] = useState<Recipe[]>([]); // Veritabanındaki asıl durum
+  const [categories, setCategories] = useState<string[]>([]);
+  const [newCategoryName, setNewCategoryName] = useState("");
   const [stockOptions, setStockOptions] = useState<StockItem[]>([]);
   const [userRole, setUserRole] = useState<string>("waiter");
   const [isDirty, setIsDirty] = useState(false);
@@ -104,6 +106,19 @@ export default function ReceteKontroluPage() {
       setDbRecipesList(mockRecipes);
     }
 
+    const savedCategories = localStorage.getItem("recipe_categories");
+    let cats = RECIPE_CATEGORY_PRIORITY;
+    if (savedCategories) {
+      try {
+        cats = JSON.parse(savedCategories);
+      } catch {
+        cats = RECIPE_CATEGORY_PRIORITY;
+      }
+    } else {
+      localStorage.setItem("recipe_categories", JSON.stringify(RECIPE_CATEGORY_PRIORITY));
+    }
+    setCategories(sortRecipeCategories(cats));
+
     return () => unsubscribe();
   }, []);
 
@@ -114,15 +129,22 @@ export default function ReceteKontroluPage() {
     document.documentElement.className = newTheme;
   };
 
-  const categories = [
-    "SICAK KAHVELER", 
-    "SOĞUK KAHVELER", 
-    "FREŞHLER", 
-    "FROZEN ÇEŞİTLERİ", 
-    "FRAPPE ÇEŞİTLERİ", 
-    "MİLKSHAKE ÇEŞİTLERİ",
-    "ALTERNATİF FREŞHLER"
-  ].sort((a, b) => a.localeCompare(b, "tr"));
+  const handleAddCategory = () => {
+    if (!newCategoryName.trim()) {
+      triggerToast("Lütfen bir kategori adı girin!");
+      return;
+    }
+    const newCat = newCategoryName.trim().toUpperCase();
+    if (categories.includes(newCat)) {
+      triggerToast("Bu kategori zaten mevcut!");
+      return;
+    }
+    const updated = [...categories, newCat];
+    localStorage.setItem("recipe_categories", JSON.stringify(updated));
+    setCategories(sortRecipeCategories(updated));
+    setNewCategoryName("");
+    triggerToast(`✅ "${newCat}" kategorisi başarıyla eklendi!`);
+  };
 
   // Malzeme Formu Geçici Ekleme
   const addTempIngredient = () => {
@@ -273,6 +295,29 @@ export default function ReceteKontroluPage() {
           
           {/* SOL KOLON: YENİ REÇETE EKLEME PANELİ */}
           <div className="lg:col-span-4 bg-[var(--card)] border border-[var(--border)] rounded-3xl p-6 space-y-6">
+            {/* Kategori Ekleme Paneli */}
+            <div className="border-b border-[var(--border)] pb-5">
+              <h3 className="text-sm font-bold flex items-center gap-2 mb-2">
+                <Layers className="w-4 h-4 text-orange-500" /> Yeni Kategori Ekle
+              </h3>
+              <div className="flex gap-2">
+                <input 
+                  type="text" 
+                  placeholder="Yeni kategori adı..."
+                  value={newCategoryName}
+                  onChange={(e) => setNewCategoryName(e.target.value)}
+                  className="flex-1 bg-[var(--background)] border border-[var(--border)] rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-orange-500 uppercase"
+                />
+                <button
+                  type="button"
+                  onClick={handleAddCategory}
+                  className="bg-orange-600 hover:bg-orange-700 text-white font-bold px-3.5 py-2 rounded-xl text-xs transition-colors cursor-pointer flex items-center gap-1 shrink-0"
+                >
+                  <Plus className="w-3.5 h-3.5" /> Ekle
+                </button>
+              </div>
+            </div>
+
             <div>
               <h2 className="text-base font-bold flex items-center gap-2">
                 <BookOpen className="w-5 h-5 text-orange-500" /> Yeni Reçete Tanımla

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Eye, EyeOff, Moon, Sun, X, Mail, CheckCircle2, AlertCircle, Info } from "lucide-react";
-import { getUserByUsername, getAllUsers, BRANCH_REGIONS } from "@/lib/userService";
+import { getUserByUsername, getAllUsers, BRANCH_REGIONS, getDynamicRegions, BranchRegion } from "@/lib/userService";
 import { logUserAction } from "@/lib/auditLogService";
 
 // Toast Bildirim Tipi
@@ -14,6 +14,7 @@ interface Toast {
 
 export default function LoginPage() {
   const [theme, setTheme] = useState<"light" | "dark">("dark");
+  const [activeRegions, setActiveRegions] = useState<BranchRegion[]>(BRANCH_REGIONS);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -62,6 +63,7 @@ export default function LoginPage() {
     } else {
       document.documentElement.className = "dark";
     }
+    getDynamicRegions().then(setActiveRegions);
   }, []);
 
   const toggleTheme = () => {
@@ -97,9 +99,9 @@ export default function LoginPage() {
         // Bölge seçim adımını başlat!
         setRegionUser(user);
         
-        let userRegions = BRANCH_REGIONS;
+        let userRegions = activeRegions;
         if (user.allowedRegions && user.allowedRegions.length > 0) {
-          userRegions = BRANCH_REGIONS.filter(r => user.allowedRegions!.includes(r.id));
+          userRegions = activeRegions.filter(r => user.allowedRegions!.includes(r.id));
         }
         
         setAvailableRegions(userRegions);
@@ -120,7 +122,7 @@ export default function LoginPage() {
     if (!regionUser) return;
     setIsLoading(true);
 
-    const regionName = BRANCH_REGIONS.find(r => r.id === regionId)?.name || regionId;
+    const regionName = activeRegions.find(r => r.id === regionId)?.name || regionId;
 
     sessionStorage.setItem("activeUser", JSON.stringify({
       username: regionUser.username,
@@ -165,9 +167,9 @@ export default function LoginPage() {
       if (user) {
         setRegionUser(user);
         
-        let userRegions = BRANCH_REGIONS;
+        let userRegions = activeRegions;
         if (user.allowedRegions && user.allowedRegions.length > 0) {
-          userRegions = BRANCH_REGIONS.filter(r => user.allowedRegions!.includes(r.id));
+          userRegions = activeRegions.filter(r => user.allowedRegions!.includes(r.id));
         }
         
         setAvailableRegions(userRegions);
@@ -256,9 +258,9 @@ export default function LoginPage() {
       // Başarılı şifre güncelleme sonrası bölge seçimine sokalım
       setRegionUser(updatedUser);
       
-      let userRegions = BRANCH_REGIONS;
+      let userRegions = activeRegions;
       if (updatedUser.allowedRegions && updatedUser.allowedRegions.length > 0) {
-        userRegions = BRANCH_REGIONS.filter(r => updatedUser.allowedRegions!.includes(r.id));
+        userRegions = activeRegions.filter(r => updatedUser.allowedRegions!.includes(r.id));
       }
       
       setAvailableRegions(userRegions);

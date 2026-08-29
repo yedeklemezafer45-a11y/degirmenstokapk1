@@ -19,7 +19,8 @@ import {
   Square,
   Check,
   Share2,
-  Calculator
+  Calculator,
+  Mic
 } from "lucide-react";
 import { StockItem, isProductAllowedForRegion } from "@/lib/stockStore";
 import { subscribeToStocks, saveAllStocks } from "@/lib/stockService";
@@ -55,6 +56,7 @@ export default function StokSayimPage() {
   // Hesap Makinesi State'leri
   const [showCalc, setShowCalc] = useState(false);
   const [calcDisplay, setCalcDisplay] = useState("");
+  const [calcExpression, setCalcExpression] = useState("");
   const [calcWarning, setCalcWarning] = useState("");
 
   // Input Değeri Temizleme & Dönüştürme Yardımcısı (Virgülü Noktaya Çevirir)
@@ -70,7 +72,30 @@ export default function StokSayimPage() {
   const handleCalcKeyPress = (key: string) => {
     if (key === "C") {
       setCalcDisplay("");
+      setCalcExpression("");
       setCalcWarning("");
+    } else if (key === "+/-") {
+      if (calcDisplay) {
+        if (calcDisplay.startsWith("-")) {
+          setCalcDisplay(calcDisplay.slice(1));
+        } else {
+          setCalcDisplay("-" + calcDisplay);
+        }
+      }
+    } else if (key === "%") {
+      try {
+        let expr = calcDisplay.replace(/,/g, ".");
+        if (expr) {
+          const result = Function(`"use strict"; return (${expr})`)();
+          if (result !== undefined && !isNaN(result) && isFinite(result)) {
+            const percentResult = result / 100;
+            setCalcExpression(`${calcDisplay}%`);
+            setCalcDisplay(String(Number(percentResult.toFixed(4))).replace(".", ","));
+          }
+        }
+      } catch (err) {
+        setCalcDisplay("Hata");
+      }
     } else if (key === "=") {
       try {
         let expr = calcDisplay.replace(/,/g, ".");
@@ -82,13 +107,26 @@ export default function StokSayimPage() {
           setCalcDisplay("Hata");
         } else {
           const resultStr = String(Number(result.toFixed(4))).replace(".", ",");
+          setCalcExpression(calcDisplay);
           setCalcDisplay(resultStr);
         }
       } catch (err) {
         setCalcDisplay("Hata");
       }
     } else {
-      setCalcDisplay(prev => prev + key);
+      const isOperator = ["+", "-", "*", "/"].includes(key);
+      if (calcExpression && !isOperator) {
+        setCalcDisplay(key);
+        setCalcExpression("");
+      } else {
+        setCalcDisplay(prev => {
+          if (prev === "Hata") return key;
+          return prev + key;
+        });
+        if (isOperator) {
+          setCalcExpression("");
+        }
+      }
     }
   };
 
@@ -990,65 +1028,120 @@ export default function StokSayimPage() {
 
       {/* Draggable/Floating Embossed 3D Calculator Panel */}
       {showCalc && (
-        <div className="fixed bottom-24 right-6 z-50 w-80 bg-[#264653]/95 dark:bg-[#1a3039]/95 border border-white/10 backdrop-blur-xl rounded-[2.5rem] p-6 shadow-2xl space-y-4 animate-fadeIn">
-          <div className="flex items-center justify-between border-b border-white/10 pb-3">
-            <div className="flex items-center gap-2">
-              <Calculator className="w-5 h-5 text-[#e76f51]" />
-              <span className="text-xs font-black uppercase tracking-wider text-zinc-100">Hızlı Hesap Makinesi</span>
+        <div className={`fixed bottom-24 right-6 z-50 w-80 backdrop-blur-xl rounded-[2.5rem] p-6 shadow-2xl space-y-5 animate-fadeIn transition-colors duration-300 ${
+          theme === "dark" 
+            ? "bg-[#1b1c1e] text-zinc-100 border border-zinc-800/80 shadow-[0_20px_50px_rgba(0,0,0,0.8)]" 
+            : "bg-[#f3f4f6]/95 text-zinc-900 border border-white/60 shadow-[0_20px_50px_rgba(0,0,0,0.15)]"
+        }`}>
+          {/* Header with Mic Pill and Close Button */}
+          <div className="flex items-center justify-between">
+            <div className={`w-10 h-7 rounded-full flex items-center justify-center shadow-inner ${
+              theme === "dark" ? "bg-zinc-800/40 text-zinc-400" : "bg-white/80 text-zinc-500 shadow-sm border border-black/5"
+            }`}>
+              <Mic className="w-3.5 h-3.5" />
             </div>
             <button 
               onClick={() => setShowCalc(false)}
-              className="text-[10px] text-zinc-400 hover:text-white font-bold transition-colors cursor-pointer"
+              className="text-[10px] text-zinc-500 hover:text-orange-500 font-bold transition-colors cursor-pointer"
             >
               Kapat
             </button>
           </div>
 
           {/* Calculator Screen */}
-          <div className="bg-zinc-950/80 rounded-2xl p-4 text-right space-y-1 border border-white/5 relative overflow-hidden">
-            {/* Warning indicator */}
-            {calcWarning && (
-              <div className="text-[9px] text-red-400 font-extrabold text-left animate-pulse">
+          <div className="text-right pr-2 space-y-1 select-all">
+            {calcWarning ? (
+              <div className="text-[9px] text-red-500 font-extrabold text-left animate-pulse">
                 {calcWarning}
               </div>
+            ) : (
+              <div className={`h-4 text-xs font-medium tracking-tight truncate ${theme === "dark" ? "text-zinc-500" : "text-zinc-400"}`}>
+                {calcExpression || " "}
+              </div>
             )}
-            <div className={`text-2xl font-mono font-black tracking-tight truncate ${calcWarning ? "text-red-500" : "text-emerald-400"}`}>
+            <div className={`text-4xl font-light tracking-tight truncate ${theme === "dark" ? "text-white" : "text-zinc-900"}`}>
               {calcDisplay || "0"}
             </div>
           </div>
 
           {/* 3D Embossed Keys Grid */}
-          <div className="grid grid-cols-4 gap-3">
-            {/* Row 1 */}
+          <div className="grid grid-cols-4 gap-3.5">
+            {/* ROW 1: Function Keys & Operator */}
             <button
               type="button"
               onClick={() => handleCalcKeyPress("C")}
-              className="col-span-2 py-3.5 bg-zinc-800 hover:bg-zinc-700 text-red-400 text-xs font-black rounded-2xl cursor-pointer transition-all active:translate-y-[2px] shadow-[inset_0_2px_4px_rgba(255,255,255,0.05),_0_4px_6px_rgba(0,0,0,0.4)] active:shadow-[inset_0_1px_2px_rgba(0,0,0,0.4)] text-center"
+              className={`w-14 h-14 rounded-full text-base font-bold flex items-center justify-center transition-all active:scale-95 cursor-pointer ${
+                theme === "dark" 
+                  ? "bg-[#3a3b3d] hover:bg-[#48494b] text-[#d4d4d2] shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),_0_2px_4px_rgba(0,0,0,0.3)]" 
+                  : "bg-[#d4d4d2] hover:bg-[#c7c7c5] text-zinc-800 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4),_0_2px_4px_rgba(0,0,0,0.08)]"
+              }`}
             >
               C
             </button>
             <button
               type="button"
-              onClick={() => handleCalcKeyPress("/")}
-              className="py-3.5 bg-[#e76f51] hover:bg-[#eb8870] text-white text-xs font-black rounded-2xl cursor-pointer transition-all active:translate-y-[2px] shadow-[inset_0_2px_4px_rgba(255,255,255,0.2),_0_4px_6px_rgba(0,0,0,0.4)] active:shadow-[inset_0_1px_2px_rgba(0,0,0,0.4)] text-center"
+              onClick={() => handleCalcKeyPress("+/-")}
+              className={`w-14 h-14 rounded-full text-base font-bold flex items-center justify-center transition-all active:scale-95 cursor-pointer ${
+                theme === "dark" 
+                  ? "bg-[#3a3b3d] hover:bg-[#48494b] text-[#d4d4d2] shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),_0_2px_4px_rgba(0,0,0,0.3)]" 
+                  : "bg-[#d4d4d2] hover:bg-[#c7c7c5] text-zinc-800 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4),_0_2px_4px_rgba(0,0,0,0.08)]"
+              }`}
             >
-              /
+              +/-
             </button>
             <button
               type="button"
-              onClick={() => handleCalcKeyPress("*")}
-              className="py-3.5 bg-[#e76f51] hover:bg-[#eb8870] text-white text-xs font-black rounded-2xl cursor-pointer transition-all active:translate-y-[2px] shadow-[inset_0_2px_4px_rgba(255,255,255,0.2),_0_4px_6px_rgba(0,0,0,0.4)] active:shadow-[inset_0_1px_2px_rgba(0,0,0,0.4)] text-center"
+              onClick={() => handleCalcKeyPress("%")}
+              className={`w-14 h-14 rounded-full text-base font-bold flex items-center justify-center transition-all active:scale-95 cursor-pointer ${
+                theme === "dark" 
+                  ? "bg-[#3a3b3d] hover:bg-[#48494b] text-[#d4d4d2] shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),_0_2px_4px_rgba(0,0,0,0.3)]" 
+                  : "bg-[#d4d4d2] hover:bg-[#c7c7c5] text-zinc-800 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4),_0_2px_4px_rgba(0,0,0,0.08)]"
+              }`}
             >
-              *
+              %
+            </button>
+            <button
+              type="button"
+              onClick={() => handleCalcKeyPress("/")}
+              className={`w-14 h-14 rounded-full text-xl font-bold flex items-center justify-center transition-all active:scale-95 cursor-pointer bg-orange-500 hover:bg-orange-600 text-white shadow-[0_2px_4px_rgba(0,0,0,0.15)]`}
+            >
+              ÷
             </button>
 
-            {/* Row 2 */}
+            {/* ROW 2: Numbers & Operator */}
             {["7", "8", "9"].map(n => (
               <button
                 key={n}
                 type="button"
                 onClick={() => handleCalcKeyPress(n)}
-                className="py-3.5 bg-zinc-800/80 hover:bg-zinc-700 text-zinc-100 text-xs font-bold rounded-2xl cursor-pointer transition-all active:translate-y-[2px] shadow-[inset_0_2px_4px_rgba(255,255,255,0.05),_0_4px_6px_rgba(0,0,0,0.4)] active:shadow-[inset_0_1px_2px_rgba(0,0,0,0.4)] text-center"
+                className={`w-14 h-14 rounded-full text-base font-bold flex items-center justify-center transition-all active:scale-95 cursor-pointer ${
+                  theme === "dark"
+                    ? "bg-[#282a2d] hover:bg-[#323437] text-white shadow-[inset_0_1px_1px_rgba(255,255,255,0.05),_0_2px_4px_rgba(0,0,0,0.3)]"
+                    : "bg-[#ffffff] hover:bg-[#f3f4f6] text-zinc-800 shadow-[inset_0_1px_1px_rgba(255,255,255,0.9),_0_2px_4px_rgba(0,0,0,0.06)] border border-black/5"
+                }`}
+              >
+                {n}
+              </button>
+            ))}
+            <button
+              type="button"
+              onClick={() => handleCalcKeyPress("*")}
+              className={`w-14 h-14 rounded-full text-xl font-bold flex items-center justify-center transition-all active:scale-95 cursor-pointer bg-orange-500 hover:bg-orange-600 text-white shadow-[0_2px_4px_rgba(0,0,0,0.15)]`}
+            >
+              ×
+            </button>
+
+            {/* ROW 3: Numbers & Operator */}
+            {["4", "5", "6"].map(n => (
+              <button
+                key={n}
+                type="button"
+                onClick={() => handleCalcKeyPress(n)}
+                className={`w-14 h-14 rounded-full text-base font-bold flex items-center justify-center transition-all active:scale-95 cursor-pointer ${
+                  theme === "dark"
+                    ? "bg-[#282a2d] hover:bg-[#323437] text-white shadow-[inset_0_1px_1px_rgba(255,255,255,0.05),_0_2px_4px_rgba(0,0,0,0.3)]"
+                    : "bg-[#ffffff] hover:bg-[#f3f4f6] text-zinc-800 shadow-[inset_0_1px_1px_rgba(255,255,255,0.9),_0_2px_4px_rgba(0,0,0,0.06)] border border-black/5"
+                }`}
               >
                 {n}
               </button>
@@ -1056,18 +1149,22 @@ export default function StokSayimPage() {
             <button
               type="button"
               onClick={() => handleCalcKeyPress("-")}
-              className="py-3.5 bg-[#e76f51] hover:bg-[#eb8870] text-white text-xs font-black rounded-2xl cursor-pointer transition-all active:translate-y-[2px] shadow-[inset_0_2px_4px_rgba(255,255,255,0.2),_0_4px_6px_rgba(0,0,0,0.4)] active:shadow-[inset_0_1px_2px_rgba(0,0,0,0.4)] text-center"
+              className={`w-14 h-14 rounded-full text-xl font-bold flex items-center justify-center transition-all active:scale-95 cursor-pointer bg-orange-500 hover:bg-orange-600 text-white shadow-[0_2px_4px_rgba(0,0,0,0.15)]`}
             >
-              -
+              −
             </button>
 
-            {/* Row 3 */}
-            {["4", "5", "6"].map(n => (
+            {/* ROW 4: Numbers & Operator */}
+            {["1", "2", "3"].map(n => (
               <button
                 key={n}
                 type="button"
                 onClick={() => handleCalcKeyPress(n)}
-                className="py-3.5 bg-zinc-800/80 hover:bg-zinc-700 text-zinc-100 text-xs font-bold rounded-2xl cursor-pointer transition-all active:translate-y-[2px] shadow-[inset_0_2px_4px_rgba(255,255,255,0.05),_0_4px_6px_rgba(0,0,0,0.4)] active:shadow-[inset_0_1px_2px_rgba(0,0,0,0.4)] text-center"
+                className={`w-14 h-14 rounded-full text-base font-bold flex items-center justify-center transition-all active:scale-95 cursor-pointer ${
+                  theme === "dark"
+                    ? "bg-[#282a2d] hover:bg-[#323437] text-white shadow-[inset_0_1px_1px_rgba(255,255,255,0.05),_0_2px_4px_rgba(0,0,0,0.3)]"
+                    : "bg-[#ffffff] hover:bg-[#f3f4f6] text-zinc-800 shadow-[inset_0_1px_1px_rgba(255,255,255,0.9),_0_2px_4px_rgba(0,0,0,0.06)] border border-black/5"
+                }`}
               >
                 {n}
               </button>
@@ -1075,52 +1172,52 @@ export default function StokSayimPage() {
             <button
               type="button"
               onClick={() => handleCalcKeyPress("+")}
-              className="py-3.5 bg-[#e76f51] hover:bg-[#eb8870] text-white text-xs font-black rounded-2xl cursor-pointer transition-all active:translate-y-[2px] shadow-[inset_0_2px_4px_rgba(255,255,255,0.2),_0_4px_6px_rgba(0,0,0,0.4)] active:shadow-[inset_0_1px_2px_rgba(0,0,0,0.4)] text-center"
+              className={`w-14 h-14 rounded-full text-xl font-bold flex items-center justify-center transition-all active:scale-95 cursor-pointer bg-orange-500 hover:bg-orange-600 text-white shadow-[0_2px_4px_rgba(0,0,0,0.15)]`}
             >
               +
             </button>
 
-            {/* Row 4 */}
-            {["1", "2", "3"].map(n => (
-              <button
-                key={n}
-                type="button"
-                onClick={() => handleCalcKeyPress(n)}
-                className="py-3.5 bg-zinc-800/80 hover:bg-zinc-700 text-zinc-100 text-xs font-bold rounded-2xl cursor-pointer transition-all active:translate-y-[2px] shadow-[inset_0_2px_4px_rgba(255,255,255,0.05),_0_4px_6px_rgba(0,0,0,0.4)] active:shadow-[inset_0_1px_2px_rgba(0,0,0,0.4)] text-center"
-              >
-                {n}
-              </button>
-            ))}
-            <button
-              type="button"
-              onClick={() => handleCalcKeyPress("=")}
-              className="row-span-2 py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black rounded-2xl cursor-pointer transition-all active:translate-y-[2px] shadow-[inset_0_2px_4px_rgba(255,255,255,0.2),_0_4px_6px_rgba(0,0,0,0.4)] active:shadow-[inset_0_1px_2px_rgba(0,0,0,0.4)] flex items-center justify-center text-center animate-pulse"
-            >
-              =
-            </button>
-
-            {/* Row 5 */}
+            {/* ROW 5: Wide 0, Dot, Equals */}
             <button
               type="button"
               onClick={() => handleCalcKeyPress("0")}
-              className="col-span-2 py-3.5 bg-zinc-800/80 hover:bg-zinc-700 text-zinc-100 text-xs font-bold rounded-2xl cursor-pointer transition-all active:translate-y-[2px] shadow-[inset_0_2px_4px_rgba(255,255,255,0.05),_0_4px_6px_rgba(0,0,0,0.4)] active:shadow-[inset_0_1px_2px_rgba(0,0,0,0.4)] text-center"
+              className={`col-span-2 h-14 rounded-full text-base font-bold flex items-center pl-6 transition-all active:scale-95 cursor-pointer ${
+                theme === "dark"
+                  ? "bg-[#282a2d] hover:bg-[#323437] text-white shadow-[inset_0_1px_1px_rgba(255,255,255,0.05),_0_2px_4px_rgba(0,0,0,0.3)]"
+                  : "bg-[#ffffff] hover:bg-[#f3f4f6] text-zinc-800 shadow-[inset_0_1px_1px_rgba(255,255,255,0.9),_0_2px_4px_rgba(0,0,0,0.06)] border border-black/5"
+              }`}
             >
               0
             </button>
             <button
               type="button"
               onClick={() => handleCalcKeyPress(".")}
-              className="py-3.5 bg-zinc-800/80 hover:bg-zinc-700 text-zinc-100 text-xs font-extrabold rounded-2xl cursor-pointer transition-all active:translate-y-[2px] shadow-[inset_0_2px_4px_rgba(255,255,255,0.05),_0_4px_6px_rgba(0,0,0,0.4)] active:shadow-[inset_0_1px_2px_rgba(0,0,0,0.4)] text-center"
+              className={`w-14 h-14 rounded-full text-base font-bold flex items-center justify-center transition-all active:scale-95 cursor-pointer ${
+                theme === "dark"
+                  ? "bg-[#282a2d] hover:bg-[#323437] text-white shadow-[inset_0_1px_1px_rgba(255,255,255,0.05),_0_2px_4px_rgba(0,0,0,0.3)]"
+                  : "bg-[#ffffff] hover:bg-[#f3f4f6] text-zinc-800 shadow-[inset_0_1px_1px_rgba(255,255,255,0.9),_0_2px_4px_rgba(0,0,0,0.06)] border border-black/5"
+              }`}
             >
               .
             </button>
+            <button
+              type="button"
+              onClick={() => handleCalcKeyPress("=")}
+              className={`w-14 h-14 rounded-full text-xl font-bold flex items-center justify-center transition-all active:scale-95 cursor-pointer bg-orange-500 hover:bg-orange-600 text-white shadow-[0_2px_4px_rgba(0,0,0,0.15)]`}
+            >
+              =
+            </button>
           </div>
-          
-          <div className="flex justify-center">
+
+          <div className="flex justify-center border-t border-[var(--border)]/30 pt-3">
             <button
               type="button"
               onClick={() => handleCalcKeyPress(",")}
-              className="px-6 py-2.5 bg-zinc-900/80 hover:bg-zinc-850 text-emerald-400 border border-emerald-500/20 text-[10px] font-black rounded-xl cursor-pointer transition-all active:translate-y-[1px] shadow-sm text-center"
+              className={`px-4 py-2 text-[10px] font-black rounded-xl transition-all active:scale-95 cursor-pointer ${
+                theme === "dark" 
+                  ? "bg-zinc-900/60 hover:bg-zinc-900 text-orange-400 border border-orange-500/20" 
+                  : "bg-white hover:bg-zinc-50 text-orange-600 border border-orange-500/25 shadow-sm"
+              }`}
             >
               Virgül (,) Ekle
             </button>

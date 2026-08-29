@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import { getAnnouncement, Announcement } from "@/lib/announcementService";
 import { subscribeToStocks } from "@/lib/stockService";
-import { BRANCH_REGIONS } from "@/lib/userService";
+import { BRANCH_REGIONS, getDynamicRegions, BranchRegion } from "@/lib/userService";
 import { isProductAllowedForRegion } from "@/lib/stockStore";
 import { useRouter } from "next/navigation";
 import { 
@@ -50,6 +50,7 @@ export default function DashboardPage() {
   const [selectedRegion, setSelectedRegion] = useState("degirmen-kafe");
   const [selectedRegionName, setSelectedRegionName] = useState("Değirmen Kafe");
   const [allowedRegions, setAllowedRegions] = useState<string[] | null>(null);
+  const [activeRegions, setActiveRegions] = useState<BranchRegion[]>(BRANCH_REGIONS);
   const [showRegionSwitcher, setShowRegionSwitcher] = useState(false);
 
   const [timeStr, setTimeStr] = useState("");
@@ -92,7 +93,7 @@ export default function DashboardPage() {
     const activeUser = sessionStorage.getItem("activeUser");
     if (activeUser) {
       const parsed = JSON.parse(activeUser);
-      const regionName = BRANCH_REGIONS.find(r => r.id === regionId)?.name || regionId;
+      const regionName = activeRegions.find(r => r.id === regionId)?.name || regionId;
       
       const updatedUser = {
         ...parsed,
@@ -180,6 +181,8 @@ export default function DashboardPage() {
       setAllowedRegions(parsed.allowedRegions || null);
       activeUsername = parsed.username || "";
     }
+
+    getDynamicRegions().then(setActiveRegions);
 
     fetchShiftInfo(activeRegion, activeUsername);
 
@@ -778,9 +781,9 @@ export default function DashboardPage() {
 
             <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1 no-scrollbar">
               {(() => {
-                let userRegions = BRANCH_REGIONS;
+                let userRegions = activeRegions;
                 if (allowedRegions && allowedRegions.length > 0 && userRole !== "admin" && userRole !== "yonetici") {
-                  userRegions = BRANCH_REGIONS.filter(r => allowedRegions.includes(r.id));
+                  userRegions = activeRegions.filter(r => allowedRegions.includes(r.id));
                 }
                 return userRegions.map((region) => {
                   const isCurrent = region.id === selectedRegion;

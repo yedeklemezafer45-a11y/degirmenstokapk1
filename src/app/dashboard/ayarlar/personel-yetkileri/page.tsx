@@ -14,13 +14,17 @@ import {
   User,
   Shield,
   UserCheck,
-  Loader2
+  Loader2,
+  Layers
 } from "lucide-react";
-import { getAllUsers, saveUser, removeUser, FirestoreUser, BRANCH_REGIONS } from "@/lib/userService";
+import { getAllUsers, saveUser, removeUser, FirestoreUser, BRANCH_REGIONS, getDynamicRegions, addDynamicRegion, BranchRegion } from "@/lib/userService";
 
 export default function PersonelYetkileriPage() {
   const [theme, setTheme] = useState<"light" | "dark">("dark");
   const [users, setUsers] = useState<FirestoreUser[]>([]);
+  const [regionsList, setRegionsList] = useState<BranchRegion[]>([]);
+  const [newRegionName, setNewRegionName] = useState("");
+  const [newRegionId, setNewRegionId] = useState("");
   const [activeUserRole, setActiveUserRole] = useState<string>("waiter");
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -39,13 +43,7 @@ export default function PersonelYetkileriPage() {
     "/dashboard/aylik-stok-takibi",
     "/dashboard/ayarlar"
   ]);
-  const [newAllowedRegions, setNewAllowedRegions] = useState<string[]>([
-    "degirmen-kafe",
-    "13-eylul-vargel-kafe",
-    "millet-bahcesi-vargel-kafe",
-    "vargel-karavan",
-    "vargel-kitap-kafe"
-  ]);
+  const [newAllowedRegions, setNewAllowedRegions] = useState<string[]>([]);
 
   // Toast Bildirim State
   const [showToast, setShowToast] = useState(false);
@@ -82,6 +80,10 @@ export default function PersonelYetkileriPage() {
 
     // Firebase'den kullanıcıları yükle
     loadUsers();
+    getDynamicRegions().then(list => {
+      setRegionsList(list);
+      setNewAllowedRegions(list.map(r => r.id));
+    });
   }, []);
 
   const loadUsers = async () => {
@@ -94,6 +96,49 @@ export default function PersonelYetkileriPage() {
       triggerToast("Kullanıcı listesi yüklenemedi!", "error");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleAddRegion = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newRegionName.trim()) {
+      triggerToast("Lütfen bir şube adı girin!", "error");
+      return;
+    }
+
+    let code = newRegionId.trim().toLowerCase();
+    if (!code) {
+      code = newRegionName.trim()
+        .toLowerCase()
+        .replace(/ğ/g, "g")
+        .replace(/ü/g, "u")
+        .replace(/ş/g, "s")
+        .replace(/ı/g, "i")
+        .replace(/ö/g, "o")
+        .replace(/ç/g, "c")
+        .replace(/[^a-z0-9]/g, "-")
+        .replace(/-+/g, "-")
+        .replace(/^-|-$/g, "");
+    }
+
+    if (regionsList.some(r => r.id === code)) {
+      triggerToast("Bu şube kodu zaten kullanımda!", "error");
+      return;
+    }
+
+    const newReg: BranchRegion = { id: code, name: newRegionName.trim() };
+    setIsSaving(true);
+    try {
+      await addDynamicRegion(newReg);
+      setRegionsList(prev => [...prev, newReg]);
+      setNewRegionName("");
+      setNewRegionId("");
+      triggerToast(`✅ "${newReg.name}" şubesi başarıyla sisteme eklendi!`);
+    } catch (err) {
+      console.error("Şube ekleme hatası:", err);
+      triggerToast("Şube eklenirken hata oluştu!", "error");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -147,13 +192,7 @@ export default function PersonelYetkileriPage() {
         "/dashboard/aylik-stok-takibi",
         "/dashboard/ayarlar"
       ]);
-      setNewAllowedRegions([
-        "degirmen-kafe",
-        "13-eylul-vargel-kafe",
-        "millet-bahcesi-vargel-kafe",
-        "vargel-karavan",
-        "vargel-kitap-kafe"
-      ]);
+      setNewAllowedRegions(regionsList.map(r => r.id));
       triggerToast(`✅ ${newUser.name} başarıyla eklendi! Artık her cihazdan giriş yapabilir.`);
     } catch (err) {
       console.error("Kullanıcı eklenemedi:", err);
@@ -412,7 +451,7 @@ export default function PersonelYetkileriPage() {
             <div className="md:col-span-5 border-t border-[var(--border)]/60 pt-4 mt-2 space-y-3">
               <span className="text-[10px] text-zinc-500 uppercase font-black tracking-widest block">Erişebileceği Bölgeler (Şubeler)</span>
               <div className="flex flex-wrap gap-2.5">
-                {BRANCH_REGIONS.map((region) => {
+                {regionsList.map((region) => {
                   const isChecked = newAllowedRegions.includes(region.id);
                   return (
                     <label key={region.id} className={`flex items-center gap-2 px-3.5 py-2 rounded-xl border text-[11px] font-bold cursor-pointer transition-all duration-200 select-none ${
@@ -496,6 +535,60 @@ export default function PersonelYetkileriPage() {
                   <div key={m} className={`text-[10px] font-medium ${m.startsWith("❌") ? "text-zinc-600" : "text-zinc-400"}`}>{m}</div>
                 ))}
               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ŞUBE / BÖLGE YÖNETİMİ PANELİ */}
+        <div className="bg-[var(--card)] border border-[var(--border)] rounded-3xl p-6 shadow-sm">
+          <div className="flex items-center gap-2 mb-5">
+            <Layers className="w-5 h-5 text-orange-500" />
+            <h3 className="text-sm font-extrabold uppercase tracking-wider text-orange-500">Şube / Bölge Yönetimi</h3>
+          </div>
+
+          <form onSubmit={handleAddRegion} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+            <div className="space-y-1">
+              <label className="text-[10px] text-zinc-500 uppercase font-bold">Şube Adı</label>
+              <input 
+                type="text" 
+                placeholder="Örn: Vargel Yeni Şube" 
+                value={newRegionName} 
+                onChange={(e) => setNewRegionName(e.target.value)}
+                className="w-full bg-[var(--background)] border border-[var(--border)] rounded-xl px-4 py-2.5 text-xs font-bold text-[var(--foreground)] focus:outline-none focus:ring-2 focus:ring-orange-500/20"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] text-zinc-500 uppercase font-bold">Şube Kodu (ID) - Opsiyonel</label>
+              <input 
+                type="text" 
+                placeholder="Örn: vargel-yeni-sube (Boş bırakılırsa otomatik üretilir)" 
+                value={newRegionId} 
+                onChange={(e) => setNewRegionId(e.target.value)}
+                className="w-full bg-[var(--background)] border border-[var(--border)] rounded-xl px-4 py-2.5 text-xs font-bold text-[var(--foreground)] focus:outline-none focus:ring-2 focus:ring-orange-500/20"
+              />
+            </div>
+            <div>
+              <button 
+                type="submit"
+                disabled={isSaving}
+                className="flex items-center justify-center gap-2 bg-orange-600 hover:bg-orange-700 disabled:opacity-50 text-white font-bold py-2.5 px-6 rounded-xl text-xs transition-colors shadow-lg h-10 cursor-pointer w-full md:w-auto"
+              >
+                {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                {isSaving ? "Kaydediliyor..." : "Yeni Şube Ekle"}
+              </button>
+            </div>
+          </form>
+
+          {/* Mevcut Şubeler Listesi */}
+          <div className="mt-5 border-t border-[var(--border)]/60 pt-4 space-y-2">
+            <span className="text-[10px] text-zinc-500 uppercase font-black tracking-widest block">Sistemde Kayıtlı Şubeler</span>
+            <div className="flex flex-wrap gap-2">
+              {regionsList.map((region) => (
+                <div key={region.id} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs font-bold">
+                  <span className="text-[var(--foreground)]">{region.name}</span>
+                  <span className="text-[10px] text-zinc-500 font-mono">({region.id})</span>
+                </div>
+              ))}
             </div>
           </div>
         </div>
@@ -592,7 +685,7 @@ export default function PersonelYetkileriPage() {
                       </td>
                       <td className="py-4 px-4">
                         <div className="flex flex-wrap gap-1.5 max-w-[280px]">
-                          {BRANCH_REGIONS.map((region) => {
+                          {regionsList.map((region) => {
                             const isAllowed = !u.allowedRegions || u.allowedRegions.includes(region.id);
                             const disabled = u.username === "zafer" || isSaving;
                             return (

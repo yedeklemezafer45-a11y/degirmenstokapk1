@@ -24,7 +24,7 @@ import { useRouter } from "next/navigation";
 import { StockItem } from "@/lib/stockStore";
 import { subscribeToStocks, saveAllStocks } from "@/lib/stockService";
 import { getAllReports, saveReport, removeReport, MonthlyReportArchive } from "@/lib/reportService";
-import { BRANCH_REGIONS } from "@/lib/userService";
+import { BRANCH_REGIONS, getDynamicRegions, BranchRegion } from "@/lib/userService";
 import { Folder, FolderOpen, ArrowRightLeft, ArrowUp, ArrowDown } from "lucide-react";
 
 export default function AylikStokTakibiPage() {
@@ -47,6 +47,7 @@ export default function AylikStokTakibiPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [selectedRegion, setSelectedRegion] = useState("degirmen-kafe");
   const [selectedRegionName, setSelectedRegionName] = useState("Değirmen Kafe");
+  const [activeRegions, setActiveRegions] = useState<BranchRegion[]>(BRANCH_REGIONS);
   
   // Toast Bildirim
   const [showToast, setShowToast] = useState(false);
@@ -108,6 +109,7 @@ export default function AylikStokTakibiPage() {
       return;
     }
 
+    getDynamicRegions().then(setActiveRegions);
     loadAllRegionsReports();
 
     // Gerçek zamanlı Firestore stok dinleyicisi — anlık güncelleme
@@ -130,8 +132,9 @@ export default function AylikStokTakibiPage() {
   const loadAllRegionsReports = async () => {
     setIsLoading(true);
     try {
+      const regions = await getDynamicRegions();
       const results = await Promise.all(
-        BRANCH_REGIONS.map(async (region) => {
+        regions.map(async (region) => {
           const fetched = await getAllReports(region.id);
           fetched.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
           return { regionId: region.id, reports: fetched };
@@ -420,7 +423,7 @@ export default function AylikStokTakibiPage() {
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {BRANCH_REGIONS.map((region) => {
+                    {activeRegions.map((region) => {
                       const reports = allRegionsReports[region.id] || [];
                       return (
                         <div
@@ -448,7 +451,7 @@ export default function AylikStokTakibiPage() {
             ) : (
               // Seçilen Şubenin Arşiv Listesi
               (() => {
-                const rName = BRANCH_REGIONS.find(r => r.id === selectedFolderRegion)?.name || "";
+                const rName = activeRegions.find(r => r.id === selectedFolderRegion)?.name || "";
                 const reports = allRegionsReports[selectedFolderRegion] || [];
 
                 return (
@@ -569,7 +572,7 @@ export default function AylikStokTakibiPage() {
                   }}
                   className="w-full bg-[var(--card)] border border-[var(--border)] rounded-xl px-3 py-2.5 text-xs text-zinc-205 focus:outline-none focus:ring-1 focus:ring-[#e76f51]"
                 >
-                  {BRANCH_REGIONS.map(r => (
+                  {activeRegions.map(r => (
                     <option key={r.id} value={r.id}>{r.name}</option>
                   ))}
                 </select>

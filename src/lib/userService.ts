@@ -21,6 +21,33 @@ export const BRANCH_REGIONS: BranchRegion[] = [
   { id: "vargel-kitap-kafe", name: "Vargel Kitap Kafe" }
 ];
 
+const REGIONS_SETTINGS_DOC = doc(db, "settings", "regions_list");
+
+export async function getDynamicRegions(): Promise<BranchRegion[]> {
+  try {
+    const snap = await getDoc(REGIONS_SETTINGS_DOC);
+    if (snap.exists()) {
+      const data = snap.data();
+      if (data.regions && Array.isArray(data.regions)) {
+        return data.regions as BranchRegion[];
+      }
+    }
+    // Seed default regions
+    await setDoc(REGIONS_SETTINGS_DOC, { regions: BRANCH_REGIONS });
+    return BRANCH_REGIONS;
+  } catch (err) {
+    console.error("getDynamicRegions hatası:", err);
+    return BRANCH_REGIONS;
+  }
+}
+
+export async function addDynamicRegion(newReg: BranchRegion): Promise<void> {
+  const current = await getDynamicRegions();
+  if (current.some(r => r.id === newReg.id)) return;
+  const updated = [...current, newReg];
+  await setDoc(REGIONS_SETTINGS_DOC, { regions: updated });
+}
+
 export interface FirestoreUser {
   username: string;
   name: string;
