@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { getAllStocks } from "@/lib/stockService";
 import { StockItem } from "@/lib/stockStore";
+import { getDynamicRegions, BranchRegion } from "@/lib/userService";
 import { useRouter } from "next/navigation";
 
 interface RegionStockMap {
@@ -36,13 +37,14 @@ export default function TumBolgelerStokPage() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [hoveredBar, setHoveredBar] = useState<{ region: string; type: string; value: number } | null>(null);
 
-  const regions = [
+  const [regionsList, setRegionsList] = useState<BranchRegion[]>([
     { id: "degirmen-kafe", name: "Değirmen Kafe" },
     { id: "13-eylul-vargel-kafe", name: "13 Eylül Vargel" },
     { id: "millet-bahcesi-vargel-kafe", name: "Millet Bahçesi Vargel" },
     { id: "vargel-karavan", name: "Vargel Karavan" },
     { id: "vargel-kitap-kafe", name: "Vargel Kitap" }
-  ];
+  ]);
+  const [selectedProductForAnalysis, setSelectedProductForAnalysis] = useState<string | null>(null);
 
   const categories = ["Tümü", ...Array.from(new Set(regionStocks.flatMap(rs => rs.items.map(i => i.category)))).sort((a, b) => a.localeCompare(b, "tr"))];
 
@@ -78,7 +80,9 @@ export default function TumBolgelerStokPage() {
   const loadAllRegionStocks = async () => {
     setIsLoading(true);
     try {
-      const promises = regions.map(async (r) => {
+      const dynamicRegions = await getDynamicRegions();
+      setRegionsList(dynamicRegions);
+      const promises = dynamicRegions.map(async (r) => {
         const items = await getAllStocks(r.id);
         return {
           regionId: r.id,
@@ -155,7 +159,7 @@ export default function TumBolgelerStokPage() {
 
   // Grafik verisi hesaplayıcıları
   const getChartData = () => {
-    return regions.map(reg => {
+    return regionsList.map(reg => {
       const rs = regionStocks.find(x => x.regionId === reg.id);
       let totalGirdi = 0;
       let totalCikti = 0;
@@ -186,6 +190,54 @@ export default function TumBolgelerStokPage() {
   const chartData = getChartData();
   const maxVal = Math.max(...chartData.flatMap(d => [d.girdi, d.cikti, d.kalan]), 10);
 
+  // Ürün Tüketim (Depodan Alınan) Hesaplayıcıları
+  const getProductsConsumption = () => {
+    const products: { name: string; category: string; unit: string; totalConsumed: number; regionalBreakdown: Record<string, number> }[] = [];
+    
+    uniqueItems.forEach(item => {
+      let totalConsumed = 0;
+      const regionalBreakdown: Record<string, number> = {};
+      
+      regionsList.forEach(reg => {
+        const found = regionStocks.find(rs => rs.regionId === reg.id)?.items.find(i => i.name === item.name);
+        const consumed = found ? (found.depodanAlinan || 0) : 0;
+        totalConsumed += consumed;
+        regionalBreakdown[reg.id] = consumed;
+      });
+      
+      products.push({
+        name: item.name,
+        category: item.category,
+        unit: item.unit,
+        totalConsumed,
+        regionalBreakdown
+      });
+    });
+    
+    return products.sort((a, b) => b.totalConsumed - a.totalConsumed);
+  };
+
+  const productsConsumption = getProductsConsumption();
+  const topMovingProducts = productsConsumption.slice(0, 5);
+  const activeProduct = selectedProductForAnalysis || (topMovingProducts.length > 0 ? topMovingProducts[0].name : null);
+  const activeProductData = productsConsumption.find(p => p.name === activeProduct) || null;
+  const otherProducts = productsConsumption.filter(p => p.name !== (activeProductData?.name || ""));
+
+  const maxTopMovingConsumed = Math.max(...topMovingProducts.map(p => p.totalConsumed), 1);
+  const regionColors = ["#2a9d8f", "#e76f51", "#e9c46a", "#f4a261", "#3b82f6"];
+  const activeProductConsumedByRegion = regionsList.map((reg, idx) => {
+    const value = activeProductData ? (activeProductData.regionalBreakdown[reg.id] || 0) : 0;
+    return {
+      id: reg.id,
+      name: reg.name,
+      value,
+      color: regionColors[idx % regionColors.length]
+    };
+  });
+  const totalActiveProductConsumed = activeProductData ? activeProductData.totalConsumed : 0;
+  const radius = 35;
+  const circumference = 2 * Math.PI * radius;
+
   // Excel/CSV Dışa Aktarım
   const exportToCSV = () => {
     if (regionStocks.length === 0) return;
@@ -193,7 +245,7 @@ export default function TumBolgelerStokPage() {
     csvContent += "Urun Adi,Kategori,Birim,Degirmen Kafe,13 Eylul Vargel,Millet Bahcesi Vargel,Vargel Karavan,Vargel Kitap,Toplam\n";
 
     uniqueItems.forEach(item => {
-      const counts = regions.map(reg => {
+      const counts = regionsList.map(reg => {
         const found = regionStocks.find(rs => rs.regionId === reg.id)?.items.find(i => i.name === item.name);
         return found ? found.quantity : 0;
       });
@@ -268,7 +320,7 @@ export default function TumBolgelerStokPage() {
             </div>
             <div>
               <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider block">Toplam Şube Sayısı</span>
-              <span className="text-xl font-black mt-0.5 block">{regions.length} Bölge</span>
+              <span className="text-xl font-black mt-0.5 block">{regionsList.length} Bölge</span>
             </div>
           </div>
           <div className="bg-[var(--card)] border border-[var(--border)] rounded-[2rem] p-6 flex items-center gap-4 shadow-sm">
@@ -305,155 +357,201 @@ export default function TumBolgelerStokPage() {
 
         {/* Grafik Analiz Paneli */}
         {!isLoading && regionStocks.length > 0 && (
-          <div className="bg-[var(--card)] border border-[var(--border)] rounded-[2.5rem] p-6 shadow-sm space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-[var(--border)] pb-3 gap-2">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 pb-2">
+            
+            {/* CARD 1: En Hızlı Giden Ürünler (Top Moving) */}
+            <div className="col-span-12 lg:col-span-4 bg-[var(--card)] border border-[var(--border)] rounded-[2.5rem] p-6 shadow-sm flex flex-col justify-between h-[450px]">
               <div>
-                <h3 
-                  style={{ fontFamily: "'Getai Grotesk', sans-serif" }}
-                  className="text-base font-black uppercase text-zinc-800 dark:text-zinc-200 tracking-tight flex items-center gap-2"
-                >
-                  <TrendingUp className="w-5 h-5 text-[#e76f51]" />
-                  ŞUBE BAZLI STOK & TÜKETİM GRAFİK ANALİZİ
-                </h3>
-                <p className="text-[10px] text-zinc-500 uppercase font-black mt-0.5">
-                  Filtre ve aramalara göre otomatik güncellenen dinamik envanter göstergeleri
-                </p>
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-[10px] font-black uppercase text-zinc-500 tracking-wider">TÜKETİM ANALİZİ</span>
+                  <span className="text-[9px] bg-orange-500/10 text-orange-500 font-extrabold uppercase px-2.5 py-1 rounded-full border border-orange-500/20">En Hızlı Gidenler</span>
+                </div>
+                
+                {/* Highlight/Summary */}
+                <div className="space-y-1 mb-6">
+                  <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest block">Lider Tüketim</span>
+                  <h4 className="text-xl font-extrabold tracking-tight truncate text-[var(--foreground)]">{activeProductData?.name || "Yükleniyor..."}</h4>
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="text-2xl font-black font-mono text-orange-500">{activeProductData?.totalConsumed || 0}</span>
+                    <span className="text-[10px] font-bold text-zinc-500 uppercase">{activeProductData?.unit || "Birim"}</span>
+                  </div>
+                </div>
               </div>
 
-              {/* Grafik Renk Açıklamaları */}
-              <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-wider">
-                <div className="flex items-center gap-1.5">
-                  <span className="w-3 h-3 rounded-full bg-[#2a9d8f]" />
-                  <span className="text-zinc-500">Siparişten Gelen (Girdi)</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="w-3 h-3 rounded-full bg-[#e76f51]" />
-                  <span className="text-zinc-500">Çıkış Yapan (Çıktı)</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="w-3 h-3 rounded-full bg-[#e9c46a]" />
-                  <span className="text-zinc-500">Stokta Bulunan (Kalan)</span>
-                </div>
+              {/* Vertical Column Chart (Top 5) */}
+              <div className="flex items-end justify-between h-48 border-t border-[var(--border)]/30 pt-6">
+                {topMovingProducts.map((p, idx) => {
+                  const barHeight = (p.totalConsumed / maxTopMovingConsumed) * 80;
+                  const isSelected = p.name === activeProduct;
+                  return (
+                    <div 
+                      key={p.name} 
+                      onClick={() => setSelectedProductForAnalysis(p.name)}
+                      className="flex flex-col items-center flex-1 cursor-pointer group"
+                    >
+                      <div className="h-32 w-full flex items-end justify-center relative">
+                        <div 
+                          style={{ height: `${Math.max(barHeight, 6)}%` }}
+                          className={`w-5 rounded-t-lg transition-all duration-300 relative ${
+                            isSelected 
+                              ? "bg-gradient-to-t from-[#e76f51] to-[#f4a261] shadow-md shadow-orange-500/10 scale-105" 
+                              : "bg-zinc-700/40 hover:bg-zinc-600/60 dark:bg-zinc-800/80 dark:hover:bg-zinc-700/90"
+                          }`}
+                        >
+                          {/* Tooltip */}
+                          <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-zinc-950 border border-white/10 text-white text-[9px] font-bold px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-30 pointer-events-none shadow-xl">
+                            {p.totalConsumed} {p.unit}
+                          </div>
+                        </div>
+                      </div>
+                      <span className={`text-[8px] font-black uppercase tracking-wider text-center mt-2.5 truncate w-full px-0.5 ${isSelected ? "text-orange-500" : "text-zinc-500"}`}>
+                        {p.name.slice(0, 10)}
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Kümelenmiş Çubuk Grafik (Grouped Bar Chart) */}
-              <div className="lg:col-span-2 space-y-4">
-                <div className="h-64 relative border border-[var(--border)]/40 rounded-3xl p-4 bg-[var(--background)]/35 overflow-hidden flex flex-col justify-end">
-                  {/* Grid Lines */}
-                  <div className="absolute inset-0 flex flex-col justify-between p-4 py-8 pointer-events-none">
-                    {[0, 1, 2, 3].map((i) => (
-                      <div key={i} className="w-full border-t border-[var(--border)]/30 relative">
-                        <span className="absolute -top-2.5 right-0 text-[8px] font-mono font-bold text-zinc-500 bg-[var(--card)] px-1 py-0.5 rounded border border-[var(--border)]/20">
-                          {Math.round(maxVal - (maxVal / 3) * i).toLocaleString("tr-TR")}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
+            {/* CARD 2: Bölgesel Tüketim Dağılımı (Doughnut Chart) */}
+            <div className="col-span-12 lg:col-span-5 bg-[var(--card)] border border-[var(--border)] rounded-[2.5rem] p-6 shadow-sm flex flex-col justify-between h-[450px]">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-xs font-black uppercase text-zinc-800 dark:text-zinc-200 tracking-tight flex items-center gap-1.5">
+                    ŞUBE DAĞILIMI
+                  </h3>
+                  <p className="text-[9px] text-zinc-500 uppercase font-bold mt-0.5">Seçili ürünün tüketim bölgeleri</p>
+                </div>
+                <span className="text-[9px] font-extrabold text-zinc-400 border border-[var(--border)] px-2.5 py-1 rounded-full uppercase bg-[var(--background)]/40 truncate max-w-[120px]">
+                  {activeProduct || "Seçim Yok"}
+                </span>
+              </div>
 
-                  {/* Bars Container */}
-                  <div className="w-full h-full flex items-end justify-between px-6 pt-4 pb-2 z-10">
-                    {chartData.map((data) => {
-                      // Calculate height percentages
-                      const girdiHeight = (data.girdi / maxVal) * 80; // max 80% to leave space for labels
-                      const ciktiHeight = (data.cikti / maxVal) * 80;
-                      const kalanHeight = (data.kalan / maxVal) * 80;
+              {/* Doughnut SVG Container */}
+              <div className="relative flex items-center justify-center my-4 h-40">
+                <svg width="150" height="150" viewBox="0 0 100 100" className="select-none transform -rotate-90">
+                  {/* Underlay base circle */}
+                  <circle
+                    cx="50"
+                    cy="50"
+                    r={radius}
+                    fill="transparent"
+                    stroke={theme === 'dark' ? '#27272a' : '#e4e4e7'}
+                    strokeWidth="9"
+                  />
+                  {/* Segment circles */}
+                  {(() => {
+                    let currentOffset = 0;
+                    return activeProductConsumedByRegion.map((regData) => {
+                      if (totalActiveProductConsumed === 0) return null;
+                      const percent = regData.value / totalActiveProductConsumed;
+                      if (percent === 0) return null;
+
+                      const strokeLength = percent * circumference;
+                      const strokeOffset = currentOffset;
+                      currentOffset -= strokeLength;
 
                       return (
-                        <div key={data.id} className="flex flex-col items-center w-1/5 space-y-2">
-                          <div className="flex items-end justify-center gap-1.5 h-44 w-full">
-                            {/* Girdi Bar */}
-                            <div
-                              onMouseEnter={() => setHoveredBar({ region: data.name, type: "Siparişten Gelen (Girdi)", value: data.girdi })}
-                              onMouseLeave={() => setHoveredBar(null)}
-                              style={{ height: `${Math.max(girdiHeight, 2)}%` }}
-                              className="w-3 bg-[#2a9d8f] hover:bg-[#34b5a6] rounded-t-lg transition-all duration-300 shadow-sm cursor-help relative group"
-                            />
-                            {/* Çıktı Bar */}
-                            <div
-                              onMouseEnter={() => setHoveredBar({ region: data.name, type: "Çıkış Yapan (Çıktı)", value: data.cikti })}
-                              onMouseLeave={() => setHoveredBar(null)}
-                              style={{ height: `${Math.max(ciktiHeight, 2)}%` }}
-                              className="w-3 bg-[#e76f51] hover:bg-[#eb8870] rounded-t-lg transition-all duration-300 shadow-sm cursor-help relative group"
-                            />
-                            {/* Kalan Bar */}
-                            <div
-                              onMouseEnter={() => setHoveredBar({ region: data.name, type: "Stokta Bulunan (Kalan)", value: data.kalan })}
-                              onMouseLeave={() => setHoveredBar(null)}
-                              style={{ height: `${Math.max(kalanHeight, 2)}%` }}
-                              className="w-3 bg-[#e9c46a] hover:bg-[#f0d48f] rounded-t-lg transition-all duration-300 shadow-sm cursor-help relative group"
-                            />
-                          </div>
-                          <span className="text-[9px] font-black uppercase text-zinc-500 tracking-wider truncate max-w-full text-center">
-                            {data.name.replace("Kafe", "")}
-                          </span>
-                        </div>
+                        <circle
+                          key={regData.id}
+                          cx="50"
+                          cy="50"
+                          r={radius}
+                          fill="transparent"
+                          stroke={regData.color}
+                          strokeWidth="9"
+                          strokeDasharray={`${strokeLength} ${circumference}`}
+                          strokeDashoffset={strokeOffset}
+                          strokeLinecap="round"
+                          className="transition-all duration-500 cursor-help"
+                        >
+                          <title>{`${regData.name}: ${regData.value}`}</title>
+                        </circle>
                       );
-                    })}
-                  </div>
+                    });
+                  })()}
+                </svg>
 
-                  {/* Tooltip Overlay */}
-                  {hoveredBar && (
-                    <div className="absolute top-4 left-4 z-20 bg-zinc-950/90 border border-white/10 rounded-2xl p-3 shadow-xl backdrop-blur-md animate-fadeIn text-[10px] space-y-0.5 animate-slideUp">
-                      <div className="font-extrabold text-orange-500">{hoveredBar.region}</div>
-                      <div className="text-zinc-400 font-semibold">{hoveredBar.type}</div>
-                      <div className="text-emerald-400 font-black font-mono text-xs">{hoveredBar.value.toLocaleString("tr-TR")} Birim</div>
-                    </div>
-                  )}
+                {/* Central Labels inside Doughnut */}
+                <div className="absolute inset-0 flex flex-col items-center justify-center text-center space-y-0.5 pointer-events-none">
+                  <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider">TOPLAM</span>
+                  <span className="text-xl font-black font-mono text-[var(--foreground)]">{totalActiveProductConsumed}</span>
+                  <span className="text-[8px] font-bold text-zinc-400 uppercase tracking-widest">{activeProductData?.unit || "Birim"}</span>
                 </div>
               </div>
 
-              {/* Konsolide Oranlar (Pie-Ratio Analizi) */}
-              <div className="border border-[var(--border)]/40 rounded-3xl p-5 bg-[var(--background)]/35 flex flex-col justify-between">
-                <div>
-                  <h4 className="text-[11px] font-black uppercase text-zinc-400 tracking-wider mb-3">
-                    GENEL STOK DURUM ORANLARI
-                  </h4>
-                  {(() => {
-                    const totalG = chartData.reduce((acc, curr) => acc + curr.girdi, 0);
-                    const totalC = chartData.reduce((acc, curr) => acc + curr.cikti, 0);
-                    const totalK = chartData.reduce((acc, curr) => acc + curr.kalan, 0);
-                    const totalSum = totalG + totalC + totalK || 1;
-
-                    const pG = (totalG / totalSum) * 100;
-                    const pC = (totalC / totalSum) * 100;
-                    const pK = (totalK / totalSum) * 100;
-
-                    return (
-                      <div className="space-y-4">
-                        {/* Bar Oran */}
-                        <div className="h-6 w-full rounded-2xl bg-zinc-800 overflow-hidden flex shadow-inner">
-                          {totalG > 0 && <div style={{ width: `${pG}%` }} className="h-full bg-[#2a9d8f] transition-all" title="Girdi" />}
-                          {totalC > 0 && <div style={{ width: `${pC}%` }} className="h-full bg-[#e76f51] transition-all" title="Çıktı" />}
-                          {totalK > 0 && <div style={{ width: `${pK}%` }} className="h-full bg-[#e9c46a] transition-all" title="Kalan" />}
-                        </div>
-
-                        {/* Detaylar */}
-                        <div className="space-y-2.5">
-                          <div className="flex items-center justify-between border-b border-[var(--border)]/20 pb-1.5">
-                            <span className="text-[10px] text-zinc-500 font-bold uppercase">Siparişten Gelen (Girdi)</span>
-                            <span className="text-[11px] font-bold font-mono text-[#2a9d8f]">%{pG.toFixed(1)}</span>
-                          </div>
-                          <div className="flex items-center justify-between border-b border-[var(--border)]/20 pb-1.5">
-                            <span className="text-[10px] text-zinc-500 font-bold uppercase">Çıkış Yapan (Çıktı)</span>
-                            <span className="text-[11px] font-bold font-mono text-[#e76f51]">%{pC.toFixed(1)}</span>
-                          </div>
-                          <div className="flex items-center justify-between pb-1">
-                            <span className="text-[10px] text-zinc-500 font-bold uppercase">Stokta Bulunan (Kalan)</span>
-                            <span className="text-[11px] font-bold font-mono text-[#e9c46a]">%{pK.toFixed(1)}</span>
-                          </div>
-                        </div>
+              {/* Legend grid */}
+              <div className="grid grid-cols-2 gap-2.5 border-t border-[var(--border)]/30 pt-4 max-h-[140px] overflow-y-auto pr-1 no-scrollbar">
+                {activeProductConsumedByRegion.map((regData) => {
+                  const percent = totalActiveProductConsumed > 0 ? ((regData.value / totalActiveProductConsumed) * 100) : 0;
+                  return (
+                    <div key={regData.id} className="flex items-start gap-1.5 text-[9px]">
+                      <span style={{ backgroundColor: regData.color }} className="w-2 h-2 rounded-full mt-1 shrink-0" />
+                      <div className="min-w-0">
+                        <span className="text-zinc-500 font-bold block truncate uppercase">{regData.name.replace("Kafe", "")}</span>
+                        <span className="font-extrabold text-zinc-850 dark:text-zinc-300 font-mono">
+                          {regData.value} {activeProductData?.unit} (%{percent.toFixed(0)})
+                        </span>
                       </div>
-                    );
-                  })()}
-                </div>
-
-                <div className="text-[9px] text-zinc-500 font-semibold bg-[var(--card)] p-2.5 rounded-2xl border border-[var(--border)]/20 text-center uppercase tracking-wider mt-4">
-                  {selectedCategory === "Tümü" ? "Tüm Kategoriler Dahil" : `${selectedCategory} Kategorisi Verileri`}
-                </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
+
+            {/* CARD 3: Diğer Ürünlerin Tüketim Listesi (Last Transactions equivalent) */}
+            <div className="col-span-12 lg:col-span-3 bg-[var(--card)] border border-[var(--border)] rounded-[2.5rem] p-6 shadow-sm flex flex-col h-[450px]">
+              <div className="mb-4">
+                <h3 className="text-xs font-black uppercase text-zinc-800 dark:text-zinc-200 tracking-tight">
+                  TÜKETİM LİSTESİ
+                </h3>
+                <p className="text-[9px] text-zinc-500 uppercase font-bold mt-0.5">Tüm ürün tüketim miktarları</p>
+              </div>
+
+              {/* List container */}
+              <div className="flex-1 overflow-y-auto pr-1 no-scrollbar space-y-3">
+                {productsConsumption.map((p) => {
+                  const isSelected = p.name === activeProduct;
+                  return (
+                    <div 
+                      key={p.name}
+                      onClick={() => setSelectedProductForAnalysis(p.name)}
+                      className={`flex items-center justify-between p-2.5 rounded-2xl border transition-all duration-150 cursor-pointer ${
+                        isSelected 
+                          ? "bg-orange-500/10 border-orange-500/35 text-orange-400 animate-pulse" 
+                          : "bg-[var(--background)]/30 border-[var(--border)]/40 hover:bg-[var(--foreground)]/5 hover:border-orange-500/20 text-zinc-300"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
+                          isSelected ? "bg-orange-500/15 text-orange-400" : "bg-zinc-800/40 text-zinc-500"
+                        }`}>
+                          <Layers className="w-4 h-4" />
+                        </div>
+                        <div className="min-w-0">
+                          <span className="font-extrabold text-[10px] block truncate text-zinc-200 group-hover:text-orange-500">
+                            {p.name}
+                          </span>
+                          <span className="text-[8px] text-zinc-500 uppercase font-bold block truncate">
+                            {p.category.slice(0, 15)}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <span className={`text-[10px] font-black font-mono px-2 py-0.5 rounded-lg ${
+                          p.totalConsumed > 0 
+                            ? "bg-red-500/10 text-red-400" 
+                            : "bg-zinc-800/40 text-zinc-500"
+                        }`}>
+                          {p.totalConsumed > 0 ? `-${p.totalConsumed}` : "0"} {p.unit}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            
           </div>
         )}
 
@@ -518,7 +616,7 @@ export default function TumBolgelerStokPage() {
                       <th className="py-4 pr-4">Ürün Adı</th>
                       <th className="py-4 px-4">Kategori</th>
                       <th className="py-4 px-4">Birim</th>
-                      {regions.map(r => (
+                      {regionsList.map((r: BranchRegion) => (
                         <th key={r.id} className="py-4 px-4 text-center">{r.name}</th>
                       ))}
                       <th className="py-4 pl-4 text-right">Toplam Stok</th>
@@ -526,8 +624,7 @@ export default function TumBolgelerStokPage() {
                   </thead>
                   <tbody className="divide-y divide-[var(--border)]/40 text-xs">
                     {uniqueItems.map((item) => {
-                      // Her şubenin stok sayılarını çıkaralım
-                      const counts = regions.map(reg => {
+                      const counts = regionsList.map((reg: BranchRegion) => {
                         const found = regionStocks.find(rs => rs.regionId === reg.id)?.items.find(i => i.name === item.name);
                         return {
                           regionId: reg.id,
@@ -536,7 +633,7 @@ export default function TumBolgelerStokPage() {
                         };
                       });
 
-                      const totalQty = counts.reduce((acc, curr) => acc + curr.qty, 0);
+                      const totalQty = counts.reduce((acc: number, curr: { qty: number }) => acc + curr.qty, 0);
 
                       return (
                         <tr key={item.name} className="hover:bg-[var(--background)]/35 transition-colors">
@@ -549,7 +646,7 @@ export default function TumBolgelerStokPage() {
                           <td className="py-3.5 px-4 text-zinc-500 font-semibold font-mono">
                             {item.unit}
                           </td>
-                          {counts.map((c) => {
+                          {counts.map((c: { regionId: string; qty: number; minLimit: number }) => {
                             const isCritical = c.qty <= c.minLimit;
                             return (
                               <td key={c.regionId} className="py-3.5 px-4 text-center">
