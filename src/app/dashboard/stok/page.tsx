@@ -126,35 +126,45 @@ export default function StokPage() {
     }
   };
 
-  // Hatalı girişi düzeltmek için stoka geri ekleme
-  const handleIncreaseQuantityCorrection = async (id: string) => {
+  // Hatalı girişi düzeltmek için doğrudan alınan miktarı güncelleme
+  const handleUpdateTakenQuantity = async (id: string) => {
     const item = stockList.find(i => i.id === id);
-    if (!item || item.depodanAlinan <= 0) {
-      setToastMessage("⚠️ Depodan alınmış miktar sıfır olduğu için düzeltme yapılamaz!");
+    if (!item) return;
+
+    const inputVal = tempInputs[id];
+    if (inputVal === undefined || inputVal === "") return;
+
+    const newAlinan = Number(parseFloat(inputVal).toFixed(3));
+    if (isNaN(newAlinan) || newAlinan < 0) {
+      setToastMessage("⚠️ Geçersiz bir miktar girdiniz!");
       setTimeout(() => setToastMessage(null), 3000);
       return;
     }
 
-    const newQty = Number((item.quantity + 1).toFixed(3));
-    const newAlinan = Number((item.depodanAlinan - 1).toFixed(3));
+    const newQty = Math.max(0, Number((item.depodaBulunan - newAlinan).toFixed(3)));
 
     const updatedItem: StockItem = {
       ...item,
-      quantity: newQty,
-      depodanAlinan: newAlinan
+      depodanAlinan: newAlinan,
+      quantity: newQty
     };
 
     try {
       await saveStockItem(selectedRegion, updatedItem);
       await logUserAction(
-        "Depo Girişi Düzeltildi",
+        "Alınan Miktar Düzeltildi",
         "STOK",
-        `"${item.name}" hatalı düşümü geri alındı (1 adet eklendi). Yeni kalan: ${newQty} ${item.unit}`
+        `"${item.name}" için alınan miktar ${item.depodanAlinan} -> ${newAlinan} olarak düzeltildi. Yeni kalan: ${newQty} ${item.unit}`
       );
-      setToastMessage("🔄 Hatalı düşüm geri alındı, envanter düzeltildi!");
+      setToastMessage("🔄 Alınan miktar güncellendi ve kalan stok hesaplandı!");
       setTimeout(() => setToastMessage(null), 3000);
+      setTempInputs(prev => {
+        const copy = { ...prev };
+        delete copy[id];
+        return copy;
+      });
     } catch (err) {
-      console.error("Düzeltme hatası:", err);
+      console.error("Miktar güncelleme hatası:", err);
     }
   };
 
@@ -443,7 +453,25 @@ export default function StokPage() {
                         </div>
                         <div>
                           <span className="text-[9px] text-zinc-500 block uppercase">Alınan</span>
-                          <span className="text-sm font-bold text-orange-500">{item.depodanAlinan}</span>
+                          {isCorrectionMode ? (
+                            <div className="flex items-center justify-center gap-1 mt-0.5">
+                              <input
+                                type="number"
+                                value={tempInputs[item.id] !== undefined ? tempInputs[item.id] : item.depodanAlinan}
+                                onChange={(e) => setTempInputs({ ...tempInputs, [item.id]: e.target.value })}
+                                className="w-12 px-1 py-0.5 text-[10px] text-center border border-orange-500/50 bg-[var(--background)] rounded focus:outline-none focus:ring-1 focus:ring-orange-500 font-bold"
+                              />
+                              <button
+                                onClick={() => handleUpdateTakenQuantity(item.id)}
+                                className="p-1 rounded bg-orange-500 text-white hover:bg-orange-600 transition-colors cursor-pointer flex items-center justify-center shrink-0"
+                                title="Değeri Kaydet"
+                              >
+                                <Check className="w-3 h-3 text-zinc-950" />
+                              </button>
+                            </div>
+                          ) : (
+                            <span className="text-sm font-bold text-orange-500">{item.depodanAlinan}</span>
+                          )}
                         </div>
                         <div>
                           <span className="text-[9px] text-zinc-500 block uppercase font-bold text-emerald-500">Kalan</span>
@@ -483,15 +511,9 @@ export default function StokPage() {
 
                           {/* KULLANICI / BARISTA GİRİŞİ: Stok Düşürme veya Düzeltme */}
                           {isCorrectionMode ? (
-                            <button
-                              onClick={() => handleIncreaseQuantityCorrection(item.id)}
-                              disabled={item.depodanAlinan <= 0}
-                              className="h-9 px-3.5 rounded-xl border border-[#e76f51]/20 bg-[#e76f51]/10 hover:bg-[#e76f51] text-[#e76f51] hover:text-[#264653] transition-colors cursor-pointer flex items-center gap-1.5 disabled:opacity-40"
-                              title="Hatalı Girişi Geri Al (1 Adet Ekle)"
-                            >
-                              <Plus className="w-3.5 h-3.5" />
-                              <span className="text-xs font-black">1 Geri Ekle</span>
-                            </button>
+                            <span className="text-[10px] font-black text-orange-500 uppercase tracking-widest bg-orange-500/10 px-3 py-2 rounded-xl border border-orange-500/20">
+                              Düzeltme Aktif
+                            </span>
                           ) : (
                             <button
                               onClick={() => handleDecreaseQuantity(item.id)}
