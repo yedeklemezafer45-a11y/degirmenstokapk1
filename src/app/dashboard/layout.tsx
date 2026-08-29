@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { usePathname } from "next/navigation";
+import GlobalChat from "@/components/GlobalChat";
 
 export default function DashboardLayout({
   children,
@@ -59,6 +60,7 @@ export default function DashboardLayout({
   return (
     <>
       {children}
+      <GlobalChat />
     </>
   );
 }
