@@ -21,6 +21,7 @@ import {
 import { getAnnouncement, Announcement } from "@/lib/announcementService";
 import { subscribeToStocks } from "@/lib/stockService";
 import { BRANCH_REGIONS } from "@/lib/userService";
+import { isProductAllowedForRegion } from "@/lib/stockStore";
 import { useRouter } from "next/navigation";
 import { 
   getLatestShiftHandover, 
@@ -199,10 +200,17 @@ export default function DashboardPage() {
 
     // Gerçek zamanlı Firestore stok analizi (kritik limit + SKT)
     const unsubscribe = subscribeToStocks(activeRegion, (currentStock) => {
-      const critCount = currentStock.filter(item => item.quantity <= item.minLimit).length;
+      const allowedStock = currentStock.filter(item => {
+        if (activeRegion === "degirmen-kafe" && (item.category === "Soft İçecek Ürünleri" || item.category === "Pastalar")) {
+          return false;
+        }
+        return isProductAllowedForRegion(activeRegion, item);
+      });
+
+      const critCount = allowedStock.filter(item => item.quantity <= item.minLimit).length;
       setCriticalCount(critCount);
 
-      const critItems = currentStock
+      const critItems = allowedStock
         .filter(item => item.quantity <= item.minLimit)
         .map(item => ({ id: item.id, name: item.name, quantity: item.quantity, unit: item.unit }));
       setCriticalItems(critItems);
@@ -210,7 +218,7 @@ export default function DashboardPage() {
       const warnings: typeof sktWarnings = [];
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      currentStock.forEach(item => {
+      allowedStock.forEach(item => {
         if (item.expDate) {
           const exp = new Date(item.expDate);
           exp.setHours(0, 0, 0, 0);

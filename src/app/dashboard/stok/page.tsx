@@ -93,10 +93,17 @@ export default function StokPage() {
     const unsubscribe = subscribeToStocks(activeRegion, (items) => {
       setStockList(items);
 
+      const allowedItems = items.filter(item => {
+        if (activeRegion === "degirmen-kafe" && (item.category === "Soft İçecek Ürünleri" || item.category === "Pastalar")) {
+          return false;
+        }
+        return isProductAllowedForRegion(activeRegion, item);
+      });
+
       const warnings: typeof sktWarnings = [];
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      items.forEach(item => {
+      allowedItems.forEach(item => {
         if (item.expDate) {
           const exp = new Date(item.expDate);
           exp.setHours(0, 0, 0, 0);
