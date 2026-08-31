@@ -92,14 +92,15 @@ export default function StokPage() {
     // Gerçek zamanlı Firestore dinleyicisi
     const unsubscribe = subscribeToStocks(activeRegion, (items) => {
       const reconciledItems = items.map(item => {
-        const expectedKalan = Math.max(0, Number(((item.depodaBulunan || 0) - (item.depodanAlinan || 0)).toFixed(3)));
-        if (item.depodaBulunan > 0 && Math.abs(item.quantity - expectedKalan) > 0.001) {
-          return {
-            ...item,
-            quantity: expectedKalan
-          };
-        }
-        return item;
+        const depoda = Math.round(item.depodaBulunan || 0);
+        const alinan = Math.round(item.depodanAlinan || 0);
+        const expectedKalan = Math.max(0, depoda - alinan);
+        return {
+          ...item,
+          depodaBulunan: depoda,
+          depodanAlinan: alinan,
+          quantity: item.depodaBulunan > 0 ? expectedKalan : Math.round(item.quantity || 0)
+        };
       });
       setStockList(reconciledItems);
 

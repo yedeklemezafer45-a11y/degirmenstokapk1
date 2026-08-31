@@ -202,14 +202,14 @@ export default function StokSayimPage() {
   };
 
   const getInitialSayilan = (item: StockItem) => {
-    if (item.depodaBulunan > 0 && (!item.depodanAlinan || item.depodanAlinan === 0)) {
-      return String(item.depodaBulunan);
+    if (item.depodaBulunan > 0) {
+      const kalan = Math.max(0, Math.round(item.depodaBulunan - (item.depodanAlinan || 0)));
+      return String(kalan);
     }
     if (item.quantity !== undefined && item.quantity !== null) {
-      return String(item.quantity);
+      return String(Math.round(item.quantity));
     }
-    const expectedKalan = Math.max(0, (item.depodaBulunan || 0) - (item.depodanAlinan || 0));
-    return String(expectedKalan);
+    return "0";
   };
 
   const getInitialAcikta = () => {
@@ -245,11 +245,17 @@ export default function StokSayimPage() {
     const unsubscribe = subscribeToStocks(
       activeRegion,
       (fetchedStocks) => {
-        setStockList(fetchedStocks);
+        const cleanStocks = fetchedStocks.map(item => ({
+          ...item,
+          depodaBulunan: Math.round(item.depodaBulunan || 0),
+          depodanAlinan: Math.round(item.depodanAlinan || 0),
+          quantity: Math.max(0, Math.round((item.depodaBulunan || item.quantity || 0) - (item.depodanAlinan || 0)))
+        }));
+        setStockList(cleanStocks);
 
         setSayilanValues(prev => {
           const updated = { ...prev };
-          fetchedStocks.forEach(item => {
+          cleanStocks.forEach(item => {
             if (!(item.id in updated)) {
               updated[item.id] = getInitialSayilan(item);
             }
@@ -397,17 +403,19 @@ export default function StokSayimPage() {
     setIsSyncing(true);
     try {
       const freshStocks = await getAllStocks(selectedRegion);
-      setStockList(freshStocks);
+      const cleanStocks = freshStocks.map(item => ({
+        ...item,
+        depodaBulunan: Math.round(item.depodaBulunan || 0),
+        depodanAlinan: Math.round(item.depodanAlinan || 0),
+        quantity: Math.max(0, Math.round((item.depodaBulunan || item.quantity || 0) - (item.depodanAlinan || 0)))
+      }));
+      setStockList(cleanStocks);
 
       const newSayilan: Record<string, string> = {};
       const newAcikta: Record<string, string> = {};
 
-      freshStocks.forEach(item => {
-        const expectedKalan = Math.max(0, Number(((item.depodaBulunan || 0) - (item.depodanAlinan || 0)).toFixed(3)));
-        const qty = (item.depodaBulunan > 0 && (!item.depodanAlinan || item.depodanAlinan === 0)) 
-          ? item.depodaBulunan 
-          : (item.quantity !== undefined && item.quantity !== null ? item.quantity : expectedKalan);
-        newSayilan[item.id] = String(qty);
+      cleanStocks.forEach(item => {
+        newSayilan[item.id] = getInitialSayilan(item);
         newAcikta[item.id] = "";
       });
 
