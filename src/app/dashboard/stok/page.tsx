@@ -144,8 +144,8 @@ export default function StokPage() {
     const item = stockList.find(i => i.id === id);
     if (!item || item.quantity <= 0) return;
 
-    const newQty = Number((item.quantity - 1).toFixed(3));
-    const newAlinan = Number((item.depodanAlinan + 1).toFixed(3));
+    const newAlinan = Math.round((item.depodanAlinan || 0) + 1);
+    const newQty = Math.max(0, Math.round((item.depodaBulunan || item.quantity) - newAlinan));
 
     const updatedItem: StockItem = {
       ...item,
@@ -174,14 +174,14 @@ export default function StokPage() {
     const inputVal = tempInputs[id];
     if (inputVal === undefined || inputVal === "") return;
 
-    const newAlinan = Number(parseFloat(inputVal).toFixed(3));
+    const newAlinan = Math.max(0, Math.round(parseFloat(inputVal)));
     if (isNaN(newAlinan) || newAlinan < 0) {
       setToastMessage("⚠️ Geçersiz bir miktar girdiniz!");
       setTimeout(() => setToastMessage(null), 3000);
       return;
     }
 
-    const newQty = Math.max(0, Number((item.depodaBulunan - newAlinan).toFixed(3)));
+    const newQty = Math.max(0, Math.round((item.depodaBulunan || 0) - newAlinan));
 
     const updatedItem: StockItem = {
       ...item,
@@ -216,14 +216,14 @@ export default function StokPage() {
     const inputVal = tempDepoInputs[id];
     if (inputVal === undefined || inputVal === "") return;
 
-    const newDepoda = Number(parseFloat(inputVal).toFixed(3));
+    const newDepoda = Math.max(0, Math.round(parseFloat(inputVal)));
     if (isNaN(newDepoda) || newDepoda < 0) {
       setToastMessage("⚠️ Geçersiz bir miktar girdiniz!");
       setTimeout(() => setToastMessage(null), 3000);
       return;
     }
 
-    const newQty = Math.max(0, Number((newDepoda - item.depodanAlinan).toFixed(3)));
+    const newQty = Math.max(0, Math.round(newDepoda - (item.depodanAlinan || 0)));
 
     const updatedItem: StockItem = {
       ...item,
@@ -255,14 +255,14 @@ export default function StokPage() {
     const bulkValue = tempInputs[id];
     if (bulkValue === undefined || bulkValue === "") return;
 
-    const addedQty = Number(parseFloat(bulkValue).toFixed(3));
+    const addedQty = Math.max(0, Math.round(parseFloat(bulkValue)));
     if (isNaN(addedQty) || addedQty <= 0) return;
 
     const item = stockList.find(i => i.id === id);
     if (!item) return;
 
-    const newDepodaBulunan = Number((item.depodaBulunan + addedQty).toFixed(3));
-    const newQty = Math.max(0, Number((newDepodaBulunan - item.depodanAlinan).toFixed(3)));
+    const newDepodaBulunan = Math.round((item.depodaBulunan || 0) + addedQty);
+    const newQty = Math.max(0, Math.round(newDepodaBulunan - (item.depodanAlinan || 0)));
     
     const updatedItem: StockItem = {
       ...item,
@@ -278,8 +278,10 @@ export default function StokPage() {
         "STOK",
         `"${item.name}" stoğuna ${addedQty} ${item.unit} ilave edildi. Toplam Depoda: ${newDepodaBulunan}, Yeni Kalan: ${newQty} ${item.unit}`
       );
+      setToastMessage("📦 Depodaki stok miktarına başarıyla ilave yapıldı!");
+      setTimeout(() => setToastMessage(null), 3000);
     } catch (err) {
-      console.error("Giriş hatası:", err);
+      console.error("Toplu miktar güncelleme hatası:", err);
     }
   };
 

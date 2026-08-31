@@ -56,13 +56,13 @@ export const mockStockItems: StockItem[] = [
   { id: "sy25", name: "HM-RASBERY ACAI BASE", category: "Şuruplar", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Adet", minLimit: 2, price: 150, weightInfo: "0.970 kg" },
 
   // KAHVELER
-  { id: "cf1", name: "HM-DAMLA SAKIZLI TÜRK KAHVESİ", category: "Kahveler", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "kg", minLimit: 3, price: 280, weightInfo: "0.500 kg" },
-  { id: "cf2", name: "HM-ESPRESSO ÇEKİRDEĞİ (ORTA KAVRULMUŞ)", category: "Kahveler", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "kg", minLimit: 10, price: 650, weightInfo: "1.000 kg" },
-  { id: "cf3", name: "HM-FİLTRE KAHVE", category: "Kahveler", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "kg", minLimit: 5, price: 320, weightInfo: "1.000 kg" },
-  { id: "cf4", name: "HM-GRANÜL KAHVE (NESCAFE)", category: "Kahveler", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "kg", minLimit: 2, price: 400, weightInfo: "0.500 kg" },
-  { id: "cf5", name: "HM-MENENGİÇ KAHVESİ", category: "Kahveler", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "kg", minLimit: 2, price: 260, weightInfo: "0.250 kg" },
-  { id: "cf6", name: "HM-OSMANLI DİBEK KAHVESİ", category: "Kahveler", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "kg", minLimit: 3, price: 290, weightInfo: "0.500 kg" },
-  { id: "cf7", name: "HM-TÜRK KAHVESİ (ORTA KAVRULMUŞ)", category: "Kahveler", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "kg", minLimit: 5, price: 250, weightInfo: "0.500 kg" },
+  { id: "cf1", name: "HM-DAMLA SAKIZLI TÜRK KAHVESİ", category: "Kahveler", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Paket", minLimit: 3, price: 280, weightInfo: "0.500 kg" },
+  { id: "cf2", name: "HM-ESPRESSO ÇEKİRDEĞİ (ORTA KAVRULMUŞ)", category: "Kahveler", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Paket", minLimit: 10, price: 650, weightInfo: "1.000 kg" },
+  { id: "cf3", name: "HM-FİLTRE KAHVE", category: "Kahveler", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Paket", minLimit: 5, price: 320, weightInfo: "1.000 kg" },
+  { id: "cf4", name: "HM-GRANÜL KAHVE (NESCAFE)", category: "Kahveler", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Paket", minLimit: 2, price: 400, weightInfo: "0.500 kg" },
+  { id: "cf5", name: "HM-MENENGİÇ KAHVESİ", category: "Kahveler", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Paket", minLimit: 2, price: 260, weightInfo: "0.250 kg" },
+  { id: "cf6", name: "HM-OSMANLI DİBEK KAHVESİ", category: "Kahveler", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Paket", minLimit: 3, price: 290, weightInfo: "0.500 kg" },
+  { id: "cf7", name: "HM-TÜRK KAHVESİ (ORTA KAVRULMUŞ)", category: "Kahveler", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Paket", minLimit: 5, price: 250, weightInfo: "0.500 kg" },
 
   // SOSLAR
   { id: "sc1", name: "HM-BEYAZ ÇİKOLATALI BAR SOS MONTE CRİSTO", category: "Soslar", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Şişe", minLimit: 2, price: 310, weightInfo: "2.500 kg" },
@@ -72,16 +72,16 @@ export const mockStockItems: StockItem[] = [
   { id: "sc5", name: "HM-MADAGASKAR SOS", category: "Soslar", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Şişe", minLimit: 1, price: 450, weightInfo: "1.000 kg" },
 
   // TOZ GRUBU (Tümü 1,000 gram)
-  { id: "dg1", name: "HM-BAL BADEM SALEP", category: "Toz Grubu", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "kg", minLimit: 2, price: 280, weightInfo: "1.000 kg" },
-  { id: "dg2", name: "HM-DAMLA SAKIZLI SALEP", category: "Toz Grubu", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "kg", minLimit: 2, price: 280, weightInfo: "1.000 kg" },
-  { id: "dg3", name: "HM-KLASİK SALEP", category: "Toz Grubu", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "kg", minLimit: 3, price: 240, weightInfo: "1.000 kg" },
-  { id: "dg4", name: "HM-SICAK BEYAZ ÇİKOLATA", category: "Toz Grubu", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "kg", minLimit: 2, price: 320, weightInfo: "1.000 kg" },
-  { id: "dg5", name: "HM-SICAK ÇİKOLATA", category: "Toz Grubu", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "kg", minLimit: 4, price: 290, weightInfo: "1.000 kg" },
-  { id: "dg6", name: "HM-ÇİKOLATA AROMALI MİLKSHAKE TOZU", category: "Toz Grubu", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "kg", minLimit: 2, price: 340, weightInfo: "1.000 kg" },
-  { id: "dg7", name: "HM-ÇİLEK AROMALI MİLKSHAKE TOZU", category: "Toz Grubu", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "kg", minLimit: 2, price: 340, weightInfo: "1.000 kg" },
-  { id: "dg8", name: "HM-KARAMEL AROMALI MİLKSHAKE TOZU", category: "Toz Grubu", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "kg", minLimit: 2, price: 340, weightInfo: "1.000 kg" },
-  { id: "dg9", name: "HM-MUZ AROMALI MİLKSHAKE TOZU", category: "Toz Grubu", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "kg", minLimit: 2, price: 340, weightInfo: "1.000 kg" },
-  { id: "dg10", name: "HM-VANİLYA AROMALI MİLKSHAKE TOZU", category: "Toz Grubu", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "kg", minLimit: 2, price: 340, weightInfo: "1.000 kg" },
+  { id: "dg1", name: "HM-BAL BADEM SALEP", category: "Toz Grubu", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Paket", minLimit: 2, price: 280, weightInfo: "1.000 kg" },
+  { id: "dg2", name: "HM-DAMLA SAKIZLI SALEP", category: "Toz Grubu", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Paket", minLimit: 2, price: 280, weightInfo: "1.000 kg" },
+  { id: "dg3", name: "HM-KLASİK SALEP", category: "Toz Grubu", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Paket", minLimit: 3, price: 240, weightInfo: "1.000 kg" },
+  { id: "dg4", name: "HM-SICAK BEYAZ ÇİKOLATA", category: "Toz Grubu", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Paket", minLimit: 2, price: 320, weightInfo: "1.000 kg" },
+  { id: "dg5", name: "HM-SICAK ÇİKOLATA", category: "Toz Grubu", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Paket", minLimit: 4, price: 290, weightInfo: "1.000 kg" },
+  { id: "dg6", name: "HM-ÇİKOLATA AROMALI MİLKSHAKE TOZU", category: "Toz Grubu", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Paket", minLimit: 2, price: 340, weightInfo: "1.000 kg" },
+  { id: "dg7", name: "HM-ÇİLEK AROMALI MİLKSHAKE TOZU", category: "Toz Grubu", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Paket", minLimit: 2, price: 340, weightInfo: "1.000 kg" },
+  { id: "dg8", name: "HM-KARAMEL AROMALI MİLKSHAKE TOZU", category: "Toz Grubu", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Paket", minLimit: 2, price: 340, weightInfo: "1.000 kg" },
+  { id: "dg9", name: "HM-MUZ AROMALI MİLKSHAKE TOZU", category: "Toz Grubu", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Paket", minLimit: 2, price: 340, weightInfo: "1.000 kg" },
+  { id: "dg10", name: "HM-VANİLYA AROMALI MİLKSHAKE TOZU", category: "Toz Grubu", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Paket", minLimit: 2, price: 340, weightInfo: "1.000 kg" },
 
   // ÇAY VE BİTKİ ÇAYLARI
   { id: "bc1", name: "HM-IHLAMUR", category: "Çay Ve Bitki Çayları", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Paket", minLimit: 1, price: 600, weightInfo: "0.250 kg" },
@@ -102,13 +102,13 @@ export const mockStockItems: StockItem[] = [
   { id: "pr6", name: "HM-YEŞİL ELMA PÜRE", category: "Püreler", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Şişe", minLimit: 2, price: 210, weightInfo: "1.000 kg" },
 
   // LİTRELİK ÜRÜNLER
-  { id: "lt1", name: "HM-ANANAS SUYU", category: "Litrelik Ürünler", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Litre", minLimit: 5, price: 45, weightInfo: "1.000 Litre" },
-  { id: "lt2", name: "HM-LİMONATA", category: "Litrelik Ürünler", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Litre", minLimit: 10, price: 35, weightInfo: "2.000 Litre" },
-  { id: "lt3", name: "HM-SÜT", category: "Litrelik Ürünler", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Litre", minLimit: 20, price: 32, weightInfo: "1.000 Litre" },
-  { id: "lt4", name: "HM-ELMA SUYU", category: "Litrelik Ürünler", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Litre", minLimit: 5, price: 45, weightInfo: "1.000 Litre" },
+  { id: "lt1", name: "HM-ANANAS SUYU", category: "Litrelik Ürünler", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Adet", minLimit: 5, price: 45, weightInfo: "1.000 Litre" },
+  { id: "lt2", name: "HM-LİMONATA", category: "Litrelik Ürünler", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Adet", minLimit: 10, price: 35, weightInfo: "2.000 Litre" },
+  { id: "lt3", name: "HM-SÜT", category: "Litrelik Ürünler", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Adet", minLimit: 20, price: 32, weightInfo: "1.000 Litre" },
+  { id: "lt4", name: "HM-ELMA SUYU", category: "Litrelik Ürünler", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Adet", minLimit: 5, price: 45, weightInfo: "1.000 Litre" },
 
   // YAN ÜRÜNLER
-  { id: "yn2", name: "HM-ANTEP FISTIKLI LOKUM", category: "Yan Ürünler", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "kg", minLimit: 1, price: 450, weightInfo: "3.000 kg" },
+  { id: "yn2", name: "HM-ANTEP FISTIKLI LOKUM", category: "Yan Ürünler", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Kutu", minLimit: 1, price: 450, weightInfo: "3.000 kg" },
   { id: "yn3", name: "HM-DONDURULARAK KURUTULMUŞ BÖĞÜRTLEN", category: "Yan Ürünler", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Paket", minLimit: 1, price: 290, weightInfo: "0.050 kg" },
   { id: "yn4", name: "HM-DONDURULARAK KURUTULMUŞ LİME", category: "Yan Ürünler", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Paket", minLimit: 1, price: 290, weightInfo: "0.050 kg" },
 
@@ -116,7 +116,7 @@ export const mockStockItems: StockItem[] = [
   { id: "ex2", name: "HM-CİCİ BEBE", category: "Ek Ürünler", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Kutu", minLimit: 2, price: 65, weightInfo: "0.700 kg" },
   { id: "ex3", name: "HM-KATLA BALLA SÜZME ÇİÇEK BALI (STİCK)", category: "Ek Ürünler", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Kutu", minLimit: 50, price: 3.5, weightInfo: "Kutu: 0.800 kg (120 Adet x 7g)" },
   { id: "ex4", name: "HM-KÜP ŞEKER", category: "Ek Ürünler", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Kutu", minLimit: 3, price: 80, weightInfo: "1.000 kg" },
-  { id: "ex5", name: "HM-LOTUS BİSCOFF SPREAD SÜRÜLEBİLİR BİSKÜVİ EZMESİ", category: "Ek Ürünler", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "kg", minLimit: 1, price: 160, weightInfo: "1.000 kg" },
+  { id: "ex5", name: "HM-LOTUS BİSCOFF SPREAD SÜRÜLEBİLİR BİSKÜVİ EZMESİ", category: "Ek Ürünler", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Kavanoz", minLimit: 1, price: 160, weightInfo: "1.000 kg" },
 
   // SOFT İÇECEK ÜRÜNLERİ
   { id: "soft1", name: "HM-SU", category: "Soft İçecek Ürünleri", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Adet", minLimit: 10, price: 10, weightInfo: "0.500 Lt" },
