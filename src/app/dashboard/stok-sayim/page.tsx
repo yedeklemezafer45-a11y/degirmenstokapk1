@@ -317,10 +317,10 @@ export default function StokSayimPage() {
           ? "kg" 
           : (item.unit === "Şişe" ? "Adet" : item.unit));
 
-    // 9.000 kg ise 9 kg, 2.400 kg ise 2.4 kg gibi temiz gösterim
+    // Tam sayı ise noktalama olmadan (örn: 9 kg), ondalıklı ise 3 basamak tam (örn: 6.790 kg)
     const cleanNumber = Number.isInteger(totalCalculated)
       ? String(totalCalculated)
-      : totalCalculated.toFixed(3).replace(/\.?0+$/, "");
+      : totalCalculated.toFixed(3);
 
     return `${cleanNumber} ${unitLabel}`;
   };
