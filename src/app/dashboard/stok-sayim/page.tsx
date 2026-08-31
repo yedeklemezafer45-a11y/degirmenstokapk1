@@ -745,10 +745,19 @@ export default function StokSayimPage() {
             { id: 5, label: "Diğer Grubu", categories: ["Toz Grubu", "Ek Ürünler", "Yan Ürünler"] }
           ];
 
+          const isProductCounted = (item: StockItem) => {
+            if (checkedItemIds[item.id]) return true;
+            const val = sayilanValues[item.id];
+            if (val !== undefined && val !== "" && !isNaN(Number(val.replace(",", ".")))) {
+              return true;
+            }
+            return false;
+          };
+
           const stepsWithStatus = steps.map(step => {
-            const stepProducts = stockList.filter(item => step.categories.includes(item.category));
+            const stepProducts = displayedStockList.filter(item => step.categories.includes(item.category));
             const totalCount = stepProducts.length;
-            const checkedCountInStep = stepProducts.filter(item => checkedItemIds[item.id]).length;
+            const checkedCountInStep = stepProducts.filter(isProductCounted).length;
             const isCompleted = totalCount > 0 && checkedCountInStep === totalCount;
             return {
               ...step,
@@ -758,8 +767,9 @@ export default function StokSayimPage() {
             };
           });
 
-          const completedStepsCount = stepsWithStatus.filter(s => s.isCompleted).length;
-          const fillWidth = completedStepsCount > 0 ? (completedStepsCount * 20 - 10) : 0;
+          const totalCountedOverall = displayedStockList.filter(isProductCounted).length;
+          const totalOverall = displayedStockList.length;
+          const fillWidth = totalOverall > 0 ? Math.round((totalCountedOverall / totalOverall) * 100) : 0;
 
           return (
             <div className="bg-[var(--card)] border border-[var(--border)] rounded-3xl p-6 shadow-sm space-y-6">
@@ -782,7 +792,7 @@ export default function StokSayimPage() {
                   </button>
 
                   <button
-                    onClick={() => handleDownloadSayimPDF(stockList)}
+                    onClick={() => handleDownloadSayimPDF(displayedStockList)}
                     type="button"
                     className="flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold bg-zinc-800 hover:bg-zinc-700 text-zinc-100 border border-zinc-700/60 transition-all cursor-pointer shadow-sm"
                     title="Sayım Sonuçlarını PDF Olarak İndir / Yazdır"
