@@ -197,8 +197,9 @@ export default function StokSayimPage() {
     const { parsedWeight } = extractWeightAndUnit(item);
     if (!item.quantity) return "0";
     const unitLower = item.unit.toLowerCase();
-    if (unitLower === "kg" || unitLower === "litre" || unitLower === "lt") {
-      return String(Math.floor(item.quantity / parsedWeight));
+    const hasWeight = !!item.weightInfo;
+    if (unitLower === "kg" || unitLower === "litre" || unitLower === "lt" || hasWeight) {
+      return String(Math.floor(Number(item.quantity.toFixed(3)) / parsedWeight));
     } else {
       return String(Math.floor(item.quantity));
     }
@@ -208,8 +209,9 @@ export default function StokSayimPage() {
     const { parsedWeight } = extractWeightAndUnit(item);
     if (!item.quantity) return "0";
     const unitLower = item.unit.toLowerCase();
-    if (unitLower === "kg" || unitLower === "litre" || unitLower === "lt") {
-      const fullWeight = Math.floor(item.quantity / parsedWeight) * parsedWeight;
+    const hasWeight = !!item.weightInfo;
+    if (unitLower === "kg" || unitLower === "litre" || unitLower === "lt" || hasWeight) {
+      const fullWeight = Math.floor(Number(item.quantity.toFixed(3)) / parsedWeight) * parsedWeight;
       const diff = Math.max(0, item.quantity - fullWeight);
       return String(Math.round(diff * 1000));
     } else {
@@ -291,37 +293,26 @@ export default function StokSayimPage() {
   const calculateTotalQuantityInUnit = (item: StockItem, countedQty: number, openUnits: number) => {
     const { parsedWeight } = extractWeightAndUnit(item);
     const unitLower = item.unit.toLowerCase();
+    const hasWeight = !!item.weightInfo;
     
-    if (unitLower === "kg" || unitLower === "litre" || unitLower === "lt") {
-      // Direct mass/volume unit
+    if (unitLower === "kg" || unitLower === "litre" || unitLower === "lt" || hasWeight) {
+      // Doğrudan ağırlık/hacim hesabı: (Sayılan Adet x Paket Ağırlığı) + (Açık Gramaj / 1000)
       return Number(((countedQty * parsedWeight) + (openUnits / 1000)).toFixed(3));
     } else {
-      // Package-based unit (Adet, Şişe, Kutu, Paket)
-      // Açıkta olan gramaj doğrudan 1000'e bölünerek adet kesri olarak eklenir
+      // Paket/Adet bazlı ürünler
       return Number((countedQty + (openUnits / 1000)).toFixed(3));
     }
   };
 
   const formatTotalDisplay = (item: StockItem, countedQty: number, openUnits: number) => {
     const isLiquid = isLiquidItem(item);
-    const targetCategories = ["Litrelik Ürünler", "Püreler", "Soslar", "Kahveler", "Toz Grubu"];
-    const isFormattedCustom = targetCategories.includes(item.category);
-    
-    if (isFormattedCustom) {
-      if (countedQty > 0 && openUnits > 0) {
-        return `${countedQty} Adet ${openUnits} Gram`;
-      } else if (countedQty > 0) {
-        return `${countedQty} Adet`;
-      } else if (openUnits > 0) {
-        return `${openUnits} Gram`;
-      }
-      return "0 Adet";
-    }
-
     const totalCalculated = calculateTotalQuantityInUnit(item, countedQty, openUnits);
+    const unitLower = item.unit.toLowerCase();
+    const hasWeight = !!item.weightInfo;
+    
     const unitLabel = isLiquid 
       ? "lt" 
-      : (item.unit === "kg" || item.unit === "Adet" 
+      : (unitLower === "kg" || hasWeight
           ? "kg" 
           : (item.unit === "Şişe" ? "Adet" : item.unit));
     return `${totalCalculated.toFixed(3)} ${unitLabel}`;
@@ -404,31 +395,34 @@ export default function StokSayimPage() {
         <html>
         <head>
           <meta charset="utf-8">
-          <title>Değirmen Kafe - Fiziki Stok Sayım Raporu</title>
+          <title>SOMA BELEDİYESİ SOMA PARK DEĞİRMEN KAFE - GIDA SAYIM LİSTESİ</title>
           <style>
-            body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 25px; color: #1e293b; background-color: #fff; line-height: 1.5; }
-            .header { text-align: center; margin-bottom: 25px; border-bottom: 3px solid #ea580c; padding-bottom: 15px; }
-            .header h1 { color: #ea580c; margin: 0; font-size: 24px; font-weight: 800; letter-spacing: 0.5px; }
-            .header p { color: #64748b; margin: 5px 0 0 0; font-size: 12px; font-weight: 500; }
-            .info-grid { display: flex; justify-content: space-between; margin-bottom: 20px; font-size: 11px; color: #475569; border-bottom: 1px dashed #cbd5e1; padding-bottom: 10px; }
-            table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 11px; }
-            th { background-color: #f8fafc; border-bottom: 2px solid #cbd5e1; color: #475569; font-weight: 700; padding: 8px 10px; text-align: left; text-transform: uppercase; }
-            td { border-bottom: 1px solid #e2e8f0; padding: 8px 10px; color: #0f172a; }
-            tr:nth-child(even) td { background-color: #f8fafc; }
-            .cat-row { background-color: #fff7ed !important; font-weight: bold; color: #c2410c; }
-            .cat-row td { border-bottom: 2px solid #ffedd5; padding: 6px 10px; text-transform: uppercase; font-size: 12px; }
+            body { font-family: Arial, Helvetica, sans-serif; padding: 15px; color: #000; background-color: #fff; line-height: 1.3; }
+            .header-box { text-align: center; margin-bottom: 10px; border: 1.5px solid #000; padding: 8px 4px; }
+            .header-box h1 { margin: 0; font-size: 15px; font-weight: 800; letter-spacing: 0.5px; }
+            .header-box h2 { margin: 3px 0; font-size: 13px; font-weight: 700; }
+            .header-box h3 { margin: 0; font-size: 12px; font-weight: 700; color: #333; }
+            .info-grid { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 10px; font-weight: 600; color: #222; }
+            table { width: 100%; border-collapse: collapse; font-size: 10px; border: 1.5px solid #000; }
+            th, td { border: 1px solid #000; padding: 4px 6px; }
+            th { background-color: #f2f2f2; font-weight: 800; text-transform: uppercase; text-align: center; }
+            .cat-row { background-color: #e5e7eb !important; font-weight: 800; text-transform: uppercase; font-size: 10px; }
             .font-mono { font-family: monospace; font-weight: bold; }
             .text-right { text-align: right; }
             .text-center { text-align: center; }
+            .text-left { text-align: left; }
             @media print {
-              body { padding: 10px; }
+              body { padding: 0; margin: 6mm; }
+              table { page-break-inside: auto; }
+              tr { page-break-inside: avoid; page-break-after: auto; }
             }
           </style>
         </head>
         <body>
-          <div class="header">
-            <h1>DEĞİRMEN KAFE</h1>
-            <p>FİZİKİ STOK SAYIM RAPORU</p>
+          <div class="header-box">
+            <h1>SOMA BELEDİYESİ SOMA PARK DEĞİRMEN KAFE</h1>
+            <h2>GIDA SAYIM LİSTESİ</h2>
+            <h3>ANA BAR HAMMADDELER</h3>
           </div>
           <div class="info-grid">
             <div><strong>Tarih:</strong> ${nowStr}</div>
@@ -437,11 +431,11 @@ export default function StokSayimPage() {
           <table>
             <thead>
               <tr>
-                <th>Ürün Adı</th>
-                <th class="text-center">Paket Hacmi</th>
-                <th class="text-center">Sayılan Kapalı Adet</th>
-                <th class="text-center">Açıkta Olan Miktar</th>
-                <th class="text-right">Toplam Miktar</th>
+                <th style="width: 6%;">NO</th>
+                <th class="text-left" style="width: 48%;">MALZEME ADI</th>
+                <th style="width: 12%;">BİRİM</th>
+                <th style="width: 18%;">ADET/KG</th>
+                <th class="text-right" style="width: 16%;">TOPLAM</th>
               </tr>
             </thead>
             <tbody>
@@ -456,28 +450,36 @@ export default function StokSayimPage() {
         grouped[item.category].push(item);
       });
 
+      let itemNo = 1;
       Object.entries(grouped).forEach(([catName, items]) => {
         content += `
           <tr class="cat-row">
-            <td colspan="5">${catName}</td>
+            <td colspan="5" class="text-left" style="padding-left: 8px;">• ${catName}</td>
           </tr>
         `;
         items.forEach(item => {
-          const { displayWeight } = extractWeightAndUnit(item);
-          const isLiquid = isLiquidItem(item);
-          const openLabel = isLiquid ? "ml" : "gr";
-
           const countedVal = parseInputValue(sayilanValues[item.id]) || 0;
           const openVal = parseInputValue(aciktaValues[item.id]) || 0;
           const totalValText = formatTotalDisplay(item, countedVal, openVal);
 
+          let adetKgDetail = "";
+          if (countedVal > 0 && openVal > 0) {
+            adetKgDetail = `${countedVal} Adet + ${openVal} gr`;
+          } else if (countedVal > 0) {
+            adetKgDetail = `${countedVal} Adet`;
+          } else if (openVal > 0) {
+            adetKgDetail = `${openVal} gr`;
+          } else {
+            adetKgDetail = "-";
+          }
+
           content += `
             <tr>
-              <td><strong>${item.name}</strong></td>
-              <td class="text-center font-mono text-muted">${displayWeight}</td>
-              <td class="text-center font-mono">${countedVal}</td>
-              <td class="text-center font-mono">${openVal} ${openLabel}</td>
-              <td class="text-right font-mono" style="color: #059669;">${totalValText}</td>
+              <td class="text-center font-mono">${itemNo++}</td>
+              <td class="text-left"><strong>${item.name}</strong></td>
+              <td class="text-center font-mono">${item.unit}</td>
+              <td class="text-center font-mono">${adetKgDetail}</td>
+              <td class="text-right font-mono">${totalValText}</td>
             </tr>
           `;
         });
