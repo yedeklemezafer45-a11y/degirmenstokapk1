@@ -20,10 +20,11 @@ import {
   Check,
   Share2,
   Calculator,
-  Mic
+  Mic,
+  RefreshCw
 } from "lucide-react";
 import { StockItem, isProductAllowedForRegion } from "@/lib/stockStore";
-import { subscribeToStocks, saveAllStocks } from "@/lib/stockService";
+import { subscribeToStocks, saveAllStocks, getAllStocks } from "@/lib/stockService";
 import { saveReport, MonthlyReportArchive } from "@/lib/reportService";
 import { logUserAction } from "@/lib/auditLogService";
 import { useRouter } from "next/navigation";
@@ -39,6 +40,7 @@ export default function StokSayimPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>("Tümü");
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
   const [selectedRegion, setSelectedRegion] = useState("degirmen-kafe");
   const [selectedRegionName, setSelectedRegionName] = useState("Değirmen Kafe");
 
@@ -200,8 +202,14 @@ export default function StokSayimPage() {
   };
 
   const getInitialSayilan = (item: StockItem) => {
-    if (item.quantity === undefined || item.quantity === null) return "0";
-    return String(item.quantity);
+    if (item.depodaBulunan > 0 && (!item.depodanAlinan || item.depodanAlinan === 0)) {
+      return String(item.depodaBulunan);
+    }
+    if (item.quantity !== undefined && item.quantity !== null) {
+      return String(item.quantity);
+    }
+    const expectedKalan = Math.max(0, (item.depodaBulunan || 0) - (item.depodanAlinan || 0));
+    return String(expectedKalan);
   };
 
   const getInitialAcikta = () => {
@@ -384,6 +392,40 @@ export default function StokSayimPage() {
     }
   };
 
+  // Stok Kategorilerindeki güncel verileri tabloya aktarma / eşitleme
+  const handleSyncFromStockCategories = async () => {
+    setIsSyncing(true);
+    try {
+      const freshStocks = await getAllStocks(selectedRegion);
+      setStockList(freshStocks);
+
+      const newSayilan: Record<string, string> = {};
+      const newAcikta: Record<string, string> = {};
+
+      freshStocks.forEach(item => {
+        const expectedKalan = Math.max(0, Number(((item.depodaBulunan || 0) - (item.depodanAlinan || 0)).toFixed(3)));
+        const qty = (item.depodaBulunan > 0 && (!item.depodanAlinan || item.depodanAlinan === 0)) 
+          ? item.depodaBulunan 
+          : (item.quantity !== undefined && item.quantity !== null ? item.quantity : expectedKalan);
+        newSayilan[item.id] = String(qty);
+        newAcikta[item.id] = "";
+      });
+
+      setSayilanValues(newSayilan);
+      setAciktaValues(newAcikta);
+      setCheckedItemIds({});
+      localStorage.removeItem("degirmen_sayim_checked_ids");
+      setIsDirty(false);
+
+      triggerToast("🔄 Stok Kategorilerindeki veriler başarıyla eşitlendi!");
+    } catch (error) {
+      console.error("Stok senkronizasyon hatası:", error);
+      triggerToast("⚠️ Stok verileri çekilirken hata oluştu!");
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   const handleDownloadSayimPDF = (currentList: StockItem[]) => {
     try {
       const activeUserStr = sessionStorage.getItem("activeUser");
@@ -547,14 +589,13 @@ export default function StokSayimPage() {
     try {
       const updatedStock = stockList.map(item => {
         const sayilanVal = sayilanValues[item.id] !== undefined ? sayilanValues[item.id] : getInitialSayilan(item);
-        const aciktaVal = aciktaValues[item.id] !== undefined ? aciktaValues[item.id] : "0";
         const countedQty = parseInputValue(sayilanVal) || 0;
-        const openUnits = parseInputValue(aciktaVal) || 0;
-        const totalQty = calculateTotalQuantityInUnit(item, countedQty, openUnits);
 
         return {
           ...item,
-          quantity: totalQty
+          depodaBulunan: countedQty,
+          depodanAlinan: 0,
+          quantity: countedQty
         };
       });
 
@@ -776,7 +817,18 @@ export default function StokSayimPage() {
                   </p>
                 </div>
                 
-                <div className="flex items-center gap-3 self-end sm:self-center">
+                <div className="flex flex-wrap items-center gap-3 self-end sm:self-center">
+                  <button
+                    onClick={handleSyncFromStockCategories}
+                    disabled={isSyncing}
+                    type="button"
+                    className="flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold bg-blue-600/90 hover:bg-blue-600 text-white border border-blue-500/40 transition-all cursor-pointer shadow-sm hover:scale-105 active:scale-95"
+                    title="Stok Kategorilerindeki güncel verileri tabloya aktar ve eşitle"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? "animate-spin text-white" : "text-blue-200"}`} />
+                    <span>{isSyncing ? "Veriler Çekiliyor..." : "Stoktan Verileri Çek"}</span>
+                  </button>
+
                   <button
                     onClick={handleResetCheckmarks}
                     className="text-[11px] text-zinc-400 hover:text-red-400 font-semibold transition-colors px-3 py-1.5 rounded-xl border border-[var(--border)] hover:border-red-500/30 cursor-pointer"

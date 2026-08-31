@@ -84,13 +84,13 @@ export const mockStockItems: StockItem[] = [
   { id: "dg10", name: "HM-VANİLYA AROMALI MİLKSHAKE TOZU", category: "Toz Grubu", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "kg", minLimit: 2, price: 340, weightInfo: "1.000 kg" },
 
   // ÇAY VE BİTKİ ÇAYLARI
-  { id: "bc1", name: "HM-IHLAMUR", category: "Çay Ve Bitki Çayları", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "kg", minLimit: 1, price: 600, weightInfo: "0.250 kg" },
-  { id: "bc2", name: "HM-ADA ÇAYI", category: "Çay Ve Bitki Çayları", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "kg", minLimit: 1, price: 450, weightInfo: "0.250 kg" },
-  { id: "bc3", name: "HM-HİBİSCUS", category: "Çay Ve Bitki Çayları", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "kg", minLimit: 1, price: 380, weightInfo: "0.250 kg" },
-  { id: "bc4", name: "HM-KIŞ ÇAYI", category: "Çay Ve Bitki Çayları", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "kg", minLimit: 2, price: 480, weightInfo: "0.250 kg" },
-  { id: "bc5", name: "HM-KUŞBURNU", category: "Çay Ve Bitki Çayları", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "kg", minLimit: 1, price: 350, weightInfo: "0.250 kg" },
-  { id: "bc6", name: "HM-NANE LİMON", category: "Çay Ve Bitki Çayları", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "kg", minLimit: 1, price: 320, weightInfo: "0.250 kg" },
-  { id: "bc7", name: "HM-YEŞİL ÇAY", category: "Çay Ve Bitki Çayları", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "kg", minLimit: 1, price: 400, weightInfo: "0.250 kg" },
+  { id: "bc1", name: "HM-IHLAMUR", category: "Çay Ve Bitki Çayları", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Paket", minLimit: 1, price: 600, weightInfo: "0.250 kg" },
+  { id: "bc2", name: "HM-ADA ÇAYI", category: "Çay Ve Bitki Çayları", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Paket", minLimit: 1, price: 450, weightInfo: "0.250 kg" },
+  { id: "bc3", name: "HM-HİBİSCUS", category: "Çay Ve Bitki Çayları", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Paket", minLimit: 1, price: 380, weightInfo: "0.250 kg" },
+  { id: "bc4", name: "HM-KIŞ ÇAYI", category: "Çay Ve Bitki Çayları", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Paket", minLimit: 2, price: 480, weightInfo: "0.250 kg" },
+  { id: "bc5", name: "HM-KUŞBURNU", category: "Çay Ve Bitki Çayları", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Paket", minLimit: 1, price: 350, weightInfo: "0.250 kg" },
+  { id: "bc6", name: "HM-NANE LİMON", category: "Çay Ve Bitki Çayları", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Paket", minLimit: 1, price: 320, weightInfo: "0.250 kg" },
+  { id: "bc7", name: "HM-YEŞİL ÇAY", category: "Çay Ve Bitki Çayları", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Paket", minLimit: 1, price: 400, weightInfo: "0.250 kg" },
   { id: "bc8", name: "HM-DEMLİK POŞET ÇAY 30 GR 30'LU", category: "Çay Ve Bitki Çayları", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Kutu", minLimit: 3, price: 180, weightInfo: "1.050 kg" },
 
   // PÜRELER (Tümü 1,000 gram)

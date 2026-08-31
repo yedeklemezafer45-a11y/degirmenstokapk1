@@ -91,9 +91,19 @@ export default function StokPage() {
 
     // Gerçek zamanlı Firestore dinleyicisi
     const unsubscribe = subscribeToStocks(activeRegion, (items) => {
-      setStockList(items);
+      const reconciledItems = items.map(item => {
+        const expectedKalan = Math.max(0, Number(((item.depodaBulunan || 0) - (item.depodanAlinan || 0)).toFixed(3)));
+        if (item.depodaBulunan > 0 && Math.abs(item.quantity - expectedKalan) > 0.001) {
+          return {
+            ...item,
+            quantity: expectedKalan
+          };
+        }
+        return item;
+      });
+      setStockList(reconciledItems);
 
-      const allowedItems = items.filter(item => {
+      const allowedItems = reconciledItems.filter(item => {
         if (activeRegion === "degirmen-kafe" && (item.category === "Soft İçecek Ürünleri" || item.category === "Pastalar")) {
           return false;
         }
