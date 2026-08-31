@@ -183,6 +183,12 @@ export default function StokSayimPage() {
   };
 
   const extractWeightAndUnit = (item: StockItem) => {
+    if (item.name.includes("LOTUS BİSCOFF")) {
+      return { parsedWeight: 1.0, displayWeight: "1.000 kg" };
+    }
+    if (item.name.includes("KATLA BALLA")) {
+      return { parsedWeight: 0.800, displayWeight: "0.800 kg (120 x 7g)" };
+    }
     if (item.weightInfo) {
       const match = item.weightInfo.match(/([0-9.,]+)/);
       if (match) {
@@ -286,6 +292,14 @@ export default function StokSayimPage() {
   };
 
   const formatTotalDisplay = (item: StockItem, countedQty: number, openUnits: number) => {
+    // Litrelik Ürünler: 24 adet gibi noktalama olmadan net adet gösterimi
+    if (item.category === "Litrelik Ürünler") {
+      if (openUnits > 0) {
+        return `${countedQty} Adet + ${openUnits} ml`;
+      }
+      return `${countedQty} Adet`;
+    }
+
     const isLiquid = isLiquidItem(item);
     const totalCalculated = calculateTotalQuantityInUnit(item, countedQty, openUnits);
     const unitLower = item.unit.toLowerCase();
@@ -445,13 +459,18 @@ export default function StokSayimPage() {
           const openVal = parseInputValue(aciktaVal) || 0;
           const totalValText = formatTotalDisplay(item, countedVal, openVal);
 
+          const isLiquid = isLiquidItem(item);
+          const isKatlaBal = item.name.includes("KATLA BALLA");
+          const packageUnit = isKatlaBal ? "Kutu" : (item.unit === "Şişe" ? "Şişe" : "Adet");
+          const openUnitLabel = isLiquid ? "ml" : "gr";
+
           let adetKgDetail = "";
           if (countedVal > 0 && openVal > 0) {
-            adetKgDetail = `${countedVal} Adet + ${openVal} gr`;
+            adetKgDetail = `${countedVal} ${packageUnit} + ${openVal} ${openUnitLabel}`;
           } else if (countedVal > 0) {
-            adetKgDetail = `${countedVal} Adet`;
+            adetKgDetail = `${countedVal} ${packageUnit}`;
           } else if (openVal > 0) {
-            adetKgDetail = `${openVal} gr`;
+            adetKgDetail = `${openVal} ${openUnitLabel}`;
           } else {
             adetKgDetail = "-";
           }
@@ -956,17 +975,22 @@ export default function StokSayimPage() {
                         
                         {/* Sayılan Adet Input */}
                         <td className="py-4 px-4 text-center">
-                          <input
-                            type="text"
-                            value={sayilanVal}
-                            onChange={(e) => handleSayilanChange(item.id, e.target.value)}
-                            className={`w-24 bg-[var(--background)] border rounded-xl px-3 py-1.5 text-center font-mono font-bold focus:outline-none focus:ring-1 focus:ring-orange-500 ${
-                              sayilanHasDot 
-                                ? "text-red-500 border-red-500/50 focus:ring-red-500" 
-                                : "text-orange-500 border-[var(--border)]"
-                            }`}
-                            title={sayilanHasDot ? "Ondalıklar için lütfen virgül (,) kullanın!" : ""}
-                          />
+                          <div className="flex flex-col items-center justify-center">
+                            <input
+                              type="text"
+                              value={sayilanVal}
+                              onChange={(e) => handleSayilanChange(item.id, e.target.value)}
+                              className={`w-24 bg-[var(--background)] border rounded-xl px-3 py-1.5 text-center font-mono font-bold focus:outline-none focus:ring-1 focus:ring-orange-500 ${
+                                sayilanHasDot 
+                                  ? "text-red-500 border-red-500/50 focus:ring-red-500" 
+                                  : "text-orange-500 border-[var(--border)]"
+                              }`}
+                              title={sayilanHasDot ? "Ondalıklar için lütfen virgül (,) kullanın!" : ""}
+                            />
+                            {item.name.includes("KATLA BALLA") ? (
+                              <span className="text-[9px] text-zinc-500 font-bold uppercase mt-1">Kutu</span>
+                            ) : null}
+                          </div>
                         </td>
 
                         {/* Açıkta Miktar Input */}

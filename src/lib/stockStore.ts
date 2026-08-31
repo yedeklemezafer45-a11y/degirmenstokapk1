@@ -114,7 +114,7 @@ export const mockStockItems: StockItem[] = [
 
   // EK ÜRÜNLER
   { id: "ex2", name: "HM-CİCİ BEBE", category: "Ek Ürünler", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Kutu", minLimit: 2, price: 65, weightInfo: "0.700 kg" },
-  { id: "ex3", name: "HM-KATLA BALLA SÜZME ÇİÇEK BALI (STİCK)", category: "Ek Ürünler", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "kg", minLimit: 50, price: 3.5, weightInfo: "Kutu: 0.800 kg (120 Adet x 7g)" },
+  { id: "ex3", name: "HM-KATLA BALLA SÜZME ÇİÇEK BALI (STİCK)", category: "Ek Ürünler", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Kutu", minLimit: 50, price: 3.5, weightInfo: "Kutu: 0.800 kg (120 Adet x 7g)" },
   { id: "ex4", name: "HM-KÜP ŞEKER", category: "Ek Ürünler", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Kutu", minLimit: 3, price: 80, weightInfo: "1.000 kg" },
   { id: "ex5", name: "HM-LOTUS BİSCOFF SPREAD SÜRÜLEBİLİR BİSKÜVİ EZMESİ", category: "Ek Ürünler", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "kg", minLimit: 1, price: 160, weightInfo: "1.000 kg" },
 
