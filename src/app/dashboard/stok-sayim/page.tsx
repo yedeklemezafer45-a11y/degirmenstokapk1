@@ -282,6 +282,12 @@ export default function StokSayimPage() {
     const unitLower = item.unit.toLowerCase();
     const hasWeight = !!item.weightInfo;
     
+    if (item.name.includes("KATLA BALLA")) {
+      // Açıkta olan stick bal adeti x 7 gram (kg cinsine çevir: (adet x 7) / 1000)
+      const stickGrams = openUnits * 7;
+      return Number(((countedQty * parsedWeight) + (stickGrams / 1000)).toFixed(3));
+    }
+
     if (unitLower === "kg" || unitLower === "litre" || unitLower === "lt" || hasWeight) {
       // Doğrudan ağırlık/hacim hesabı: (Sayılan Adet x Paket Ağırlığı) + (Açık Gramaj / 1000)
       return Number(((countedQty * parsedWeight) + (openUnits / 1000)).toFixed(3));
@@ -310,7 +316,13 @@ export default function StokSayimPage() {
       : (unitLower === "kg" || hasWeight
           ? "kg" 
           : (item.unit === "Şişe" ? "Adet" : item.unit));
-    return `${totalCalculated.toFixed(3)} ${unitLabel}`;
+
+    // 9.000 kg ise 9 kg, 2.400 kg ise 2.4 kg gibi temiz gösterim
+    const cleanNumber = Number.isInteger(totalCalculated)
+      ? String(totalCalculated)
+      : totalCalculated.toFixed(3).replace(/\.?0+$/, "");
+
+    return `${cleanNumber} ${unitLabel}`;
   };
 
   const displayedStockList = stockList.filter(item => {
@@ -436,9 +448,23 @@ export default function StokSayimPage() {
             <tbody>
       `;
 
+      // Filter list for PDF based on region restrictions
+      const filteredForPDF = currentList.filter(item => {
+        // Kutu ve Plastik hiçbir şubede listelenmez
+        if (item.category === "Kutu Ve Plastik Ürünler") {
+          return false;
+        }
+        // Değirmen Kafe'de Pastalar ve Soft İçecekler listelenmez
+        if (selectedRegion === "degirmen-kafe" && (item.category === "Pastalar" || item.category === "Soft İçecek Ürünleri")) {
+          return false;
+        }
+        // Şube bazlı genel kısıtlamalar
+        return isProductAllowedForRegion(selectedRegion, item);
+      });
+
       // Group by category
       const grouped: Record<string, StockItem[]> = {};
-      currentList.forEach(item => {
+      filteredForPDF.forEach(item => {
         if (!grouped[item.category]) {
           grouped[item.category] = [];
         }
@@ -462,7 +488,7 @@ export default function StokSayimPage() {
           const isLiquid = isLiquidItem(item);
           const isKatlaBal = item.name.includes("KATLA BALLA");
           const packageUnit = isKatlaBal ? "Kutu" : (item.unit === "Şişe" ? "Şişe" : "Adet");
-          const openUnitLabel = isLiquid ? "ml" : "gr";
+          const openUnitLabel = isKatlaBal ? "Stick" : (isLiquid ? "ml" : "gr");
 
           let adetKgDetail = "";
           if (countedVal > 0 && openVal > 0) {
@@ -909,7 +935,8 @@ export default function StokSayimPage() {
                       : (item.unit === "kg" || item.unit === "Adet" 
                           ? "kg" 
                           : (item.unit === "Şişe" ? "Adet" : item.unit));
-                    const openLabel = isLiquid ? "ml" : "gr";
+                    const isKatlaBal = item.name.includes("KATLA BALLA");
+                    const openLabel = isKatlaBal ? "Adet (7g)" : (isLiquid ? "ml" : "gr");
 
                     const isChecked = !!checkedItemIds[item.id];
                     const sayilanVal = sayilanValues[item.id] !== undefined ? sayilanValues[item.id] : getInitialSayilan(item);
