@@ -249,15 +249,7 @@ export default function StokSayimPage() {
           return updated;
         });
 
-        setAciktaValues(prev => {
-          const updated = { ...prev };
-          fetchedStocks.forEach(item => {
-            if (!(item.id in updated)) {
-              updated[item.id] = "0";
-            }
-          });
-          return updated;
-        });
+        // aciktaValues başlangıçta boş kalır; kullanıcı 0 bile girse ilerlemeyi tetikler
 
         setIsLoading(false);
       },
@@ -384,10 +376,11 @@ export default function StokSayimPage() {
 
   // Sayım İşaretlerini Sıfırla
   const handleResetCheckmarks = () => {
-    if (window.confirm("Tüm ürünlerdeki 'İşlem Yapıldı' işaretlerini kaldırmak istediğinize emin misiniz?")) {
+    if (window.confirm("Tüm ürünlerdeki 'İşlem Yapıldı' işaretlerini ve açıkta girilenleri kaldırmak istediğinize emin misiniz?")) {
       setCheckedItemIds({});
+      setAciktaValues({});
       localStorage.removeItem("degirmen_sayim_checked_ids");
-      triggerToast("Tüm işlem işaretleri temizlendi.");
+      triggerToast("Tüm işlem işaretleri ve açıkta miktarlar temizlendi.");
     }
   };
 
@@ -747,8 +740,8 @@ export default function StokSayimPage() {
 
           const isProductCounted = (item: StockItem) => {
             if (checkedItemIds[item.id]) return true;
-            const val = sayilanValues[item.id];
-            if (val !== undefined && val !== "" && !isNaN(Number(val.replace(",", ".")))) {
+            const acikta = aciktaValues[item.id];
+            if (acikta !== undefined && acikta !== "") {
               return true;
             }
             return false;
