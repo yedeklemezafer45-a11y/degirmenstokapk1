@@ -194,31 +194,12 @@ export default function StokSayimPage() {
   };
 
   const getInitialSayilan = (item: StockItem) => {
-    const { parsedWeight } = extractWeightAndUnit(item);
-    if (!item.quantity) return "0";
-    const unitLower = item.unit.toLowerCase();
-    const hasWeight = !!item.weightInfo;
-    if (unitLower === "kg" || unitLower === "litre" || unitLower === "lt" || hasWeight) {
-      return String(Math.floor(Number(item.quantity.toFixed(3)) / parsedWeight));
-    } else {
-      return String(Math.floor(item.quantity));
-    }
+    if (item.quantity === undefined || item.quantity === null) return "0";
+    return String(item.quantity);
   };
 
-  const getInitialAcikta = (item: StockItem) => {
-    const { parsedWeight } = extractWeightAndUnit(item);
-    if (!item.quantity) return "0";
-    const unitLower = item.unit.toLowerCase();
-    const hasWeight = !!item.weightInfo;
-    if (unitLower === "kg" || unitLower === "litre" || unitLower === "lt" || hasWeight) {
-      const fullWeight = Math.floor(Number(item.quantity.toFixed(3)) / parsedWeight) * parsedWeight;
-      const diff = Math.max(0, item.quantity - fullWeight);
-      return String(Math.round(diff * 1000));
-    } else {
-      const diff = Math.max(0, item.quantity - Math.floor(item.quantity));
-      const divisor = parsedWeight * 1000;
-      return String(Math.round(diff * divisor));
-    }
+  const getInitialAcikta = () => {
+    return "0";
   };
 
   useEffect(() => {
@@ -266,7 +247,7 @@ export default function StokSayimPage() {
           const updated = { ...prev };
           fetchedStocks.forEach(item => {
             if (!(item.id in updated)) {
-              updated[item.id] = getInitialAcikta(item);
+              updated[item.id] = "0";
             }
           });
           return updated;
@@ -458,8 +439,10 @@ export default function StokSayimPage() {
           </tr>
         `;
         items.forEach(item => {
-          const countedVal = parseInputValue(sayilanValues[item.id]) || 0;
-          const openVal = parseInputValue(aciktaValues[item.id]) || 0;
+          const sayilanVal = sayilanValues[item.id] !== undefined ? sayilanValues[item.id] : getInitialSayilan(item);
+          const aciktaVal = aciktaValues[item.id] !== undefined ? aciktaValues[item.id] : "0";
+          const countedVal = parseInputValue(sayilanVal) || 0;
+          const openVal = parseInputValue(aciktaVal) || 0;
           const totalValText = formatTotalDisplay(item, countedVal, openVal);
 
           let adetKgDetail = "";
@@ -525,8 +508,10 @@ export default function StokSayimPage() {
     setIsSaving(true);
     try {
       const updatedStock = stockList.map(item => {
-        const countedQty = parseInputValue(sayilanValues[item.id]) || 0;
-        const openUnits = parseInputValue(aciktaValues[item.id]) || 0;
+        const sayilanVal = sayilanValues[item.id] !== undefined ? sayilanValues[item.id] : getInitialSayilan(item);
+        const aciktaVal = aciktaValues[item.id] !== undefined ? aciktaValues[item.id] : "0";
+        const countedQty = parseInputValue(sayilanVal) || 0;
+        const openUnits = parseInputValue(aciktaVal) || 0;
         const totalQty = calculateTotalQuantityInUnit(item, countedQty, openUnits);
 
         return {
@@ -577,8 +562,10 @@ export default function StokSayimPage() {
       let totalGramsAcc = 0;
       const reportSnapshot = stockList.map(item => {
         const { parsedWeight } = extractWeightAndUnit(item);
-        const countedQty = parseInputValue(sayilanValues[item.id]) || 0;
-        const openGrams = parseInputValue(aciktaValues[item.id]) || 0;
+        const sayilanVal = sayilanValues[item.id] !== undefined ? sayilanValues[item.id] : getInitialSayilan(item);
+        const aciktaVal = aciktaValues[item.id] !== undefined ? aciktaValues[item.id] : "0";
+        const countedQty = parseInputValue(sayilanVal) || 0;
+        const openGrams = parseInputValue(aciktaVal) || 0;
         const totalQty = calculateTotalQuantityInUnit(item, countedQty, openGrams);
 
         const unitLower = item.unit.toLowerCase();
@@ -906,12 +893,11 @@ export default function StokSayimPage() {
                     const openLabel = isLiquid ? "ml" : "gr";
 
                     const isChecked = !!checkedItemIds[item.id];
-                    const countedQty = parseInputValue(sayilanValues[item.id]) || 0;
-                    const openUnits = parseInputValue(aciktaValues[item.id]) || 0;
-                    const totalCalculated = calculateTotalQuantityInUnit(item, countedQty, openUnits);
-
                     const sayilanVal = sayilanValues[item.id] !== undefined ? sayilanValues[item.id] : getInitialSayilan(item);
-                    const aciktaVal = aciktaValues[item.id] || "";
+                    const aciktaVal = aciktaValues[item.id] !== undefined ? aciktaValues[item.id] : "0";
+                    const countedQty = parseInputValue(sayilanVal) || 0;
+                    const openUnits = parseInputValue(aciktaVal) || 0;
+                    const totalCalculated = calculateTotalQuantityInUnit(item, countedQty, openUnits);
 
                     const sayilanHasDot = String(sayilanVal).includes(".");
                     const aciktaHasDot = String(aciktaVal).includes(".");
