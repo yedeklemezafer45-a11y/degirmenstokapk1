@@ -136,7 +136,7 @@ export default function AylikStokTakibiPage() {
       const results = await Promise.all(
         regions.map(async (region) => {
           const fetched = await getAllReports(region.id);
-          fetched.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+          fetched.sort((a, b) => (b.id || "").localeCompare(a.id || ""));
           return { regionId: region.id, reports: fetched };
         })
       );
@@ -151,6 +151,200 @@ export default function AylikStokTakibiPage() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Mevcut Stok Durumunu Anında Kalıcı Arşive Kaydet
+  const handleArchiveCurrentStock = async () => {
+    if (stockList.length === 0) {
+      triggerToast("⚠️ Kaydedilecek stok verisi bulunamadı!");
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const activeUserStr = sessionStorage.getItem("activeUser");
+      const activeUserName = activeUserStr ? JSON.parse(activeUserStr).fullName : "Yönetici";
+
+      const now = new Date();
+      const currentMonth = now.toISOString().substring(0, 7);
+      const dateStr = now.toLocaleDateString("tr-TR");
+      const timeStr = now.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" });
+      const reportTitle = `${now.toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" })} Sayım Raporu (${timeStr})`;
+
+      let totalGramsAcc = 0;
+      const reportSnapshot = stockList.map(item => {
+        const { parsedWeight } = extractWeightAndUnit(item);
+        const unitLower = item.unit.toLowerCase();
+        const isMassOrVolume = unitLower === "kg" || unitLower === "litre" || unitLower === "lt";
+        const countedQty = item.quantity || 0;
+        const totalCountedGram = isMassOrVolume ? countedQty : Number((countedQty * parsedWeight).toFixed(3));
+        totalGramsAcc += totalCountedGram * 1000;
+
+        const sysKalanKg = isMassOrVolume ? item.quantity : Number((item.quantity * parsedWeight).toFixed(3));
+
+        return {
+          productId: item.id,
+          productName: item.name,
+          category: item.category,
+          depodaBulunan: item.depodaBulunan,
+          depodanAlinan: item.depodanAlinan,
+          sysKalan: item.quantity,
+          sabitGramaj: item.weightInfo || "1.00",
+          sayilanAdet: countedQty,
+          sayilanAciktaGrams: 0,
+          sayilanToplamGramaj: totalCountedGram,
+          farkGramaj: 0
+        };
+      });
+
+      const newArchiveReport: MonthlyReportArchive = {
+        id: "sayim_" + Date.now(),
+        month: currentMonth,
+        monthName: reportTitle,
+        completedDate: dateStr,
+        completedTime: timeStr,
+        createdAt: now.toLocaleString("tr-TR"),
+        archivedBy: activeUserName,
+        regionId: selectedRegion,
+        regionName: selectedRegionName,
+        totalItems: stockList.length,
+        totalGrams: totalGramsAcc,
+        stockSnapshot: reportSnapshot
+      };
+
+      await saveReport(selectedRegion, newArchiveReport);
+      await loadAllRegionsReports();
+      triggerToast(`✅ "${reportTitle}" başarıyla kalıcı arşive kaydedildi!`);
+      setActiveTab("arsiv");
+      setSelectedFolderRegion(selectedRegion);
+    } catch (err) {
+      console.error("Arşivleme hatası:", err);
+      triggerToast("Rapor arşivlenirken hata oluştu!");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handlePrintArchivePDF = (report: MonthlyReportArchive) => {
+    try {
+      const isLiquid = (cat: string, unit: string) => {
+        return cat === "Litrelik Ürünler" || unit?.toLowerCase() === "litre" || unit?.toLowerCase() === "lt";
+      };
+
+      let content = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <title>${report.monthName}</title>
+          <style>
+            @page { size: A4 portrait; margin: 10mm; }
+            body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 0; color: #111; font-size: 10px; }
+            .header-box { border-bottom: 2px solid #ea580c; padding-bottom: 8px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+            .title { font-size: 15px; font-weight: 800; text-transform: uppercase; color: #ea580c; }
+            .meta { font-size: 9px; color: #555; margin-top: 3px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+            th, td { border: 1px solid #e5e7eb; padding: 4px 6px; text-align: left; }
+            th { background-color: #f9fafb; font-weight: 700; font-size: 9px; text-transform: uppercase; color: #374151; }
+            .text-center { text-align: center; }
+            .text-right { text-align: right; }
+            .bold { font-weight: 700; }
+          </style>
+        </head>
+        <body>
+          <div class="header-box">
+            <div>
+              <div class="title">${report.regionName || selectedRegionName} - ${report.monthName}</div>
+              <div class="meta">Tamamlanma Tarihi: <b>${report.completedDate || report.createdAt} ${report.completedTime || ""}</b> | Raporlayan: <b>${report.archivedBy}</b></div>
+            </div>
+            <div style="text-align: right;">
+              <div style="font-weight: 800; font-size: 11px;">Toplam Kalem: ${report.totalItems}</div>
+            </div>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 24px;" class="text-center">#</th>
+                <th>Ürün Adı</th>
+                <th>Kategori</th>
+                <th class="text-center">Girdi</th>
+                <th class="text-center">Çıktı</th>
+                <th class="text-center">Kalan</th>
+                <th class="text-center">Sayılan Adet</th>
+                <th class="text-right">Toplam Miktar</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${(report.stockSnapshot || []).map((item: any, idx: number) => `
+                <tr>
+                  <td class="text-center">${idx + 1}</td>
+                  <td class="bold">${item.productName}</td>
+                  <td>${item.category}</td>
+                  <td class="text-center">${item.depodaBulunan ?? "-"}</td>
+                  <td class="text-center">${item.depodanAlinan ?? "-"}</td>
+                  <td class="text-center">${item.sysKalan ?? "-"}</td>
+                  <td class="text-center bold">${item.sayilanAdet ?? item.sysKalan ?? "-"}</td>
+                  <td class="text-right bold">${item.sayilanToplamGramaj ? item.sayilanToplamGramaj + " " + (isLiquid(item.category, item.unit) ? "lt" : "kg") : "-"}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </body>
+        </html>
+      `;
+
+      const iframe = document.createElement("iframe");
+      iframe.style.position = "fixed";
+      iframe.style.right = "0";
+      iframe.style.bottom = "0";
+      iframe.style.width = "0";
+      iframe.style.height = "0";
+      iframe.style.border = "0";
+      document.body.appendChild(iframe);
+
+      const doc = iframe.contentWindow?.document;
+      if (!doc) return;
+      doc.open();
+      doc.write(content);
+      doc.close();
+
+      iframe.onload = () => {
+        setTimeout(() => {
+          iframe.contentWindow?.focus();
+          iframe.contentWindow?.print();
+          setTimeout(() => {
+            document.body.removeChild(iframe);
+          }, 1000);
+        }, 300);
+      };
+    } catch (err) {
+      console.error("PDF yazdırma hatası:", err);
+    }
+  };
+
+  const handleDownloadArchiveCSV = (report: MonthlyReportArchive) => {
+    let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
+    csvContent += "Urun Adi;Kategori;Depoda Bulunan;Depodan Alinan;Teorik Kalan;Sayilan Adet;Sayilan Toplam Miktar\n";
+
+    (report.stockSnapshot || []).forEach((item: any) => {
+      const name = (item.productName || "").replace(/;/g, " ");
+      const cat = (item.category || "").replace(/;/g, " ");
+      const girdi = item.depodaBulunan ?? 0;
+      const cikti = item.depodanAlinan ?? 0;
+      const kalan = item.sysKalan ?? 0;
+      const sayilan = item.sayilanAdet ?? 0;
+      const miktar = item.sayilanToplamGramaj ?? 0;
+
+      csvContent += `"${name}";"${cat}";${girdi};${cikti};${kalan};${sayilan};${miktar}\n`;
+    });
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `${report.monthName.replace(/\s+/g, "_")}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const toggleTheme = () => {
@@ -337,14 +531,25 @@ export default function AylikStokTakibiPage() {
                 </p>
               </div>
 
-              <button
-                onClick={() => loadAllRegionsReports()}
-                disabled={isLoading}
-                className="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-zinc-200 font-semibold cursor-pointer"
-              >
-                {isLoading ? <Loader2 className="w-4 h-4 animate-spin text-orange-500" /> : <RefreshCw className="w-4 h-4" />}
-                Verileri Yenile
-              </button>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={handleArchiveCurrentStock}
+                  disabled={isSaving || isLoading}
+                  className="flex items-center gap-1.5 bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white px-3.5 py-2 rounded-2xl text-xs font-bold shadow-md cursor-pointer transition-all active:scale-95"
+                >
+                  <Archive className="w-4 h-4" />
+                  {isSaving ? "Arşivleniyor..." : "Bu Sayımı Arşive Kaydet"}
+                </button>
+
+                <button
+                  onClick={() => loadAllRegionsReports()}
+                  disabled={isLoading}
+                  className="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-zinc-200 font-semibold cursor-pointer border border-[var(--border)] px-3 py-2 rounded-2xl bg-[var(--card)] hover:bg-[var(--foreground)]/5"
+                >
+                  {isLoading ? <Loader2 className="w-4 h-4 animate-spin text-orange-500" /> : <RefreshCw className="w-4 h-4" />}
+                  Yenile
+                </button>
+              </div>
             </div>
 
             {isLoading ? (
@@ -407,14 +612,25 @@ export default function AylikStokTakibiPage() {
             {selectedFolderRegion === null ? (
               // Klasör Listesi
               <div className="space-y-4">
-                <div>
-                  <h3 className="font-extrabold text-sm uppercase tracking-wider text-orange-500 flex items-center gap-2">
-                    <FolderOpen className="w-5 h-5" />
-                    Şube Arşiv Klasörleri
-                  </h3>
-                  <p className="text-xs text-zinc-500 mt-1">
-                    Geçmiş dönem aylık stok sayım arşivlerini şube bazında düzenlenmiş klasörler içerisinden inceleyin.
-                  </p>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-extrabold text-sm uppercase tracking-wider text-orange-500 flex items-center gap-2">
+                      <FolderOpen className="w-5 h-5" />
+                      Şube Arşiv Klasörleri
+                    </h3>
+                    <p className="text-xs text-zinc-500 mt-1">
+                      Geçmiş dönem aylık stok sayım arşivlerini şube bazında düzenlenmiş klasörler içerisinden inceleyin.
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={handleArchiveCurrentStock}
+                    disabled={isSaving || isLoading}
+                    className="flex items-center gap-1.5 bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white px-4 py-2 rounded-2xl text-xs font-bold shadow-md cursor-pointer transition-all active:scale-95"
+                  >
+                    <Archive className="w-4 h-4" />
+                    {isSaving ? "Arşivleniyor..." : "Bu Sayımı Arşive Kaydet"}
+                  </button>
                 </div>
 
                 {isLoading ? (
@@ -457,17 +673,27 @@ export default function AylikStokTakibiPage() {
                 return (
                   <div className="space-y-6">
                     <div className="flex items-center justify-between">
-                      <button
-                        onClick={() => setSelectedFolderRegion(null)}
-                        className="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-zinc-200 font-bold border border-[var(--border)] px-4 py-2 rounded-2xl cursor-pointer bg-[var(--card)] hover:bg-[var(--foreground)]/5 transition-all"
-                      >
-                        ← Klasörlere Geri Dön
-                      </button>
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={() => setSelectedFolderRegion(null)}
+                          className="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-zinc-200 font-bold border border-[var(--border)] px-4 py-2 rounded-2xl cursor-pointer bg-[var(--card)] hover:bg-[var(--foreground)]/5 transition-all"
+                        >
+                          ← Klasörlere Geri Dön
+                        </button>
+                        <button
+                          onClick={handleArchiveCurrentStock}
+                          disabled={isSaving}
+                          className="flex items-center gap-1.5 bg-orange-500 hover:bg-orange-600 text-white px-3.5 py-2 rounded-2xl text-xs font-bold cursor-pointer transition-all shadow-sm"
+                        >
+                          <Archive className="w-3.5 h-3.5" />
+                          Bu Şube İçin Sayımı Arşivle
+                        </button>
+                      </div>
                       <div>
                         <h3 className="font-black text-sm uppercase tracking-wider text-orange-500 text-right">
                           {rName}
                         </h3>
-                        <p className="text-[10px] text-zinc-500 font-extrabold text-right uppercase">Arşiv Raporları</p>
+                        <p className="text-[10px] text-zinc-500 font-extrabold text-right uppercase">Ömür Boyu Kalıcı Arşiv Raporları</p>
                       </div>
                     </div>
 
@@ -476,7 +702,7 @@ export default function AylikStokTakibiPage() {
                         <Archive className="w-10 h-10 text-zinc-500 mx-auto opacity-50" />
                         <h3 className="text-sm font-bold text-zinc-400">Bu Şubeye Ait Kayıtlı Arşiv Raporu Yok</h3>
                         <p className="text-xs text-zinc-500">
-                          Bu şubenin envanter sayımı kapatıldığında otomatik arşiv raporları burada listelenecektir.
+                          "Bu Sayımı Arşive Kaydet" butonuna basarak veya Fiziki Stok Sayımından güncelleyerek anında kalıcı rapor oluşturabilirsiniz.
                         </p>
                       </div>
                     ) : (
@@ -484,19 +710,39 @@ export default function AylikStokTakibiPage() {
                         <div key={report.id} className="bg-[var(--card)] border border-[var(--border)] rounded-3xl p-6 shadow-sm space-y-4">
                           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-[var(--border)] pb-3">
                             <div>
-                              <h4 className="font-extrabold text-sm text-orange-500">{report.monthName} Arşiv Raporu</h4>
-                              <p className="text-[11px] text-zinc-500">
-                                Kayıt Zamanı: {report.createdAt} · Kaydeden: <span className="font-bold text-zinc-300">{report.archivedBy}</span> · Arşiv No: <span className="font-mono text-orange-500 font-extrabold">{report.id}</span>
+                              <h4 className="font-extrabold text-sm text-orange-500">{report.monthName}</h4>
+                              <p className="text-[11px] text-zinc-500 mt-0.5">
+                                Tamamlanma Tarihi: <span className="font-bold text-zinc-300">{report.completedDate || report.createdAt} {report.completedTime || ""}</span> · Kaydeden: <span className="font-bold text-zinc-300">{report.archivedBy}</span> · Toplam Kalem: <span className="font-bold text-zinc-300">{report.totalItems}</span>
                               </p>
                             </div>
 
-                            <button
-                              onClick={() => handleDeleteArchive(selectedFolderRegion, report.id)}
-                              className="p-2 rounded-xl hover:bg-red-500/10 text-zinc-500 hover:text-red-500 transition-colors cursor-pointer"
-                              title="Arşivi Sil"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => handlePrintArchivePDF(report)}
+                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-orange-500/10 hover:bg-orange-500 text-orange-500 hover:text-white text-xs font-bold transition-all cursor-pointer"
+                                title="Raporu Yazdır / PDF İndir"
+                              >
+                                <Download className="w-3.5 h-3.5" />
+                                PDF Yazdır
+                              </button>
+
+                              <button
+                                onClick={() => handleDownloadArchiveCSV(report)}
+                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500 text-emerald-500 hover:text-white text-xs font-bold transition-all cursor-pointer"
+                                title="CSV Excel İndir"
+                              >
+                                <FileSpreadsheet className="w-3.5 h-3.5" />
+                                CSV
+                              </button>
+
+                              <button
+                                onClick={() => handleDeleteArchive(selectedFolderRegion, report.id)}
+                                className="p-2 rounded-xl hover:bg-red-500/10 text-zinc-500 hover:text-red-500 transition-colors cursor-pointer"
+                                title="Arşivi Sil"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
                           </div>
 
                           <div className="overflow-x-auto">
@@ -508,8 +754,7 @@ export default function AylikStokTakibiPage() {
                                   <th className="py-2 px-3 text-center">Çıktı</th>
                                   <th className="py-2 px-3 text-center">Teorik Kalan</th>
                                   <th className="py-2 px-3 text-center text-orange-400">Sayılan Adet</th>
-                                  <th className="py-2 px-3 text-center text-amber-500">Fiili Gramaj</th>
-                                  <th className="py-2 px-3 text-right">Fark</th>
+                                  <th className="py-2 px-3 text-center text-amber-500">Fiili Toplam</th>
                                 </tr>
                               </thead>
                               <tbody className="divide-y divide-[var(--border)]/40 text-xs">
@@ -519,16 +764,11 @@ export default function AylikStokTakibiPage() {
                                     return (
                                       <tr key={item.productId} className="hover:bg-[var(--background)]/30">
                                         <td className="py-2 px-3 font-semibold text-zinc-300">{item.productName}</td>
-                                        <td className="py-2 px-3 text-center font-mono text-emerald-400">{item.depodaBulunan}</td>
-                                        <td className="py-2 px-3 text-center font-mono text-red-400">{item.depodanAlinan}</td>
-                                        <td className="py-2 px-3 text-center font-mono text-zinc-400">{item.sysKalan}</td>
-                                        <td className="py-2 px-3 text-center font-mono font-bold text-orange-400">{item.sayilanAdet}</td>
-                                        <td className="py-2 px-3 text-center font-mono font-bold text-amber-500">{item.sayilanToplamGramaj} {unitSfx}</td>
-                                        <td className={`py-2 px-3 text-right font-mono font-bold ${
-                                          item.farkGramaj > 0 ? "text-red-400" : item.farkGramaj < 0 ? "text-emerald-400" : "text-zinc-500"
-                                        }`}>
-                                          {item.farkGramaj > 0 ? `-${item.farkGramaj} ${unitSfx}` : item.farkGramaj < 0 ? `+${Math.abs(item.farkGramaj)} ${unitSfx}` : "Tam"}
-                                        </td>
+                                        <td className="py-2 px-3 text-center font-mono text-emerald-400">{item.depodaBulunan ?? "-"}</td>
+                                        <td className="py-2 px-3 text-center font-mono text-red-400">{item.depodanAlinan ?? "-"}</td>
+                                        <td className="py-2 px-3 text-center font-mono text-zinc-400">{item.sysKalan ?? "-"}</td>
+                                        <td className="py-2 px-3 text-center font-mono font-bold text-orange-400">{item.sayilanAdet ?? item.sysKalan ?? "-"}</td>
+                                        <td className="py-2 px-3 text-center font-mono font-bold text-amber-500">{item.sayilanToplamGramaj ? `${item.sayilanToplamGramaj} ${unitSfx}` : "-"}</td>
                                       </tr>
                                     );
                                   })}

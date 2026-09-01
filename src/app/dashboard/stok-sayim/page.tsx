@@ -591,10 +591,69 @@ export default function StokSayimPage() {
     }
   };
 
-  // Toplu Değişiklikleri Firebase Firestore'a Kaydet
+  // Toplu Değişiklikleri Firebase Firestore'a Kaydet ve Kalıcı Arşive Ekle
   const handleSaveChanges = async () => {
     setIsSaving(true);
     try {
+      const activeUserStr = sessionStorage.getItem("activeUser");
+      const activeUserName = activeUserStr ? JSON.parse(activeUserStr).fullName : "Yönetici";
+
+      const now = new Date();
+      const currentMonth = now.toISOString().substring(0, 7);
+      const dateStr = now.toLocaleDateString("tr-TR");
+      const timeStr = now.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" });
+      const reportTitle = `${now.toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" })} Sayım Raporu (${timeStr})`;
+
+      let totalGramsAcc = 0;
+      const reportSnapshot = stockList.map(item => {
+        const { parsedWeight } = extractWeightAndUnit(item);
+        const sayilanVal = sayilanValues[item.id] !== undefined ? sayilanValues[item.id] : getInitialSayilan(item);
+        const aciktaVal = aciktaValues[item.id] !== undefined ? aciktaValues[item.id] : "0";
+        const countedQty = parseInputValue(sayilanVal) || 0;
+        const openGrams = parseInputValue(aciktaVal) || 0;
+        const totalQty = calculateTotalQuantityInUnit(item, countedQty, openGrams);
+
+        const unitLower = item.unit.toLowerCase();
+        const isMassOrVolume = unitLower === "kg" || unitLower === "litre" || unitLower === "lt";
+        const totalCountedGram = isMassOrVolume ? totalQty : Number((totalQty * parsedWeight).toFixed(3));
+        totalGramsAcc += totalCountedGram * 1000;
+
+        const sysKalanKg = isMassOrVolume ? item.quantity : Number((item.quantity * parsedWeight).toFixed(3));
+
+        return {
+          productId: item.id,
+          productName: item.name,
+          category: item.category,
+          depodaBulunan: item.depodaBulunan,
+          depodanAlinan: item.depodanAlinan,
+          sysKalan: item.quantity,
+          sabitGramaj: item.weightInfo || "1.00",
+          sayilanAdet: countedQty,
+          sayilanAciktaGrams: openGrams,
+          sayilanToplamGramaj: totalCountedGram,
+          farkGramaj: Number((sysKalanKg - totalCountedGram).toFixed(3))
+        };
+      });
+
+      const newArchiveReport: MonthlyReportArchive = {
+        id: "sayim_" + Date.now(),
+        month: currentMonth,
+        monthName: reportTitle,
+        completedDate: dateStr,
+        completedTime: timeStr,
+        createdAt: now.toLocaleString("tr-TR"),
+        archivedBy: activeUserName,
+        regionId: selectedRegion,
+        regionName: selectedRegionName,
+        totalItems: stockList.length,
+        totalGrams: totalGramsAcc,
+        stockSnapshot: reportSnapshot
+      };
+
+      // 1. Kalıcı Arşiv Kaydı
+      await saveReport(selectedRegion, newArchiveReport);
+
+      // 2. Canlı Stokları Güncelleme
       const updatedStock = stockList.map(item => {
         const sayilanVal = sayilanValues[item.id] !== undefined ? sayilanValues[item.id] : getInitialSayilan(item);
         const countedQty = parseInputValue(sayilanVal) || 0;
@@ -612,19 +671,19 @@ export default function StokSayimPage() {
       setIsDirty(false);
 
       await logUserAction(
-        "Fiziki Stok Sayımı Yapıldı",
+        "Fiziki Stok Sayımı Yapıldı ve Arşivlendi",
         "STOK",
-        `${stockList.length} kalemin fiziki sayım verileri güncellendi ve Firestore veritabanına işlendi.`
+        `${stockList.length} kalemin fiziki sayım verileri güncellendi, Firestore arşive "${reportTitle}" olarak kaydedildi.`
       );
 
-      triggerToast("✅ Sayım sonuçları bulut veritabanına kaydedildi!");
+      triggerToast("✅ Sayım sonuçları güncellendi ve kalıcı arşive kaydedildi!");
 
       // Sayım sonuçlarını otomatik PDF/Yazıcı çıktısı olarak tetikle
       setTimeout(() => {
-        handleDownloadSayimPDF(updatedStock);
+        handleDownloadSayimPDF(displayedStockList);
       }, 800);
     } catch (err) {
-      console.error("Stok kaydetme hatası:", err);
+      console.error("Stok kaydetme ve arşivleme hatası:", err);
       triggerToast("Kaydedilirken hata oluştu!");
     } finally {
       setIsSaving(false);
