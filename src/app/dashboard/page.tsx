@@ -250,100 +250,30 @@ export default function DashboardPage() {
 
   // Modülleri dinamik olarak yetkiye göre oluşturalım
   const modules = [
-    { 
-      label: "STOK KONTROLÜ", 
-      bullets: [
-        "DEPO GİRDİ / ÇIKTI İŞLEMLERİ",
-        "ANLIK ŞUBE STOK TAKİBİ",
-        "KRİTİK LİMİT & SKT UYARILARI"
-      ],
-      active: true, 
-      path: "/dashboard/stok",
-      colorGradient: "from-blue-400 via-indigo-400 to-purple-400"
-    },
-    { 
-      label: "STOK SAYIM", 
-      bullets: [
-        "FİZİKİ DÖNEM STOK SAYIMI",
-        "GRAMAJ & LİTRE HESAPLAMA",
-        "SAYIM RAPORU & PDF ÇIKTISI"
-      ],
-      active: true, 
-      path: "/dashboard/stok-sayim",
-      colorGradient: "from-emerald-400 via-teal-400 to-cyan-400"
-    },
-    { 
-      label: "REÇETELER", 
-      bullets: [
-        "TÜM KAHVE & İÇECEK LİSTESİ",
-        "GRAMAJ VE HAZIRLANIŞ TARİFİ",
-        "BARİSTA STANDARTLARI"
-      ],
-      active: true, 
-      path: "/dashboard/receteler",
-      colorGradient: "from-amber-400 via-orange-400 to-rose-400"
-    },
-    { 
-      label: "SİPARİŞ VER", 
-      bullets: [
-        "GENEL MALZEME SİPARİŞİ",
-        "SOFT İÇECEK AYRI SEPETİ",
-        "TEK TIKLA WHATSAPP İLETİMİ"
-      ],
-      active: true, 
-      path: "/dashboard/siparis",
-      colorGradient: "from-cyan-400 via-sky-400 to-blue-500"
-    },
+    { label: "Stok Kontrolü", active: true, path: "/dashboard/stok" },
+    { label: "Stok Sayım", active: true, path: "/dashboard/stok-sayim" },
+    { label: "Reçeteler", active: true, path: "/dashboard/receteler" },
+    { label: "Sipariş Ver", active: true, path: "/dashboard/siparis" },
   ];
 
   const [showNotifDropdown, setShowNotifDropdown] = useState(false);
 
   // Tüm Şube Stokları ve Aylık Stok Takibi yetkisini admin veya yoneticiye verelim
   if (userRole === "admin" || userRole === "yonetici") {
-    modules.push({ 
-      label: "TÜM ŞUBELER", 
-      bullets: [
-        "TÜM ŞUBELERİN ANLIK STOKLARI",
-        "ŞUBELER ARASI STOK KIYASLAMA",
-        "MERKEZİ ENVANTER RAPORU"
-      ],
-      active: true, 
-      path: "/dashboard/tum-bolgeler-stok",
-      colorGradient: "from-fuchsia-400 via-pink-400 to-rose-400"
-    });
-    modules.push({ 
-      label: "AYLIK STOK TAKİBİ", 
-      bullets: [
-        "DÖNEM SONU SAYIM RAPORLARI",
-        "ÖMÜR BOYU KALICI ARŞİV",
-        "DÖNEMLER ARASI FARK ANALİZİ"
-      ],
-      active: true, 
-      path: "/dashboard/aylik-stok-takibi",
-      colorGradient: "from-purple-400 via-violet-400 to-indigo-400"
-    });
+    modules.push({ label: "Tüm Şube Stokları", active: true, path: "/dashboard/tum-bolgeler-stok" });
+    modules.push({ label: "Aylık Stok Takibi", active: true, path: "/dashboard/aylik-stok-takibi" });
   }
 
   // Ayarlar sadece admin
   if (userRole === "admin") {
-    modules.push({ 
-      label: "AYARLAR", 
-      bullets: [
-        "STOK LİSTESİ",
-        "REÇETE KONTROLÜ",
-        "STK TAKİP VS AYARLAR KISMI"
-      ],
-      active: true, 
-      path: "/dashboard/ayarlar",
-      colorGradient: "from-violet-400 via-indigo-400 to-cyan-400"
-    });
+    modules.push({ label: "Ayarlar", active: true, path: "/dashboard/ayarlar" });
   }
 
   const totalWarnings = criticalCount + sktWarnings.length;
 
-  const visibleModules = allowedMenus && allowedMenus.length > 0
+  const visibleModules = (allowedMenus && allowedMenus.length > 0
     ? modules.filter(m => allowedMenus.includes(m.path))
-    : modules;
+    : modules).sort((a, b) => a.label.localeCompare(b.label, "tr"));
 
   return (
     <div className="min-h-screen flex flex-col bg-[var(--background)] text-[var(--foreground)] transition-colors duration-300 relative">
@@ -736,78 +666,83 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Dinamik Kartlar Grid (Klasör Tasarımı) */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 w-full justify-items-center py-6 max-w-6xl">
+        {/* Dinamik Kartlar Grid (Görseldeki Asimetrik Cutout Tasarımı) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 w-full justify-items-center py-6 max-w-5xl">
           {visibleModules.map((item, idx) => {
-            const seqNumber = String(idx + 1).padStart(2, "0");
-
-            return (
-              <div 
-                key={idx}
-                onClick={() => {
-                  if (item.path !== "#") router.push(item.path);
-                }}
-                className="relative w-full max-w-[315px] h-[330px] rounded-[2.5rem] border-[5px] border-black bg-white shadow-2xl overflow-hidden cursor-pointer transition-all duration-300 hover:scale-[1.03] hover:shadow-[0_20px_50px_rgba(0,0,0,0.5)] select-none group"
-              >
-                {/* 1. ÜST BEYAZ ALAN: LOGO GÖRSELİ */}
-                <div className="absolute top-1 right-2 w-[185px] h-[108px] flex items-center justify-center pointer-events-none z-0">
-                  <img 
-                    src="/degirmen-panel-logo.png" 
-                    alt="Değirmen Kafe Bilişim Paneli" 
-                    className="w-full h-full object-contain filter drop-shadow-[0_4px_10px_rgba(0,0,0,0.12)]" 
-                  />
-                </div>
-
-                {/* 2. SİYAH GÖVDE VE KLASÖR ŞEKLİ */}
-                <div className="absolute inset-x-0 bottom-0 top-[84px] z-10">
-                  {/* SVG Klasör Üst Kavisli Çıkıntısı */}
-                  <svg 
-                    className="absolute top-0 left-0 w-full h-[36px] text-[#0e0e11] fill-current" 
-                    viewBox="0 0 315 36" 
-                    preserveAspectRatio="none"
-                  >
-                    <path d="M 0,16 C 0,6 6,0 16,0 L 130,0 C 142,0 148,16 162,16 L 315,16 L 315,36 L 0,36 Z" />
-                  </svg>
-
-                  {/* Gövde Arka Planı */}
-                  <div className="absolute top-[35px] inset-x-0 bottom-0 bg-[#0e0e11]" />
-
-                  {/* Gövde İçi İçerikler */}
-                  <div className="relative h-full px-6 pt-1 pb-5 flex flex-col justify-between text-left">
-                    
-                    <div>
-                      {/* Modül Başlığı */}
-                      <div className="mb-3">
-                        <span className={`text-base font-black tracking-wider bg-gradient-to-r ${item.colorGradient} bg-clip-text text-transparent uppercase block drop-shadow-sm`}>
-                          {item.label}
-                        </span>
-                      </div>
-
-                      {/* Maddeler */}
-                      <div className="space-y-1.5">
-                        {item.bullets.map((bullet, bIdx) => (
-                          <div key={bIdx} className="flex items-start gap-2 text-[11px] font-extrabold text-zinc-400 tracking-wide uppercase leading-tight">
-                            <span className="w-1.5 h-1.5 rounded-full bg-zinc-500 shrink-0 mt-1" />
-                            <span>{bullet}</span>
-                          </div>
-                        ))}
-                      </div>
+            // Alternate styles: steel (index 0, 2, 4...) and peach (index 1, 3...)
+            const isSteel = idx % 2 === 0;
+            
+            if (isSteel) {
+              // Deep Charcoal Blue Card layout with Neon Glow (No borders)
+              return (
+                <div 
+                  key={idx}
+                  onClick={() => {
+                    if (item.path !== "#") router.push(item.path);
+                  }}
+                  className="relative w-full max-w-[290px] h-[190px] bg-[#264653] hover:bg-[#345e70] dark:bg-[#1a3039] dark:hover:bg-[#203c48] rounded-3xl p-6 flex flex-col items-center justify-center cursor-pointer transition-all duration-300 shadow-[0_0_15px_rgba(231,111,81,0.12)] hover:shadow-[0_0_30px_rgba(231,111,81,0.45)] hover:-translate-y-1 select-none overflow-hidden group"
+                >
+                  {/* Top-Left Cutout (Concave Corner for Arrow Button) */}
+                  <div className="absolute top-0 left-0 w-14 h-14 bg-[var(--background)] rounded-br-[2rem] transition-colors duration-300">
+                    <div className="absolute top-0 left-0 w-9 h-9 bg-[#264653] group-hover:bg-[#345e70] dark:bg-[#1a3039] dark:group-hover:bg-[#203c48] text-[#e76f51] flex items-center justify-center rounded-xl shadow-sm transition-colors duration-300">
+                      <ArrowUpRight className="w-4 h-4 -rotate-90" />
                     </div>
-
-                    {/* Alt Kısım: SIRA NUMARASI */}
-                    <div className="flex items-baseline gap-2 pt-2 select-none">
-                      <span className="text-3xl sm:text-4xl font-black text-white tracking-tight leading-none">
-                        {seqNumber}
-                      </span>
-                      <span className="text-xs sm:text-sm font-black text-zinc-300 uppercase tracking-widest">
-                        SIRA
-                      </span>
-                    </div>
-
                   </div>
+
+                  {/* Bottom-Right Cutout (Concave Corner for Text Label) */}
+                  <div className="absolute bottom-0 right-0 w-28 h-10 bg-[var(--background)] rounded-tl-[1.5rem] transition-colors duration-300">
+                    <div className="absolute bottom-0 right-0 px-3 py-1.5 bg-[#264653] group-hover:bg-[#345e70] dark:bg-[#1a3039] dark:group-hover:bg-[#203c48] text-[9px] font-black uppercase text-[#e76f51] tracking-widest rounded-lg transition-colors duration-300">
+                      DEĞİRMEN
+                    </div>
+                  </div>
+
+                  {/* Centered Large Menu Title */}
+                  <div className="text-center z-10 px-4 mt-2">
+                    <span 
+                      className="text-xl sm:text-2xl font-sans font-black uppercase tracking-tighter text-[#e76f51] leading-tight block drop-shadow-sm"
+                    >
+                      {item.label}
+                    </span>
+                  </div>
+
                 </div>
-              </div>
-            );
+              );
+            } else {
+              // Yanmış Şeftali Card layout with Neon Glow (No borders)
+              return (
+                <div 
+                  key={idx}
+                  onClick={() => {
+                    if (item.path !== "#") router.push(item.path);
+                  }}
+                  className="relative w-full max-w-[290px] h-[190px] bg-[#e76f51] hover:bg-[#eb8870] dark:bg-[#a6442d] dark:hover:bg-[#c25137] rounded-3xl p-6 flex flex-col items-center justify-center cursor-pointer transition-all duration-300 shadow-[0_0_15px_rgba(231,111,81,0.12)] hover:shadow-[0_0_30px_rgba(231,111,81,0.45)] hover:-translate-y-1 select-none overflow-hidden group"
+                >
+                  {/* Top-Right Cutout (Concave Corner for Arrow Button) */}
+                  <div className="absolute top-0 right-0 w-14 h-14 bg-[var(--background)] rounded-bl-[2rem] transition-colors duration-300">
+                    <div className="absolute top-0 right-0 w-9 h-9 bg-[#e76f51] group-hover:bg-[#eb8870] dark:bg-[#a6442d] dark:group-hover:bg-[#c25137] text-[#264653] dark:text-zinc-950 flex items-center justify-center rounded-xl shadow-sm transition-colors duration-300">
+                      <ArrowUpRight className="w-4 h-4" />
+                    </div>
+                  </div>
+
+                  {/* Bottom-Left Cutout (Concave Corner for Text Label) */}
+                  <div className="absolute bottom-0 left-0 w-28 h-10 bg-[var(--background)] rounded-tr-[1.5rem] transition-colors duration-300">
+                    <div className="absolute bottom-0 left-0 px-3 py-1.5 bg-[#e76f51] group-hover:bg-[#eb8870] dark:bg-[#a6442d] dark:group-hover:bg-[#c25137] text-[9px] font-black uppercase text-[#264653] dark:text-zinc-950 tracking-widest rounded-lg transition-colors duration-300">
+                      {item.label === "Sipariş Ver" ? "SİPARİŞ" : item.label === "Tüm Şube Stokları" ? "ANALİZ" : "CAFE"}
+                    </div>
+                  </div>
+
+                  {/* Centered Large Menu Title */}
+                  <div className="text-center z-10 px-4 mt-2">
+                    <span 
+                      className="text-xl sm:text-2xl font-sans font-black uppercase tracking-tighter text-[#264653] dark:text-zinc-950 leading-tight block drop-shadow-sm"
+                    >
+                      {item.label}
+                    </span>
+                  </div>
+
+                </div>
+              );
+            }
           })}
         </div>
 
