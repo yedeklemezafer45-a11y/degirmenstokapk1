@@ -749,24 +749,14 @@ export default function DashboardPage() {
                 }}
                 className="relative w-full max-w-[320px] h-[340px] rounded-[2.75rem] border-[5px] border-black bg-white shadow-2xl overflow-hidden cursor-pointer transition-all duration-300 hover:scale-[1.03] hover:shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex flex-col justify-between group select-none"
               >
-                {/* 1. ÜST BEYAZ ALAN: LOGO VE BAŞLIK */}
-                <div className="w-full h-[110px] bg-white flex items-center justify-end pr-5 pt-3 relative">
-                  <div className="flex items-center gap-2 select-none">
-                    <div className="w-14 h-14 flex items-center justify-center">
-                      <img 
-                        src="/logo.png" 
-                        alt="Değirmen Kafe" 
-                        className="w-full h-full object-contain filter drop-shadow-[0_4px_8px_rgba(0,0,0,0.25)]" 
-                      />
-                    </div>
-                    <div className="text-left">
-                      <div className="text-sm font-black tracking-tight text-zinc-950 leading-tight">
-                        DEĞİRMEN<br />KAFE
-                      </div>
-                      <div className="text-[11px] font-semibold italic text-[#1d3557] tracking-tight font-serif mt-0.5">
-                        Bilişim Paneli
-                      </div>
-                    </div>
+                {/* 1. ÜST BEYAZ ALAN: YALNIZCA GÖRSEL (YAZISIZ) */}
+                <div className="w-full h-[115px] bg-white flex items-center justify-end pr-4 pt-2 relative select-none">
+                  <div className="w-[180px] h-[95px] flex items-center justify-center">
+                    <img 
+                      src="/degirmen-panel-logo.png" 
+                      alt="Değirmen Kafe Bilişim Paneli" 
+                      className="w-full h-full object-contain filter drop-shadow-sm" 
+                    />
                   </div>
                 </div>
 
