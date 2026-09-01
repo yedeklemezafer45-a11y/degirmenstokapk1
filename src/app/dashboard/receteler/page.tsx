@@ -248,6 +248,14 @@ export default function RecetelerPage() {
         <div className="flex items-center gap-4">
           {/* PDF İndir Butonu */}
           <button
+            onClick={() => router.push("/dashboard/ai-trend-laboratuvar")}
+            className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-black px-4 py-2 rounded-xl text-xs shadow-lg transition-all hover:scale-105 active:scale-95 cursor-pointer"
+          >
+            <Sparkles className="w-4 h-4 text-amber-300 animate-spin-slow" />
+            AI Trend & Denge Laboratuvarı
+          </button>
+
+          <button
             onClick={handleDownloadPDF}
             className="flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white font-bold px-4 py-2 rounded-xl text-xs shadow-lg transition-colors cursor-pointer"
           >

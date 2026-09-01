@@ -16,7 +16,8 @@ import {
   X,
   ArrowUpRight,
   Power,
-  Share2
+  Share2,
+  Sparkles
 } from "lucide-react";
 import { getAnnouncement, Announcement } from "@/lib/announcementService";
 import { subscribeToStocks } from "@/lib/stockService";
@@ -359,6 +360,16 @@ export default function DashboardPage() {
             </button>
           </div>
           
+          {/* AI Trend & Reçete Laboratuvarı Butonu */}
+          <button
+            onClick={() => router.push("/dashboard/ai-trend-laboratuvar")}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-[10px] font-black rounded-xl shadow-md transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer uppercase tracking-wider shrink-0"
+            title="AI Trend & Reçete Denge Laboratuvarı"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-amber-300 animate-spin-slow" />
+            <span className="hidden md:inline">AI Trend Lab</span>
+          </button>
+
           <button
             onClick={handleSharePage}
             className="p-2 rounded-xl hover:bg-[var(--foreground)]/5 text-zinc-500 hover:text-orange-500 transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer"
