@@ -287,13 +287,21 @@ export default function GlobalChat() {
       {/* Floating Chat Trigger Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-6 left-6 z-50 w-14 h-14 bg-orange-500 hover:bg-orange-600 text-white rounded-full flex items-center justify-center shadow-xl border border-white/10 transition-all duration-300 hover:scale-110 active:scale-95 cursor-pointer"
+        className="fixed bottom-6 left-6 z-50 w-14 h-14 bg-zinc-950 hover:bg-zinc-900 rounded-2xl flex items-center justify-center shadow-2xl border border-white/10 transition-all duration-300 hover:scale-110 active:scale-95 cursor-pointer overflow-hidden group p-1"
         title="Personel Mesajlaşma"
       >
-        {isOpen ? <X className="w-6 h-6" /> : <MessageSquare className="w-6 h-6" />}
+        {isOpen ? (
+          <X className="w-6 h-6 text-white" />
+        ) : (
+          <img 
+            src="/chat-icon.png" 
+            alt="Personel Mesajlaşma" 
+            className="w-full h-full object-cover rounded-xl drop-shadow-md transition-transform duration-300 group-hover:scale-105" 
+          />
+        )}
         {/* Aktif personel rozeti */}
         {onlineUsers.length > 1 && !isOpen && (
-          <span className="absolute -top-1.5 -right-1.5 bg-emerald-500 border-2 border-zinc-950 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full flex items-center justify-center min-w-5 h-5 animate-bounce">
+          <span className="absolute -top-1.5 -right-1.5 bg-emerald-500 border-2 border-zinc-950 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full flex items-center justify-center min-w-5 h-5 animate-bounce z-10">
             {onlineUsers.length}
           </span>
         )}
@@ -305,11 +313,16 @@ export default function GlobalChat() {
           
           {/* Header */}
           <div className="flex items-center justify-between border-b border-zinc-800/80 pb-3">
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-emerald-500 rounded-full animate-pulse" />
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl overflow-hidden shadow-sm shrink-0 border border-white/10">
+                <img src="/chat-icon.png" alt="Sohbet" className="w-full h-full object-cover" />
+              </div>
               <div>
                 <h3 className="text-xs font-black uppercase tracking-wider text-zinc-100">Personel İletişim</h3>
-                <p className="text-[8px] text-zinc-500 uppercase font-black">{onlineUsers.length} Personel Aktif</p>
+                <p className="text-[8px] text-emerald-400 uppercase font-black flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse inline-block" />
+                  {onlineUsers.length} Personel Aktif
+                </p>
               </div>
             </div>
             <button 
@@ -342,7 +355,9 @@ export default function GlobalChat() {
           <div className="flex-1 overflow-y-auto pr-1 no-scrollbar my-3 space-y-3.5 min-h-0">
             {messages.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20 text-center space-y-2">
-                <MessageSquare className="w-10 h-10 text-zinc-700" />
+                <div className="w-12 h-12 rounded-2xl overflow-hidden opacity-60 shadow-md">
+                  <img src="/chat-icon.png" alt="Sohbet" className="w-full h-full object-cover" />
+                </div>
                 <span className="text-[10px] font-black text-zinc-500 uppercase">Sohbeti Başlatın</span>
                 <p className="text-[8px] text-zinc-600 max-w-[200px] leading-normal uppercase font-bold">
                   Bölge veya şube fark etmeksizin tüm çalışanlar ile anlık olarak yazışın.
