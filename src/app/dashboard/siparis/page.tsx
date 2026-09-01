@@ -115,6 +115,11 @@ export default function SiparisPage() {
     document.documentElement.className = newTheme;
   };
 
+  // HM- önekini temizleyici yardımcı fonksiyon
+  const cleanHMName = (name: string) => {
+    return name.replace(/^HM[-\s]*/i, "").trim();
+  };
+
   // Sepete ürün ekle (Soft İçecekler otomatik olarak Soft Sepetine, diğerleri Genel Sepete gider)
   const handleAddToOrder = (item: StockItem) => {
     const qty = quantities[item.id] || 1;
@@ -126,6 +131,7 @@ export default function SiparisPage() {
       return;
     }
 
+    const cleanName = cleanHMName(item.name);
     const isSoftDrink = item.category === "Soft İçecek Ürünleri";
 
     if (isSoftDrink) {
@@ -136,10 +142,10 @@ export default function SiparisPage() {
           updated[existingIdx].quantity += qty;
           return updated;
         }
-        return [...prev, { id: item.id, name: item.name, quantity: qty, unit, category: item.category }];
+        return [...prev, { id: item.id, name: cleanName, quantity: qty, unit, category: item.category }];
       });
       setActiveCartTab("soft");
-      triggerToast(`🥤 "${item.name}" Soft İçecek Sepetine eklendi!`);
+      triggerToast(`🥤 "${cleanName}" Soft İçecek Sepetine eklendi!`);
     } else {
       setGeneralOrderItems(prev => {
         const existingIdx = prev.findIndex(o => o.id === item.id && o.unit === unit);
@@ -148,9 +154,9 @@ export default function SiparisPage() {
           updated[existingIdx].quantity += qty;
           return updated;
         }
-        return [...prev, { id: item.id, name: item.name, quantity: qty, unit, category: item.category }];
+        return [...prev, { id: item.id, name: cleanName, quantity: qty, unit, category: item.category }];
       });
-      triggerToast(`📦 "${item.name}" Genel Sipariş Sepetine eklendi!`);
+      triggerToast(`📦 "${cleanName}" Genel Sipariş Sepetine eklendi!`);
     }
 
     // Miktarı sıfırla
