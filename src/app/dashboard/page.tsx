@@ -248,32 +248,41 @@ export default function DashboardPage() {
     document.documentElement.className = newTheme;
   };
 
-  // Modülleri dinamik olarak yetkiye göre oluşturalım
-  const modules = [
+  // Modülleri tam istenen sıralama ve satırlara göre tanımlayalım:
+  // 1. Sıra: Aylık stok takibi, Stok Kontrolü, Stok Sayım
+  const row1Modules = [
+    { label: "Aylık Stok Takibi", active: true, path: "/dashboard/aylik-stok-takibi", requiresAdminOrManager: true },
     { label: "Stok Kontrolü", active: true, path: "/dashboard/stok" },
     { label: "Stok Sayım", active: true, path: "/dashboard/stok-sayim" },
+  ];
+
+  // 2. Sıra: Reçeteler, Sipariş Ver
+  const row2Modules = [
     { label: "Reçeteler", active: true, path: "/dashboard/receteler" },
     { label: "Sipariş Ver", active: true, path: "/dashboard/siparis" },
   ];
 
+  // 3. Sıra: Ayarlar, Tüm Şube Stokları
+  const row3Modules = [
+    { label: "Ayarlar", active: true, path: "/dashboard/ayarlar", requiresAdmin: true },
+    { label: "Tüm Şube Stokları", active: true, path: "/dashboard/tum-bolgeler-stok", requiresAdminOrManager: true },
+  ];
+
+  const filterRow = (items: { label: string; active: boolean; path: string; requiresAdmin?: boolean; requiresAdminOrManager?: boolean }[]) => {
+    return items.filter(m => {
+      if (m.requiresAdmin && userRole !== "admin") return false;
+      if (m.requiresAdminOrManager && userRole !== "admin" && userRole !== "yonetici") return false;
+      if (allowedMenus && allowedMenus.length > 0 && !allowedMenus.includes(m.path)) return false;
+      return true;
+    });
+  };
+
+  const visibleRow1 = filterRow(row1Modules);
+  const visibleRow2 = filterRow(row2Modules);
+  const visibleRow3 = filterRow(row3Modules);
+
   const [showNotifDropdown, setShowNotifDropdown] = useState(false);
-
-  // Tüm Şube Stokları ve Aylık Stok Takibi yetkisini admin veya yoneticiye verelim
-  if (userRole === "admin" || userRole === "yonetici") {
-    modules.push({ label: "Tüm Şube Stokları", active: true, path: "/dashboard/tum-bolgeler-stok" });
-    modules.push({ label: "Aylık Stok Takibi", active: true, path: "/dashboard/aylik-stok-takibi" });
-  }
-
-  // Ayarlar sadece admin
-  if (userRole === "admin") {
-    modules.push({ label: "Ayarlar", active: true, path: "/dashboard/ayarlar" });
-  }
-
   const totalWarnings = criticalCount + sktWarnings.length;
-
-  const visibleModules = (allowedMenus && allowedMenus.length > 0
-    ? modules.filter(m => allowedMenus.includes(m.path))
-    : modules).sort((a, b) => a.label.localeCompare(b.label, "tr"));
 
   return (
     <div className="min-h-screen flex flex-col bg-[var(--background)] text-[var(--foreground)] transition-colors duration-300 relative">
@@ -666,84 +675,172 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Dinamik Kartlar Grid (Görseldeki Asimetrik Cutout Tasarımı) */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 w-full justify-items-center py-6 max-w-5xl">
-          {visibleModules.map((item, idx) => {
-            // Alternate styles: steel (index 0, 2, 4...) and peach (index 1, 3...)
-            const isSteel = idx % 2 === 0;
-            
-            if (isSteel) {
-              // Deep Charcoal Blue Card layout with Neon Glow (No borders)
-              return (
-                <div 
-                  key={idx}
-                  onClick={() => {
-                    if (item.path !== "#") router.push(item.path);
-                  }}
-                  className="relative w-full max-w-[290px] h-[190px] bg-[#264653] hover:bg-[#345e70] dark:bg-[#1a3039] dark:hover:bg-[#203c48] rounded-3xl p-6 flex flex-col items-center justify-center cursor-pointer transition-all duration-300 shadow-[0_0_15px_rgba(231,111,81,0.12)] hover:shadow-[0_0_30px_rgba(231,111,81,0.45)] hover:-translate-y-1 select-none overflow-hidden group"
-                >
-                  {/* Top-Left Cutout (Concave Corner for Arrow Button) */}
-                  <div className="absolute top-0 left-0 w-14 h-14 bg-[var(--background)] rounded-br-[2rem] transition-colors duration-300">
-                    <div className="absolute top-0 left-0 w-9 h-9 bg-[#264653] group-hover:bg-[#345e70] dark:bg-[#1a3039] dark:group-hover:bg-[#203c48] text-[#e76f51] flex items-center justify-center rounded-xl shadow-sm transition-colors duration-300">
-                      <ArrowUpRight className="w-4 h-4 -rotate-90" />
+        {/* Dinamik Kartlar Grid (Satır Bazlı 3 Kademeli Düzen) */}
+        <div className="w-full max-w-5xl space-y-8 py-6">
+          
+          {/* 1. SIRA: Aylık Stok Takibi, Stok Kontrolü, Stok Sayım */}
+          {visibleRow1.length > 0 && (
+            <div className={`grid gap-8 justify-items-center w-full ${
+              visibleRow1.length >= 3 ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3" : "grid-cols-1 sm:grid-cols-2 max-w-2xl mx-auto"
+            }`}>
+              {visibleRow1.map((item, idx) => {
+                const isSteel = idx % 2 === 0;
+                return (
+                  <div 
+                    key={item.path}
+                    onClick={() => {
+                      if (item.path !== "#") router.push(item.path);
+                    }}
+                    className={`relative w-full max-w-[290px] h-[190px] rounded-3xl p-6 flex flex-col items-center justify-center cursor-pointer transition-all duration-300 hover:-translate-y-1 select-none overflow-hidden group ${
+                      isSteel 
+                        ? "bg-[#264653] hover:bg-[#345e70] dark:bg-[#1a3039] dark:hover:bg-[#203c48] shadow-[0_0_15px_rgba(231,111,81,0.12)] hover:shadow-[0_0_30px_rgba(231,111,81,0.45)]" 
+                        : "bg-[#e76f51] hover:bg-[#eb8870] dark:bg-[#a6442d] dark:hover:bg-[#c25137] shadow-[0_0_15px_rgba(231,111,81,0.12)] hover:shadow-[0_0_30px_rgba(231,111,81,0.45)]"
+                    }`}
+                  >
+                    {/* Cutout Arrow Corner */}
+                    <div className={`absolute w-14 h-14 bg-[var(--background)] transition-colors duration-300 ${isSteel ? "top-0 left-0 rounded-br-[2rem]" : "top-0 right-0 rounded-bl-[2rem]"}`}>
+                      <div className={`absolute w-9 h-9 flex items-center justify-center rounded-xl shadow-sm transition-colors duration-300 ${
+                        isSteel 
+                          ? "top-0 left-0 bg-[#264653] group-hover:bg-[#345e70] dark:bg-[#1a3039] dark:group-hover:bg-[#203c48] text-[#e76f51]" 
+                          : "top-0 right-0 bg-[#e76f51] group-hover:bg-[#eb8870] dark:bg-[#a6442d] dark:group-hover:bg-[#c25137] text-[#264653] dark:text-zinc-950"
+                      }`}>
+                        <ArrowUpRight className={`w-4 h-4 ${isSteel ? "-rotate-90" : ""}`} />
+                      </div>
+                    </div>
+
+                    {/* Cutout Label Corner */}
+                    <div className={`absolute w-28 h-10 bg-[var(--background)] transition-colors duration-300 ${isSteel ? "bottom-0 right-0 rounded-tl-[1.5rem]" : "bottom-0 left-0 rounded-tr-[1.5rem]"}`}>
+                      <div className={`absolute px-3 py-1.5 text-[9px] font-black uppercase tracking-widest rounded-lg transition-colors duration-300 ${
+                        isSteel 
+                          ? "bottom-0 right-0 bg-[#264653] group-hover:bg-[#345e70] dark:bg-[#1a3039] dark:group-hover:bg-[#203c48] text-[#e76f51]" 
+                          : "bottom-0 left-0 bg-[#e76f51] group-hover:bg-[#eb8870] dark:bg-[#a6442d] dark:group-hover:bg-[#c25137] text-[#264653] dark:text-zinc-950"
+                      }`}>
+                        {item.label === "Aylık Stok Takibi" ? "RAPOR" : "DEĞİRMEN"}
+                      </div>
+                    </div>
+
+                    {/* Centered Large Menu Title */}
+                    <div className="text-center z-10 px-4 mt-2">
+                      <span className={`text-xl sm:text-2xl font-sans font-black uppercase tracking-tighter leading-tight block drop-shadow-sm ${
+                        isSteel ? "text-[#e76f51]" : "text-[#264653] dark:text-zinc-950"
+                      }`}>
+                        {item.label}
+                      </span>
                     </div>
                   </div>
+                );
+              })}
+            </div>
+          )}
 
-                  {/* Bottom-Right Cutout (Concave Corner for Text Label) */}
-                  <div className="absolute bottom-0 right-0 w-28 h-10 bg-[var(--background)] rounded-tl-[1.5rem] transition-colors duration-300">
-                    <div className="absolute bottom-0 right-0 px-3 py-1.5 bg-[#264653] group-hover:bg-[#345e70] dark:bg-[#1a3039] dark:group-hover:bg-[#203c48] text-[9px] font-black uppercase text-[#e76f51] tracking-widest rounded-lg transition-colors duration-300">
-                      DEĞİRMEN
+          {/* 2. SIRA: Reçeteler, Sipariş Ver */}
+          {visibleRow2.length > 0 && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 justify-items-center max-w-2xl mx-auto w-full">
+              {visibleRow2.map((item, idx) => {
+                const globalIdx = visibleRow1.length + idx;
+                const isSteel = globalIdx % 2 === 0;
+                return (
+                  <div 
+                    key={item.path}
+                    onClick={() => {
+                      if (item.path !== "#") router.push(item.path);
+                    }}
+                    className={`relative w-full max-w-[290px] h-[190px] rounded-3xl p-6 flex flex-col items-center justify-center cursor-pointer transition-all duration-300 hover:-translate-y-1 select-none overflow-hidden group ${
+                      isSteel 
+                        ? "bg-[#264653] hover:bg-[#345e70] dark:bg-[#1a3039] dark:hover:bg-[#203c48] shadow-[0_0_15px_rgba(231,111,81,0.12)] hover:shadow-[0_0_30px_rgba(231,111,81,0.45)]" 
+                        : "bg-[#e76f51] hover:bg-[#eb8870] dark:bg-[#a6442d] dark:hover:bg-[#c25137] shadow-[0_0_15px_rgba(231,111,81,0.12)] hover:shadow-[0_0_30px_rgba(231,111,81,0.45)]"
+                    }`}
+                  >
+                    {/* Cutout Arrow Corner */}
+                    <div className={`absolute w-14 h-14 bg-[var(--background)] transition-colors duration-300 ${isSteel ? "top-0 left-0 rounded-br-[2rem]" : "top-0 right-0 rounded-bl-[2rem]"}`}>
+                      <div className={`absolute w-9 h-9 flex items-center justify-center rounded-xl shadow-sm transition-colors duration-300 ${
+                        isSteel 
+                          ? "top-0 left-0 bg-[#264653] group-hover:bg-[#345e70] dark:bg-[#1a3039] dark:group-hover:bg-[#203c48] text-[#e76f51]" 
+                          : "top-0 right-0 bg-[#e76f51] group-hover:bg-[#eb8870] dark:bg-[#a6442d] dark:group-hover:bg-[#c25137] text-[#264653] dark:text-zinc-950"
+                      }`}>
+                        <ArrowUpRight className={`w-4 h-4 ${isSteel ? "-rotate-90" : ""}`} />
+                      </div>
+                    </div>
+
+                    {/* Cutout Label Corner */}
+                    <div className={`absolute w-28 h-10 bg-[var(--background)] transition-colors duration-300 ${isSteel ? "bottom-0 right-0 rounded-tl-[1.5rem]" : "bottom-0 left-0 rounded-tr-[1.5rem]"}`}>
+                      <div className={`absolute px-3 py-1.5 text-[9px] font-black uppercase tracking-widest rounded-lg transition-colors duration-300 ${
+                        isSteel 
+                          ? "bottom-0 right-0 bg-[#264653] group-hover:bg-[#345e70] dark:bg-[#1a3039] dark:group-hover:bg-[#203c48] text-[#e76f51]" 
+                          : "bottom-0 left-0 bg-[#e76f51] group-hover:bg-[#eb8870] dark:bg-[#a6442d] dark:group-hover:bg-[#c25137] text-[#264653] dark:text-zinc-950"
+                      }`}>
+                        {item.label === "Sipariş Ver" ? "SİPARİŞ" : "REÇETE"}
+                      </div>
+                    </div>
+
+                    {/* Centered Large Menu Title */}
+                    <div className="text-center z-10 px-4 mt-2">
+                      <span className={`text-xl sm:text-2xl font-sans font-black uppercase tracking-tighter leading-tight block drop-shadow-sm ${
+                        isSteel ? "text-[#e76f51]" : "text-[#264653] dark:text-zinc-950"
+                      }`}>
+                        {item.label}
+                      </span>
                     </div>
                   </div>
+                );
+              })}
+            </div>
+          )}
 
-                  {/* Centered Large Menu Title */}
-                  <div className="text-center z-10 px-4 mt-2">
-                    <span 
-                      className="text-xl sm:text-2xl font-sans font-black uppercase tracking-tighter text-[#e76f51] leading-tight block drop-shadow-sm"
-                    >
-                      {item.label}
-                    </span>
-                  </div>
+          {/* 3. SIRA: Ayarlar, Tüm Şube Stokları */}
+          {visibleRow3.length > 0 && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 justify-items-center max-w-2xl mx-auto w-full">
+              {visibleRow3.map((item, idx) => {
+                const globalIdx = visibleRow1.length + visibleRow2.length + idx;
+                const isSteel = globalIdx % 2 === 0;
+                return (
+                  <div 
+                    key={item.path}
+                    onClick={() => {
+                      if (item.path !== "#") router.push(item.path);
+                    }}
+                    className={`relative w-full max-w-[290px] h-[190px] rounded-3xl p-6 flex flex-col items-center justify-center cursor-pointer transition-all duration-300 hover:-translate-y-1 select-none overflow-hidden group ${
+                      isSteel 
+                        ? "bg-[#264653] hover:bg-[#345e70] dark:bg-[#1a3039] dark:hover:bg-[#203c48] shadow-[0_0_15px_rgba(231,111,81,0.12)] hover:shadow-[0_0_30px_rgba(231,111,81,0.45)]" 
+                        : "bg-[#e76f51] hover:bg-[#eb8870] dark:bg-[#a6442d] dark:hover:bg-[#c25137] shadow-[0_0_15px_rgba(231,111,81,0.12)] hover:shadow-[0_0_30px_rgba(231,111,81,0.45)]"
+                    }`}
+                  >
+                    {/* Cutout Arrow Corner */}
+                    <div className={`absolute w-14 h-14 bg-[var(--background)] transition-colors duration-300 ${isSteel ? "top-0 left-0 rounded-br-[2rem]" : "top-0 right-0 rounded-bl-[2rem]"}`}>
+                      <div className={`absolute w-9 h-9 flex items-center justify-center rounded-xl shadow-sm transition-colors duration-300 ${
+                        isSteel 
+                          ? "top-0 left-0 bg-[#264653] group-hover:bg-[#345e70] dark:bg-[#1a3039] dark:group-hover:bg-[#203c48] text-[#e76f51]" 
+                          : "top-0 right-0 bg-[#e76f51] group-hover:bg-[#eb8870] dark:bg-[#a6442d] dark:group-hover:bg-[#c25137] text-[#264653] dark:text-zinc-950"
+                      }`}>
+                        <ArrowUpRight className={`w-4 h-4 ${isSteel ? "-rotate-90" : ""}`} />
+                      </div>
+                    </div>
 
-                </div>
-              );
-            } else {
-              // Yanmış Şeftali Card layout with Neon Glow (No borders)
-              return (
-                <div 
-                  key={idx}
-                  onClick={() => {
-                    if (item.path !== "#") router.push(item.path);
-                  }}
-                  className="relative w-full max-w-[290px] h-[190px] bg-[#e76f51] hover:bg-[#eb8870] dark:bg-[#a6442d] dark:hover:bg-[#c25137] rounded-3xl p-6 flex flex-col items-center justify-center cursor-pointer transition-all duration-300 shadow-[0_0_15px_rgba(231,111,81,0.12)] hover:shadow-[0_0_30px_rgba(231,111,81,0.45)] hover:-translate-y-1 select-none overflow-hidden group"
-                >
-                  {/* Top-Right Cutout (Concave Corner for Arrow Button) */}
-                  <div className="absolute top-0 right-0 w-14 h-14 bg-[var(--background)] rounded-bl-[2rem] transition-colors duration-300">
-                    <div className="absolute top-0 right-0 w-9 h-9 bg-[#e76f51] group-hover:bg-[#eb8870] dark:bg-[#a6442d] dark:group-hover:bg-[#c25137] text-[#264653] dark:text-zinc-950 flex items-center justify-center rounded-xl shadow-sm transition-colors duration-300">
-                      <ArrowUpRight className="w-4 h-4" />
+                    {/* Cutout Label Corner */}
+                    <div className={`absolute w-28 h-10 bg-[var(--background)] transition-colors duration-300 ${isSteel ? "bottom-0 right-0 rounded-tl-[1.5rem]" : "bottom-0 left-0 rounded-tr-[1.5rem]"}`}>
+                      <div className={`absolute px-3 py-1.5 text-[9px] font-black uppercase tracking-widest rounded-lg transition-colors duration-300 ${
+                        isSteel 
+                          ? "bottom-0 right-0 bg-[#264653] group-hover:bg-[#345e70] dark:bg-[#1a3039] dark:group-hover:bg-[#203c48] text-[#e76f51]" 
+                          : "bottom-0 left-0 bg-[#e76f51] group-hover:bg-[#eb8870] dark:bg-[#a6442d] dark:group-hover:bg-[#c25137] text-[#264653] dark:text-zinc-950"
+                      }`}>
+                        {item.label === "Ayarlar" ? "SİSTEM" : "ANALİZ"}
+                      </div>
+                    </div>
+
+                    {/* Centered Large Menu Title */}
+                    <div className="text-center z-10 px-4 mt-2">
+                      <span className={`text-xl sm:text-2xl font-sans font-black uppercase tracking-tighter leading-tight block drop-shadow-sm ${
+                        isSteel ? "text-[#e76f51]" : "text-[#264653] dark:text-zinc-950"
+                      }`}>
+                        {item.label}
+                      </span>
                     </div>
                   </div>
+                );
+              })}
+            </div>
+          )}
 
-                  {/* Bottom-Left Cutout (Concave Corner for Text Label) */}
-                  <div className="absolute bottom-0 left-0 w-28 h-10 bg-[var(--background)] rounded-tr-[1.5rem] transition-colors duration-300">
-                    <div className="absolute bottom-0 left-0 px-3 py-1.5 bg-[#e76f51] group-hover:bg-[#eb8870] dark:bg-[#a6442d] dark:group-hover:bg-[#c25137] text-[9px] font-black uppercase text-[#264653] dark:text-zinc-950 tracking-widest rounded-lg transition-colors duration-300">
-                      {item.label === "Sipariş Ver" ? "SİPARİŞ" : item.label === "Tüm Şube Stokları" ? "ANALİZ" : "CAFE"}
-                    </div>
-                  </div>
-
-                  {/* Centered Large Menu Title */}
-                  <div className="text-center z-10 px-4 mt-2">
-                    <span 
-                      className="text-xl sm:text-2xl font-sans font-black uppercase tracking-tighter text-[#264653] dark:text-zinc-950 leading-tight block drop-shadow-sm"
-                    >
-                      {item.label}
-                    </span>
-                  </div>
-
-                </div>
-              );
-            }
-          })}
         </div>
 
       </main>
