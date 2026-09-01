@@ -747,54 +747,64 @@ export default function DashboardPage() {
                 onClick={() => {
                   if (item.path !== "#") router.push(item.path);
                 }}
-                className="relative w-full max-w-[320px] h-[340px] rounded-[2.75rem] border-[5px] border-black bg-white shadow-2xl overflow-hidden cursor-pointer transition-all duration-300 hover:scale-[1.03] hover:shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex flex-col justify-between group select-none"
+                className="relative w-full max-w-[315px] h-[330px] rounded-[2.5rem] border-[5px] border-black bg-white shadow-2xl overflow-hidden cursor-pointer transition-all duration-300 hover:scale-[1.03] hover:shadow-[0_20px_50px_rgba(0,0,0,0.5)] select-none group"
               >
-                {/* 1. ÜST BEYAZ ALAN: BÜYÜTÜLMÜŞ LOGO GÖRSELİ */}
-                <div className="w-full h-[130px] bg-white relative flex items-center justify-end select-none">
-                  <div className="absolute right-1 -top-1 w-[235px] h-[135px] flex items-center justify-end pointer-events-none">
-                    <img 
-                      src="/degirmen-panel-logo.png" 
-                      alt="Değirmen Kafe Bilişim Paneli" 
-                      className="w-full h-full object-contain filter drop-shadow-[0_4px_10px_rgba(0,0,0,0.15)]" 
-                    />
-                  </div>
+                {/* 1. ÜST BEYAZ ALAN: LOGO GÖRSELİ */}
+                <div className="absolute top-1 right-2 w-[185px] h-[108px] flex items-center justify-center pointer-events-none z-0">
+                  <img 
+                    src="/degirmen-panel-logo.png" 
+                    alt="Değirmen Kafe Bilişim Paneli" 
+                    className="w-full h-full object-contain filter drop-shadow-[0_4px_10px_rgba(0,0,0,0.12)]" 
+                  />
                 </div>
 
-                {/* 2. ALT SİYAH GÖVDE (KLASÖR KESİMİ VE SEKMELİ YAPI) */}
-                <div className="relative flex-1 bg-[#0d0d10] rounded-b-[2.35rem] px-6 py-5 flex flex-col justify-between text-left">
-                  
-                  {/* Klasör Üst Sekme Çıkıntısı (Folder Tab) */}
-                  <div className="absolute -top-7 left-0 h-8 w-[50%] bg-[#0d0d10] rounded-t-2xl flex items-center px-5 z-10">
-                    <span className={`text-xs sm:text-sm font-black tracking-wider bg-gradient-to-r ${item.colorGradient} bg-clip-text text-transparent uppercase truncate`}>
-                      {item.label}
-                    </span>
-                  </div>
-                  
-                  {/* Sekme sağ geçiş kavisi */}
-                  <div className="absolute -top-7 left-[50%] w-5 h-7 overflow-hidden pointer-events-none z-10">
-                    <div className="w-10 h-10 rounded-bl-2xl bg-white -mt-3 -ml-5" />
-                  </div>
+                {/* 2. SİYAH GÖVDE VE KLASÖR ŞEKLİ */}
+                <div className="absolute inset-x-0 bottom-0 top-[84px] z-10">
+                  {/* SVG Klasör Üst Kavisli Çıkıntısı */}
+                  <svg 
+                    className="absolute top-0 left-0 w-full h-[36px] text-[#0e0e11] fill-current" 
+                    viewBox="0 0 315 36" 
+                    preserveAspectRatio="none"
+                  >
+                    <path d="M 0,16 C 0,6 6,0 16,0 L 130,0 C 142,0 148,16 162,16 L 315,16 L 315,36 L 0,36 Z" />
+                  </svg>
 
-                  {/* Maddeler / Alt Açıklamalar */}
-                  <div className="mt-3 space-y-2">
-                    {item.bullets.map((bullet, bIdx) => (
-                      <div key={bIdx} className="flex items-center gap-2 text-[11px] font-extrabold text-zinc-400 tracking-wide uppercase">
-                        <span className="w-1.5 h-1.5 rounded-full bg-zinc-500 shrink-0" />
-                        <span className="truncate">{bullet}</span>
+                  {/* Gövde Arka Planı */}
+                  <div className="absolute top-[35px] inset-x-0 bottom-0 bg-[#0e0e11]" />
+
+                  {/* Gövde İçi İçerikler */}
+                  <div className="relative h-full px-6 pt-1 pb-5 flex flex-col justify-between text-left">
+                    
+                    <div>
+                      {/* Modül Başlığı */}
+                      <div className="mb-3">
+                        <span className={`text-base font-black tracking-wider bg-gradient-to-r ${item.colorGradient} bg-clip-text text-transparent uppercase block drop-shadow-sm`}>
+                          {item.label}
+                        </span>
                       </div>
-                    ))}
-                  </div>
 
-                  {/* Alt Kısım: SIRA NUMARASI */}
-                  <div className="flex items-baseline gap-2 pt-4 border-t border-zinc-900 select-none">
-                    <span className="text-3xl sm:text-4xl font-black text-white tracking-tight leading-none">
-                      {seqNumber}
-                    </span>
-                    <span className="text-xs font-black text-zinc-400 uppercase tracking-widest">
-                      SIRA
-                    </span>
-                  </div>
+                      {/* Maddeler */}
+                      <div className="space-y-1.5">
+                        {item.bullets.map((bullet, bIdx) => (
+                          <div key={bIdx} className="flex items-start gap-2 text-[11px] font-extrabold text-zinc-400 tracking-wide uppercase leading-tight">
+                            <span className="w-1.5 h-1.5 rounded-full bg-zinc-500 shrink-0 mt-1" />
+                            <span>{bullet}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
 
+                    {/* Alt Kısım: SIRA NUMARASI */}
+                    <div className="flex items-baseline gap-2 pt-2 select-none">
+                      <span className="text-3xl sm:text-4xl font-black text-white tracking-tight leading-none">
+                        {seqNumber}
+                      </span>
+                      <span className="text-xs sm:text-sm font-black text-zinc-300 uppercase tracking-widest">
+                        SIRA
+                      </span>
+                    </div>
+
+                  </div>
                 </div>
               </div>
             );
