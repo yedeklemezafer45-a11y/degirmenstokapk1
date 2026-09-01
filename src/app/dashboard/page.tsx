@@ -749,13 +749,13 @@ export default function DashboardPage() {
                 }}
                 className="relative w-full max-w-[320px] h-[340px] rounded-[2.75rem] border-[5px] border-black bg-white shadow-2xl overflow-hidden cursor-pointer transition-all duration-300 hover:scale-[1.03] hover:shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex flex-col justify-between group select-none"
               >
-                {/* 1. ÜST BEYAZ ALAN: YALNIZCA GÖRSEL (YAZISIZ) */}
-                <div className="w-full h-[115px] bg-white flex items-center justify-end pr-4 pt-2 relative select-none">
-                  <div className="w-[180px] h-[95px] flex items-center justify-center">
+                {/* 1. ÜST BEYAZ ALAN: BÜYÜTÜLMÜŞ LOGO GÖRSELİ */}
+                <div className="w-full h-[130px] bg-white relative flex items-center justify-end select-none">
+                  <div className="absolute right-1 -top-1 w-[235px] h-[135px] flex items-center justify-end pointer-events-none">
                     <img 
                       src="/degirmen-panel-logo.png" 
                       alt="Değirmen Kafe Bilişim Paneli" 
-                      className="w-full h-full object-contain filter drop-shadow-sm" 
+                      className="w-full h-full object-contain filter drop-shadow-[0_4px_10px_rgba(0,0,0,0.15)]" 
                     />
                   </div>
                 </div>
@@ -764,14 +764,14 @@ export default function DashboardPage() {
                 <div className="relative flex-1 bg-[#0d0d10] rounded-b-[2.35rem] px-6 py-5 flex flex-col justify-between text-left">
                   
                   {/* Klasör Üst Sekme Çıkıntısı (Folder Tab) */}
-                  <div className="absolute -top-7 left-0 h-8 w-[62%] bg-[#0d0d10] rounded-t-2xl flex items-center px-6">
+                  <div className="absolute -top-7 left-0 h-8 w-[50%] bg-[#0d0d10] rounded-t-2xl flex items-center px-5 z-10">
                     <span className={`text-xs sm:text-sm font-black tracking-wider bg-gradient-to-r ${item.colorGradient} bg-clip-text text-transparent uppercase truncate`}>
                       {item.label}
                     </span>
                   </div>
                   
                   {/* Sekme sağ geçiş kavisi */}
-                  <div className="absolute -top-7 left-[62%] w-5 h-7 overflow-hidden pointer-events-none">
+                  <div className="absolute -top-7 left-[50%] w-5 h-7 overflow-hidden pointer-events-none z-10">
                     <div className="w-10 h-10 rounded-bl-2xl bg-white -mt-3 -ml-5" />
                   </div>
 
