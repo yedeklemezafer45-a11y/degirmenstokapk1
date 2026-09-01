@@ -21,7 +21,8 @@ import {
   Share2,
   Calculator,
   Mic,
-  RefreshCw
+  RefreshCw,
+  X
 } from "lucide-react";
 import { StockItem, isProductAllowedForRegion } from "@/lib/stockStore";
 import { subscribeToStocks, saveAllStocks, getAllStocks } from "@/lib/stockService";
@@ -1181,10 +1182,18 @@ export default function StokSayimPage() {
       {/* Floating 3D Calculator Trigger Button */}
       <button
         onClick={() => setShowCalc(!showCalc)}
-        className="fixed bottom-6 right-6 z-50 w-14 h-14 bg-[#e76f51] hover:bg-[#eb8870] text-white rounded-full flex items-center justify-center shadow-xl border border-white/10 transition-all duration-300 hover:scale-110 active:scale-95 cursor-pointer"
+        className="fixed bottom-6 right-6 z-50 w-14 h-14 bg-zinc-950 hover:bg-zinc-900 rounded-2xl flex items-center justify-center shadow-2xl border border-white/10 transition-all duration-300 hover:scale-110 active:scale-95 cursor-pointer overflow-hidden group p-1"
         title="Hesap Makinesi"
       >
-        <Calculator className="w-6 h-6" />
+        {showCalc ? (
+          <X className="w-6 h-6 text-white" />
+        ) : (
+          <img 
+            src="/calculator-icon.png" 
+            alt="Hesap Makinesi" 
+            className="w-full h-full object-cover rounded-xl drop-shadow-md transition-transform duration-300 group-hover:scale-105" 
+          />
+        )}
       </button>
 
       {/* Draggable/Floating Embossed 3D Calculator Panel */}
@@ -1194,12 +1203,13 @@ export default function StokSayimPage() {
             ? "bg-[#1b1c1e] text-zinc-100 border border-zinc-800/80 shadow-[0_20px_50px_rgba(0,0,0,0.8)]" 
             : "bg-[#f3f4f6]/95 text-zinc-900 border border-white/60 shadow-[0_20px_50px_rgba(0,0,0,0.15)]"
         }`}>
-          {/* Header with Mic Pill and Close Button */}
+          {/* Header with Calculator 3D Icon Pill and Close Button */}
           <div className="flex items-center justify-between">
-            <div className={`w-10 h-7 rounded-full flex items-center justify-center shadow-inner ${
-              theme === "dark" ? "bg-zinc-800/40 text-zinc-400" : "bg-white/80 text-zinc-500 shadow-sm border border-black/5"
-            }`}>
-              <Mic className="w-3.5 h-3.5" />
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg overflow-hidden border border-white/10 shadow-sm shrink-0">
+                <img src="/calculator-icon.png" alt="Hesap Makinesi" className="w-full h-full object-cover" />
+              </div>
+              <span className="text-[10px] font-black uppercase tracking-wider text-zinc-400">Hesap Makinesi</span>
             </div>
             <button 
               onClick={() => setShowCalc(false)}
