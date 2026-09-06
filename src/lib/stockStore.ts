@@ -10,7 +10,8 @@ export type StockCategory =
   | "Yan Ürünler"
   | "Kutu Ve Plastik Ürünler"
   | "Soft İçecek Ürünleri"
-  | "Pastalar";
+  | "Pastalar"
+  | (string & {});
 
 export interface StockItem {
   id: string;
@@ -203,8 +204,8 @@ export function isProductAllowedForRegion(regionId: string, item: { name: string
     if (item.category === "Kahveler" && forbiddenCoffees.includes(item.name)) {
       return false;
     }
-    // Pastalar kısıtlaması (13 Eylül Vargel ve Millet Bahçesi Vargel'de sadece bu 9 pasta olacak, diğer şubelerde hepsi kalabilir)
-    if (regionId === "13-eylul-vargel-kafe" || regionId === "millet-bahcesi-vargel-kafe") {
+    // Pastalar kısıtlaması (13 Eylül Vargel, Millet Bahçesi Vargel ve Vargel Karavan'da sadece bu 9 pasta olacak)
+    if (regionId === "13-eylul-vargel-kafe" || regionId === "millet-bahcesi-vargel-kafe" || regionId === "vargel-karavan" || regionId.includes("vargel")) {
       const allowedCakes = [
         "HM-DEVİLS PASTA",
         "HM-DAĞ MEYVELİ PASTA",

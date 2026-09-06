@@ -41,7 +41,8 @@ export default function PersonelYetkileriPage() {
     "/dashboard/siparis",
     "/dashboard/tum-bolgeler-stok",
     "/dashboard/aylik-stok-takibi",
-    "/dashboard/ayarlar"
+    "/dashboard/ayarlar",
+    "/dashboard/ai-trend-laboratuvar"
   ]);
   const [newAllowedRegions, setNewAllowedRegions] = useState<string[]>([]);
 
@@ -190,13 +191,40 @@ export default function PersonelYetkileriPage() {
         "/dashboard/siparis",
         "/dashboard/tum-bolgeler-stok",
         "/dashboard/aylik-stok-takibi",
-        "/dashboard/ayarlar"
+        "/dashboard/ayarlar",
+        "/dashboard/ai-trend-laboratuvar"
       ]);
       setNewAllowedRegions(regionsList.map(r => r.id));
       triggerToast(`✅ ${newUser.name} başarıyla eklendi! Artık her cihazdan giriş yapabilir.`);
     } catch (err) {
       console.error("Kullanıcı eklenemedi:", err);
       triggerToast("Kullanıcı eklenirken hata oluştu!", "error");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Personel Rolünü / Yetkisini Doğrudan Değiştirme Fonksiyonu
+  const handleChangeRole = async (user: FirestoreUser, newRole: FirestoreUser["role"]) => {
+    if (user.username === "zafer") {
+      triggerToast("Ana admin hesabı (zafer) rolü değiştirilemez!", "error");
+      return;
+    }
+
+    const updatedUser: FirestoreUser = {
+      ...user,
+      role: newRole
+    };
+
+    setIsSaving(true);
+    try {
+      await saveUser(updatedUser);
+      setUsers(prev => prev.map(u => u.username === user.username ? updatedUser : u));
+      const roleText = newRole === "admin" ? "Admin (Ana Sorumlu)" : newRole === "yonetici" ? "Yönetici (Bölge)" : "Barista (Personel)";
+      triggerToast(`✅ @${user.username} kullanıcısının rolü "${roleText}" olarak güncellendi.`);
+    } catch (err) {
+      console.error("Rol güncellenemedi:", err);
+      triggerToast("Rol güncellenirken hata oluştu!", "error");
     } finally {
       setIsSaving(false);
     }
@@ -216,7 +244,8 @@ export default function PersonelYetkileriPage() {
       "/dashboard/siparis",
       "/dashboard/tum-bolgeler-stok",
       "/dashboard/aylik-stok-takibi",
-      "/dashboard/ayarlar"
+      "/dashboard/ayarlar",
+      "/dashboard/ai-trend-laboratuvar"
     ];
 
     let newAllowed: string[];
@@ -420,6 +449,7 @@ export default function PersonelYetkileriPage() {
                   { label: "Tüm Şube Stokları", path: "/dashboard/tum-bolgeler-stok" },
                   { label: "Aylık Stok Takibi", path: "/dashboard/aylik-stok-takibi" },
                   { label: "Ayarlar", path: "/dashboard/ayarlar" },
+                  { label: "AI Trend Lab", path: "/dashboard/ai-trend-laboratuvar" },
                 ].map((menu) => {
                   const isChecked = newAllowedMenus.includes(menu.path);
                   return (
@@ -501,7 +531,7 @@ export default function PersonelYetkileriPage() {
                 <span className="text-xs font-extrabold text-red-400 uppercase">Ana Sorumlu (Admin)</span>
               </div>
               <div className="space-y-1">
-                {["✅ Tüm Sayfalar", "✅ Stok Kontrol (Ekle+Sil)", "✅ Ayarlar", "✅ Personel Yönetimi", "✅ Duyuru Yönetimi", "✅ Aylık Stok Takibi"].map(m => (
+                {["✅ Tüm Sayfalar", "✅ Stok Kontrol (Ekle+Sil)", "✅ Ayarlar", "✅ Personel Yönetimi", "✅ Duyuru Yönetimi", "✅ Aylık Stok Takibi", "✅ AI Trend Lab"].map(m => (
                   <div key={m} className="text-[10px] text-zinc-400 font-medium">{m}</div>
                 ))}
               </div>
@@ -516,7 +546,7 @@ export default function PersonelYetkileriPage() {
                 <span className="text-xs font-extrabold text-amber-400 uppercase">Bölge Sorumlusu</span>
               </div>
               <div className="space-y-1">
-                {["✅ Dashboard", "✅ Stok Görüntüle", "✅ Stok Sayım", "✅ Reçeteler", "✅ Stok Kontrol (Sadece Ekle)", "✅ Aylık Stok Takibi", "❌ Ayarlar / Personel"].map(m => (
+                {["✅ Dashboard", "✅ Stok Görüntüle", "✅ Stok Sayım", "✅ Reçeteler", "✅ Stok Kontrol (Sadece Ekle)", "✅ Aylık Stok Takibi", "✅ AI Trend Lab", "❌ Ayarlar / Personel"].map(m => (
                   <div key={m} className={`text-[10px] font-medium ${m.startsWith("❌") ? "text-zinc-600" : "text-zinc-400"}`}>{m}</div>
                 ))}
               </div>
@@ -642,18 +672,31 @@ export default function PersonelYetkileriPage() {
                         {"•".repeat(u.password?.length || 4)}
                       </td>
                       <td className="py-4 px-4">
-                        <span className={`px-2.5 py-0.5 rounded-xl font-bold border text-[10px] ${
-                          u.role === "admin" 
-                            ? "bg-red-500/10 text-red-500 border-red-500/20" 
-                            : u.role === "yonetici"
-                            ? "bg-amber-500/10 text-amber-500 border-amber-500/20"
-                            : "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
-                        }`}>
-                          {u.role === "admin" ? "ADMIN" : u.role === "yonetici" ? "YÖNETİCİ" : "BARISTA"}
-                        </span>
+                        {u.username === "zafer" ? (
+                          <span className="px-2.5 py-1 rounded-xl font-black border text-[10px] bg-red-500/10 text-red-500 border-red-500/20">
+                            ADMIN (KİLİTLİ)
+                          </span>
+                        ) : (
+                          <select
+                            value={u.role}
+                            disabled={isSaving}
+                            onChange={(e) => handleChangeRole(u, e.target.value as FirestoreUser["role"])}
+                            className={`px-2 py-1 rounded-xl font-bold border text-[10px] bg-[var(--background)] focus:outline-none focus:ring-1 focus:ring-orange-500 cursor-pointer ${
+                              u.role === "admin" 
+                                ? "text-red-400 border-red-500/30" 
+                                : u.role === "yonetici"
+                                ? "text-amber-400 border-amber-500/30"
+                                : "text-emerald-400 border-emerald-500/30"
+                            }`}
+                          >
+                            <option value="waiter">Barista (Personel)</option>
+                            <option value="yonetici">Yönetici (Bölge)</option>
+                            <option value="admin">Admin (Ana Sorumlu)</option>
+                          </select>
+                        )}
                       </td>
                       <td className="py-4 px-4">
-                        <div className="flex flex-wrap gap-1.5 max-w-[280px]">
+                        <div className="flex flex-wrap gap-1.5 max-w-[320px]">
                           {[
                             { label: "Stok", path: "/dashboard/stok" },
                             { label: "Sayım", path: "/dashboard/stok-sayim" },
@@ -662,6 +705,7 @@ export default function PersonelYetkileriPage() {
                             { label: "Tüm Şubeler", path: "/dashboard/tum-bolgeler-stok" },
                             { label: "Aylık", path: "/dashboard/aylik-stok-takibi" },
                             { label: "Ayarlar", path: "/dashboard/ayarlar" },
+                            { label: "AI Lab", path: "/dashboard/ai-trend-laboratuvar" },
                           ].map((m) => {
                             const isAllowed = !u.allowedMenus || u.allowedMenus.includes(m.path);
                             const disabled = u.username === "zafer" || isSaving;

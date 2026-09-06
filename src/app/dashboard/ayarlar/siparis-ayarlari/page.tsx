@@ -43,6 +43,11 @@ export default function SiparisAyarlariPage() {
   const [newItemPrice, setNewItemPrice] = useState("0");
   const [newItemWeight, setNewItemWeight] = useState("1.000 kg");
 
+  // Yeni Kategori Ekleme State'leri
+  const [customCategories, setCustomCategories] = useState<string[]>([]);
+  const [isAddCategoryOpen, setIsAddCategoryOpen] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
+
   // Bölge State'leri
   const [selectedRegion, setSelectedRegion] = useState("degirmen-kafe");
   const [selectedRegionName, setSelectedRegionName] = useState("Değirmen Kafe");
@@ -67,6 +72,15 @@ export default function SiparisAyarlariPage() {
     if (savedTheme) {
       setTheme(savedTheme);
       document.documentElement.className = savedTheme;
+    }
+
+    const savedCustomCats = localStorage.getItem("degirmen_siparis_custom_categories");
+    if (savedCustomCats) {
+      try {
+        setCustomCategories(JSON.parse(savedCustomCats));
+      } catch (e) {
+        console.error("Custom categories load error:", e);
+      }
     }
 
     const activeUser = sessionStorage.getItem("activeUser");
@@ -104,6 +118,45 @@ export default function SiparisAyarlariPage() {
 
     return () => unsubscribe();
   }, []);
+
+  // Yeni Kategori Ekleme Fonksiyonu
+  const handleAddCustomCategory = (e: React.FormEvent) => {
+    e.preventDefault();
+    const cleanName = newCategoryName.trim();
+    if (!cleanName) {
+      triggerToast("Lütfen bir kategori adı giriniz!");
+      return;
+    }
+
+    const standardCats = [
+      "Çay Ve Bitki Çayları",
+      "Kahveler",
+      "Şuruplar",
+      "Soslar",
+      "Püreler",
+      "Toz Grubu",
+      "Ek Ürünler",
+      "Litrelik Ürünler",
+      "Yan Ürünler",
+      "Kutu Ve Plastik Ürünler",
+      "Soft İçecek Ürünleri",
+      "Pastalar"
+    ];
+
+    if (standardCats.some(c => c.toLowerCase() === cleanName.toLowerCase()) || 
+        customCategories.some(c => c.toLowerCase() === cleanName.toLowerCase())) {
+      triggerToast("Bu kategori adı zaten sistemde mevcut!");
+      return;
+    }
+
+    const updated = [...customCategories, cleanName];
+    setCustomCategories(updated);
+    localStorage.setItem("degirmen_siparis_custom_categories", JSON.stringify(updated));
+    setNewItemCategory(cleanName as StockCategory);
+    setNewCategoryName("");
+    setIsAddCategoryOpen(false);
+    triggerToast(`✅ "${cleanName}" kategorisi başarıyla eklendi!`);
+  };
 
   // Kutu ve Plastik Ürünler seçilirse Paket Hacim / Gramaj değerini otomatik belirle
   useEffect(() => {
@@ -211,6 +264,22 @@ export default function SiparisAyarlariPage() {
     }
   };
 
+  const defaultCategories: string[] = [
+    "Çay Ve Bitki Çayları",
+    "Kahveler",
+    "Şuruplar",
+    "Soslar",
+    "Püreler",
+    "Toz Grubu",
+    "Ek Ürünler",
+    "Litrelik Ürünler",
+    "Yan Ürünler",
+    "Kutu Ve Plastik Ürünler",
+    ...(selectedRegion !== "degirmen-kafe" ? ["Soft İçecek Ürünleri", "Pastalar"] : [])
+  ];
+
+  const allAvailableCategories = Array.from(new Set([...defaultCategories, ...customCategories]));
+
   const displayedStockList = stockList.filter(item => {
     if (selectedRegion === "degirmen-kafe" && (item.category === "Soft İçecek Ürünleri" || item.category === "Pastalar")) {
       return false;
@@ -218,7 +287,7 @@ export default function SiparisAyarlariPage() {
     return isProductAllowedForRegion(selectedRegion, item);
   });
 
-  const categories = ["Tümü", ...Array.from(new Set(displayedStockList.map(i => i.category))).sort((a, b) => a.localeCompare(b, "tr"))];
+  const categories = ["Tümü", ...Array.from(new Set([...displayedStockList.map(i => i.category), ...customCategories])).sort((a, b) => a.localeCompare(b, "tr"))];
 
   const filteredStock = displayedStockList.filter(item => {
     const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
@@ -290,6 +359,14 @@ export default function SiparisAyarlariPage() {
             </button>
             <button
               type="button"
+              onClick={() => setIsAddCategoryOpen(!isAddCategoryOpen)}
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-indigo-500/10 border border-indigo-500/30 hover:bg-indigo-500/20 text-indigo-400 text-[10px] font-black rounded-xl transition-all cursor-pointer uppercase tracking-wider"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              {isAddCategoryOpen ? "Kapat" : "Yeni Kategori Ekle"}
+            </button>
+            <button
+              type="button"
               onClick={() => setIsAddOpen(!isAddOpen)}
               className="flex items-center gap-1.5 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-[10px] font-black rounded-xl transition-all cursor-pointer uppercase tracking-wider shadow-md shadow-orange-500/10"
             >
@@ -298,6 +375,41 @@ export default function SiparisAyarlariPage() {
             </button>
           </div>
         </div>
+
+        {/* Yeni Kategori Ekle Formu */}
+        {isAddCategoryOpen && (
+          <form 
+            onSubmit={handleAddCustomCategory}
+            className="bg-[var(--card)] border border-indigo-500/30 rounded-[2rem] p-6 shadow-md space-y-4 animate-slideDown"
+          >
+            <div className="flex items-center gap-2 border-b border-[var(--border)]/60 pb-3">
+              <Plus className="w-4 h-4 text-indigo-400" />
+              <h3 className="font-extrabold text-sm uppercase tracking-wider text-indigo-400">Yeni Sipariş Kategorisi Oluştur</h3>
+              <p className="text-[10px] text-zinc-500 ml-2">(Oluşturulan kategori sipariş menüsüne ve ürün ekleme listesine anında dahil olur)</p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-3 items-end">
+              <div className="flex-1 space-y-1.5 w-full">
+                <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block">Kategori Adı *</label>
+                <input 
+                  type="text"
+                  required
+                  placeholder="Örn: Özel Karışımlar, Kokteyl Süsleri, Sandviçler..."
+                  value={newCategoryName}
+                  onChange={(e) => setNewCategoryName(e.target.value)}
+                  className="w-full bg-[var(--background)] border border-[var(--border)] rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/30 text-[var(--foreground)]"
+                />
+              </div>
+              <button
+                type="submit"
+                className="flex items-center justify-center gap-1.5 px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold rounded-xl text-xs transition-all cursor-pointer shadow-md shadow-indigo-500/20 uppercase tracking-wider shrink-0 h-10 w-full sm:w-auto"
+              >
+                <Plus className="w-4 h-4" />
+                Kategoriyi Kaydet
+              </button>
+            </div>
+          </form>
+        )}
 
         {/* Yeni Ürün Ekle Formu */}
         {isAddOpen && (
@@ -334,22 +446,9 @@ export default function SiparisAyarlariPage() {
                   onChange={(e) => setNewItemCategory(e.target.value as StockCategory)}
                   className="w-full bg-[var(--background)] border border-[var(--border)] rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-orange-500 text-[var(--foreground)]"
                 >
-                  <option value="Çay Ve Bitki Çayları">Çay Ve Bitki Çayları</option>
-                  <option value="Kahveler">Kahveler</option>
-                  <option value="Şuruplar">Şuruplar</option>
-                  <option value="Soslar">Soslar</option>
-                  <option value="Püreler">Püreler</option>
-                  <option value="Toz Grubu">Toz Grubu</option>
-                  <option value="Ek Ürünler">Ek Ürünler</option>
-                  <option value="Litrelik Ürünler">Litrelik Ürünler</option>
-                  <option value="Yan Ürünler">Yan Ürünler</option>
-                  <option value="Kutu Ve Plastik Ürünler">Kutu Ve Plastik Ürünler</option>
-                  {selectedRegion !== "degirmen-kafe" && (
-                    <>
-                      <option value="Soft İçecek Ürünleri">Soft İçecek Ürünleri</option>
-                      <option value="Pastalar">Pastalar</option>
-                    </>
-                  )}
+                  {allAvailableCategories.map((cat) => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
                 </select>
               </div>
 
