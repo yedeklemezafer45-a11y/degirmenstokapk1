@@ -87,11 +87,11 @@ export async function seedDefaultStocksForRegion(regionId: string): Promise<void
     batch.set(itemRef, seedItem);
   }
 
-  // Göçün tamamlandığını işaretlemek için özel dokümanı yaz
-  const migrationRef = doc(db, path, "_migration_v3");
+  // Göç v4 tamamlandı işaretle
+  const migrationRef = doc(db, path, "_migration_v4");
   const migrationDoc: StockItem = {
-    id: "_migration_v3",
-    name: "MIGRATION_V3_METADATA",
+    id: "_migration_v4",
+    name: "MIGRATION_V4_METADATA",
     category: "Yan Ürünler",
     depodaBulunan: 0,
     depodanAlinan: 0,
@@ -109,39 +109,35 @@ export async function seedDefaultStocksForRegion(regionId: string): Promise<void
 
 // Eksik varsayılan ürünleri Firestore'a yükle (Yeni kategori/ürün güncellemeleri için)
 export async function ensureAllDefaultStocksExist(regionId: string, currentItems: StockItem[]): Promise<void> {
-  const hasMigrationV3 = currentItems.some(i => i.id === "_migration_v3");
-  if (hasMigrationV3) {
-    // Göç zaten yapılmış, silinen ürünleri geri yükleme
+  const currentIds = new Set(currentItems.map(i => i.id));
+  const missingItems = mockStockItems.filter(item => !currentIds.has(item.id) && !item.id.startsWith("_migration"));
+  
+  if (missingItems.length === 0) {
     return;
   }
 
-  const currentIds = new Set(currentItems.map(i => i.id));
-  const missingItems = mockStockItems.filter(item => !currentIds.has(item.id));
-  
+  console.log(`Region ${regionId} has ${missingItems.length} missing items. Seeding them...`);
   const path = getStocksCollectionPath(regionId);
   const batch = writeBatch(db);
 
-  if (missingItems.length > 0) {
-    console.log(`Region ${regionId} has ${missingItems.length} missing items. Seeding them...`);
-    for (const item of missingItems) {
-      const itemRef = doc(db, path, item.id);
-      const seedItem: StockItem = {
-        ...item,
-        depodaBulunan: 0,
-        depodanAlinan: 0,
-        quantity: 0,
-        expDate: "",
-        orderable: true
-      };
-      batch.set(itemRef, seedItem);
-    }
+  for (const item of missingItems) {
+    const itemRef = doc(db, path, item.id);
+    const seedItem: StockItem = {
+      ...item,
+      depodaBulunan: 0,
+      depodanAlinan: 0,
+      quantity: 0,
+      expDate: "",
+      orderable: true
+    };
+    batch.set(itemRef, seedItem);
   }
 
-  // Göç v3 tamamlandı işaretle
-  const migrationRef = doc(db, path, "_migration_v3");
+  // Göç v4 tamamlandı işaretle
+  const migrationRef = doc(db, path, "_migration_v4");
   const migrationDoc: StockItem = {
-    id: "_migration_v3",
-    name: "MIGRATION_V3_METADATA",
+    id: "_migration_v4",
+    name: "MIGRATION_V4_METADATA",
     category: "Yan Ürünler",
     depodaBulunan: 0,
     depodanAlinan: 0,
@@ -154,7 +150,11 @@ export async function ensureAllDefaultStocksExist(regionId: string, currentItems
   };
   batch.set(migrationRef, migrationDoc);
 
-  await batch.commit();
+  try {
+    await batch.commit();
+  } catch (err) {
+    console.error(`ensureAllDefaultStocksExist commit error for ${regionId}:`, err);
+  }
 }
 
 export function sanitizeStockItem(item: StockItem): StockItem {
@@ -200,14 +200,27 @@ export async function getAllStocks(regionId: string): Promise<StockItem[]> {
       const freshSnap = await getDocs(collection(db, path));
       const rawItems = freshSnap.docs.map(d => d.data() as StockItem);
       const items = rawItems
-        .filter(item => item.id !== "_migration_v3" && item.id !== "_migration_v2")
+        .filter(item => !item.id.startsWith("_migration"))
         .map(sanitizeStockItem);
       return [...items].sort((a, b) => a.name.localeCompare(b.name, "tr"));
     }
     const rawItems = snapshot.docs.map(d => d.data() as StockItem);
     await ensureAllDefaultStocksExist(regionId, rawItems);
-    const items = rawItems
-      .filter(item => item.id !== "_migration_v3" && item.id !== "_migration_v2")
+
+    const currentIds = new Set(rawItems.map(d => d.id));
+    const missingDefaults = mockStockItems
+      .filter(item => !currentIds.has(item.id) && !item.id.startsWith("_migration"))
+      .map(item => ({
+        ...item,
+        depodaBulunan: 0,
+        depodanAlinan: 0,
+        quantity: 0,
+        expDate: "",
+        orderable: true
+      }));
+
+    const items = [...rawItems, ...missingDefaults]
+      .filter(item => !item.id.startsWith("_migration"))
       .map(sanitizeStockItem);
     return [...items].sort((a, b) => a.name.localeCompare(b.name, "tr"));
   } catch (err) {
@@ -232,17 +245,34 @@ export function subscribeToStocks(
         seedDefaultStocksForRegion(regionId).then(() => {
           // İlk kez tetiklendiğinde seed sonrası Snapshot zaten tekrar ateşlenecektir.
         });
+        const initial = [...mockStockItems].map(sanitizeStockItem).sort((a, b) => a.name.localeCompare(b.name, "tr"));
+        callback(initial);
         return;
       }
       const rawItems = snapshot.docs.map(d => d.data() as StockItem);
-      // Arka planda eksik olanları ekle
-      ensureAllDefaultStocksExist(regionId, rawItems).then(() => {
-        const items = rawItems
-          .filter(item => item.id !== "_migration_v3" && item.id !== "_migration_v2")
-          .map(sanitizeStockItem);
-        const sorted = [...items].sort((a, b) => a.name.localeCompare(b.name, "tr"));
-        callback(sorted);
-      });
+      
+      const currentIds = new Set(rawItems.map(d => d.id));
+      const missingDefaults = mockStockItems
+        .filter(item => !currentIds.has(item.id) && !item.id.startsWith("_migration"))
+        .map(item => ({
+          ...item,
+          depodaBulunan: 0,
+          depodanAlinan: 0,
+          quantity: 0,
+          expDate: "",
+          orderable: true
+        }));
+
+      // Arka planda eksik olanları veritabanına ekle
+      if (missingDefaults.length > 0) {
+        ensureAllDefaultStocksExist(regionId, rawItems).catch(e => console.error("ensureAllDefaultStocksExist error:", e));
+      }
+
+      const items = [...rawItems, ...missingDefaults]
+        .filter(item => !item.id.startsWith("_migration"))
+        .map(sanitizeStockItem);
+      const sorted = [...items].sort((a, b) => a.name.localeCompare(b.name, "tr"));
+      callback(sorted);
     },
     (error) => {
       console.error(`subscribeToStocks (${regionId}) hatası:`, error);

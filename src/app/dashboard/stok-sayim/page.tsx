@@ -910,7 +910,7 @@ export default function StokSayimPage() {
             { id: 2, label: "Kahveler", categories: ["Kahveler"] },
             { id: 3, label: "Şurup & Sos & Püre", categories: ["Şuruplar", "Soslar", "Püreler"] },
             { id: 4, label: "Litrelik Ürünler", categories: ["Litrelik Ürünler"] },
-            { id: 5, label: "Diğer Grubu", categories: ["Toz Grubu", "Ek Ürünler", "Yan Ürünler", "Soft İçecek Ürünleri", "Pastalar"] }
+            { id: 5, label: "Diğer Grubu", categories: ["Toz Grubu", "Ek Ürünler", "Yan Ürünler", "Soft İçecek Ürünleri", "Pastalar", "Kutu Ve Plastik Ürünler"] }
           ];
 
           const isProductCounted = (item: StockItem) => {

@@ -364,7 +364,33 @@ export default function StokPage() {
 
   const criticalCount = displayedStockList.filter(item => item.quantity <= item.minLimit).length;
 
-  const categories = ["Tümü", ...Array.from(new Set(displayedStockList.map(i => i.category))).sort((a, b) => a.localeCompare(b, "tr"))];
+  const STOCK_CATEGORY_ORDER = [
+    "Şuruplar",
+    "Kahveler",
+    "Soslar",
+    "Toz Grubu",
+    "Püreler",
+    "Çay Ve Bitki Çayları",
+    "Ek Ürünler",
+    "Litrelik Ürünler",
+    "Yan Ürünler",
+    "Soft İçecek Ürünleri",
+    "Pastalar",
+    "Kutu Ve Plastik Ürünler"
+  ];
+
+  const sortStockCategories = (cats: string[]): string[] => {
+    return [...cats].sort((a, b) => {
+      const idxA = STOCK_CATEGORY_ORDER.indexOf(a);
+      const idxB = STOCK_CATEGORY_ORDER.indexOf(b);
+      if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+      if (idxA !== -1) return -1;
+      if (idxB !== -1) return 1;
+      return a.localeCompare(b, "tr");
+    });
+  };
+
+  const categories = ["Tümü", ...sortStockCategories(Array.from(new Set(displayedStockList.map(i => i.category))))];
 
   const allAvailableCategories = Array.from(new Set([
     "Çay Ve Bitki Çayları",
@@ -376,9 +402,9 @@ export default function StokPage() {
     "Ek Ürünler",
     "Litrelik Ürünler",
     "Yan Ürünler",
-    "Kutu Ve Plastik Ürünler",
     "Soft İçecek Ürünleri",
     "Pastalar",
+    "Kutu Ve Plastik Ürünler",
     ...stockList.map(i => i.category)
   ])).sort((a, b) => a.localeCompare(b, "tr"));
 
