@@ -30,6 +30,31 @@ import { saveReport, MonthlyReportArchive } from "@/lib/reportService";
 import { logUserAction } from "@/lib/auditLogService";
 import { useRouter } from "next/navigation";
 
+export const STOCK_CATEGORY_ORDER: string[] = [
+  "Şuruplar",
+  "Kahveler",
+  "Soslar",
+  "Toz Grubu",
+  "Püreler",
+  "Çay Ve Bitki Çayları",
+  "Ek Ürünler",
+  "Litrelik Ürünler",
+  "Yan Ürünler",
+  "Soft İçecek Ürünleri",
+  "Pastalar",
+  "Kutu Ve Plastik Ürünler"
+];
+
+export function sortStockCategories(cats: string[]): string[] {
+  return [...cats].sort((a, b) => {
+    const idxA = STOCK_CATEGORY_ORDER.indexOf(a);
+    const idxB = STOCK_CATEGORY_ORDER.indexOf(b);
+    if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+    if (idxA !== -1) return -1;
+    if (idxB !== -1) return 1;
+    return a.localeCompare(b, "tr");
+  });
+}
 
 export default function StokSayimPage() {
   const router = useRouter();
@@ -342,13 +367,24 @@ export default function StokSayimPage() {
     return isProductAllowedForRegion(selectedRegion, item);
   });
 
-  const categories = ["Tümü", ...Array.from(new Set(displayedStockList.map((i) => i.category))).sort((a, b) => a.localeCompare(b, "tr"))];
+  const categories = ["Tümü", ...sortStockCategories(Array.from(new Set(displayedStockList.map((i) => i.category))))];
 
-  const filteredStocks = displayedStockList.filter((item) => {
-    const matchesCategory = selectedCategory === "Tümü" || item.category === selectedCategory;
-    const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
-  });
+  const filteredStocks = displayedStockList
+    .filter((item) => {
+      const matchesCategory = selectedCategory === "Tümü" || item.category === selectedCategory;
+      const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
+      return matchesCategory && matchesSearch;
+    })
+    .sort((a, b) => {
+      const idxA = STOCK_CATEGORY_ORDER.indexOf(a.category);
+      const idxB = STOCK_CATEGORY_ORDER.indexOf(b.category);
+      const orderA = idxA !== -1 ? idxA : 999;
+      const orderB = idxB !== -1 ? idxB : 999;
+      if (orderA !== orderB) {
+        return orderA - orderB;
+      }
+      return a.name.localeCompare(b.name, "tr");
+    });
 
   // Onay Kutusu Manuel Değiştirme
   const toggleItemCheck = (id: string) => {
@@ -516,7 +552,10 @@ export default function StokSayimPage() {
       });
 
       let itemNo = 1;
-      Object.entries(grouped).forEach(([catName, items]) => {
+      const sortedCatNames = sortStockCategories(Object.keys(grouped));
+      sortedCatNames.forEach(catName => {
+        const items = grouped[catName];
+        if (!items || items.length === 0) return;
         content += `
           <tr class="cat-row">
             <td colspan="5" class="text-left" style="padding-left: 8px;">• ${catName}</td>
@@ -1054,7 +1093,8 @@ export default function StokSayimPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[var(--border)]/40 text-xs">
-                  {filteredStocks.map((item) => {
+                  {filteredStocks.map((item, idx) => {
+                    const isFirstOfCategory = selectedCategory === "Tümü" && (idx === 0 || filteredStocks[idx - 1].category !== item.category);
                     const { displayWeight } = extractWeightAndUnit(item);
                     const isLiquid = isLiquidItem(item);
                     const unitLabel = isLiquid 
@@ -1076,103 +1116,119 @@ export default function StokSayimPage() {
                     const aciktaHasDot = String(aciktaVal).includes(".");
 
                     return (
-                      <tr 
-                        key={item.id} 
-                        className={`transition-colors ${
-                          isChecked 
-                            ? "bg-emerald-500/5 hover:bg-emerald-500/10 border-l-4 border-l-emerald-500" 
-                            : "hover:bg-[var(--background)]/35"
-                        }`}
-                      >
-                        {/* İşlem Yapıldı Onay Kutusu */}
-                        <td className="py-4 px-3 text-center">
-                          <button
-                            type="button"
-                            onClick={() => toggleItemCheck(item.id)}
-                            className={`p-1 rounded-lg transition-transform hover:scale-110 cursor-pointer ${
-                              isChecked ? "text-emerald-500" : "text-zinc-600 hover:text-zinc-400"
-                            }`}
-                            title={isChecked ? "İşlem yapıldı olarak işaretli" : "İşlem yapıldı olarak işaretle"}
-                          >
-                            {isChecked ? (
-                              <CheckCircle2 className="w-5 h-5 fill-emerald-500 text-zinc-950" />
-                            ) : (
-                              <Square className="w-5 h-5 stroke-[1.5]" />
-                            )}
-                          </button>
-                        </td>
-
-                        <td className="py-4 px-4 font-semibold text-zinc-800 dark:text-zinc-200">
-                          <div className="flex items-center gap-2">
-                            <span>{item.name}</span>
-                            {isChecked && (
-                              <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                                İşlem Yapıldı
-                              </span>
-                            )}
-                          </div>
-                        </td>
-
-                        <td className="py-4 px-4">
-                          <span className={`px-2.5 py-1 rounded-xl text-[10px] font-bold border ${
-                            isLiquid 
-                              ? "bg-blue-500/10 text-blue-400 border-blue-500/20" 
-                              : "bg-[var(--background)] border-[var(--border)] text-zinc-400"
-                          }`}>
-                            {item.category}
-                          </span>
-                        </td>
-
-                        <td className="py-4 px-4 text-center font-mono text-zinc-400">
-                          {displayWeight}
-                        </td>
-                        
-                        {/* Sayılan Adet Input */}
-                        <td className="py-4 px-4 text-center">
-                          <div className="flex flex-col items-center justify-center">
-                            <input
-                              type="text"
-                              value={sayilanVal}
-                              onChange={(e) => handleSayilanChange(item.id, e.target.value)}
-                              className={`w-24 bg-[var(--background)] border rounded-xl px-3 py-1.5 text-center font-mono font-bold focus:outline-none focus:ring-1 focus:ring-orange-500 ${
-                                sayilanHasDot 
-                                  ? "text-red-500 border-red-500/50 focus:ring-red-500" 
-                                  : "text-orange-500 border-[var(--border)]"
+                      <React.Fragment key={item.id}>
+                        {isFirstOfCategory && (
+                          <tr className="bg-orange-500/10 dark:bg-orange-950/30 border-y border-orange-500/20">
+                            <td colSpan={7} className="py-2.5 px-4">
+                              <div className="flex items-center gap-2">
+                                <div className="w-2.5 h-2.5 rounded-full bg-orange-500 animate-pulse" />
+                                <span className="text-xs font-black uppercase tracking-wider text-orange-500 dark:text-orange-400">
+                                  {item.category}
+                                </span>
+                                <span className="text-[10px] text-zinc-500 font-bold ml-1">
+                                  ({filteredStocks.filter(i => i.category === item.category).length} Ürün)
+                                </span>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                        <tr 
+                          className={`transition-colors ${
+                            isChecked 
+                              ? "bg-emerald-500/5 hover:bg-emerald-500/10 border-l-4 border-l-emerald-500" 
+                              : "hover:bg-[var(--background)]/35"
+                          }`}
+                        >
+                          {/* İşlem Yapıldı Onay Kutusu */}
+                          <td className="py-4 px-3 text-center">
+                            <button
+                              type="button"
+                              onClick={() => toggleItemCheck(item.id)}
+                              className={`p-1 rounded-lg transition-transform hover:scale-110 cursor-pointer ${
+                                isChecked ? "text-emerald-500" : "text-zinc-600 hover:text-zinc-400"
                               }`}
-                              title={sayilanHasDot ? "Ondalıklar için lütfen virgül (,) kullanın!" : ""}
-                            />
-                            {item.name.includes("KATLA BALLA") ? (
-                              <span className="text-[9px] text-zinc-500 font-bold uppercase mt-1">Kutu</span>
-                            ) : null}
-                          </div>
-                        </td>
+                              title={isChecked ? "İşlem yapıldı olarak işaretli" : "İşlem yapıldı olarak işaretle"}
+                            >
+                              {isChecked ? (
+                                <CheckCircle2 className="w-5 h-5 fill-emerald-500 text-zinc-950" />
+                              ) : (
+                                <Square className="w-5 h-5 stroke-[1.5]" />
+                              )}
+                            </button>
+                          </td>
 
-                        {/* Açıkta Miktar Input */}
-                        <td className="py-4 px-4 text-center">
-                          <div className="relative inline-block w-28">
-                            <input
-                              type="text"
-                              placeholder="0"
-                              value={aciktaVal}
-                              onChange={(e) => handleAciktaChange(item.id, e.target.value)}
-                              className={`w-full bg-[var(--background)] border rounded-xl px-3 py-1.5 text-center font-mono focus:outline-none focus:ring-1 focus:ring-orange-500 ${
-                                aciktaHasDot 
-                                  ? "text-red-500 border-red-500/50 font-bold focus:ring-red-500" 
-                                  : "text-zinc-350 border-[var(--border)]"
-                              }`}
-                              title={aciktaHasDot ? "Ondalıklar için lütfen virgül (,) kullanın!" : ""}
-                            />
-                            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-zinc-500 font-bold pointer-events-none">
-                              {openLabel}
+                          <td className="py-4 px-4 font-semibold text-zinc-800 dark:text-zinc-200">
+                            <div className="flex items-center gap-2">
+                              <span>{item.name}</span>
+                              {isChecked && (
+                                <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                  İşlem Yapıldı
+                                </span>
+                              )}
+                            </div>
+                          </td>
+
+                          <td className="py-4 px-4">
+                            <span className={`px-2.5 py-1 rounded-xl text-[10px] font-bold border ${
+                              isLiquid 
+                                ? "bg-blue-500/10 text-blue-400 border-blue-500/20" 
+                                : "bg-[var(--background)] border-[var(--border)] text-zinc-400"
+                            }`}>
+                              {item.category}
                             </span>
-                          </div>
-                        </td>
+                          </td>
 
-                        {/* Toplam Karşılığı */}
-                        <td className="py-4 px-4 text-right font-mono font-bold text-emerald-400 text-sm">
-                          {formatTotalDisplay(item, countedQty, openUnits)}
-                        </td>
-                      </tr>
+                          <td className="py-4 px-4 text-center font-mono text-zinc-400">
+                            {displayWeight}
+                          </td>
+                          
+                          {/* Sayılan Adet Input */}
+                          <td className="py-4 px-4 text-center">
+                            <div className="flex flex-col items-center justify-center">
+                              <input
+                                type="text"
+                                value={sayilanVal}
+                                onChange={(e) => handleSayilanChange(item.id, e.target.value)}
+                                className={`w-24 bg-[var(--background)] border rounded-xl px-3 py-1.5 text-center font-mono font-bold focus:outline-none focus:ring-1 focus:ring-orange-500 ${
+                                  sayilanHasDot 
+                                    ? "text-red-500 border-red-500/50 focus:ring-red-500" 
+                                    : "text-orange-500 border-[var(--border)]"
+                                }`}
+                                title={sayilanHasDot ? "Ondalıklar için lütfen virgül (,) kullanın!" : ""}
+                              />
+                              {item.name.includes("KATLA BALLA") ? (
+                                <span className="text-[9px] text-zinc-500 font-bold uppercase mt-1">Kutu</span>
+                              ) : null}
+                            </div>
+                          </td>
+
+                          {/* Açıkta Miktar Input */}
+                          <td className="py-4 px-4 text-center">
+                            <div className="relative inline-block w-28">
+                              <input
+                                type="text"
+                                placeholder="0"
+                                value={aciktaVal}
+                                onChange={(e) => handleAciktaChange(item.id, e.target.value)}
+                                className={`w-full bg-[var(--background)] border rounded-xl px-3 py-1.5 text-center font-mono focus:outline-none focus:ring-1 focus:ring-orange-500 ${
+                                  aciktaHasDot 
+                                    ? "text-red-500 border-red-500/50 font-bold focus:ring-red-500" 
+                                    : "text-zinc-350 border-[var(--border)]"
+                                }`}
+                                title={aciktaHasDot ? "Ondalıklar için lütfen virgül (,) kullanın!" : ""}
+                              />
+                              <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-zinc-500 font-bold pointer-events-none">
+                                {openLabel}
+                              </span>
+                            </div>
+                          </td>
+
+                          {/* Toplam Karşılığı */}
+                          <td className="py-4 px-4 text-right font-mono font-bold text-emerald-400 text-sm">
+                            {formatTotalDisplay(item, countedQty, openUnits)}
+                          </td>
+                        </tr>
+                      </React.Fragment>
                     );
                   })}
                 </tbody>

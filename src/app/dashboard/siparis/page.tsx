@@ -245,6 +245,32 @@ export default function SiparisPage() {
     triggerToast("Soft İçecek siparişi için WhatsApp'a yönlendiriliyorsunuz... 💬");
   };
 
+  const STOCK_CATEGORY_ORDER = [
+    "Şuruplar",
+    "Kahveler",
+    "Soslar",
+    "Toz Grubu",
+    "Püreler",
+    "Çay Ve Bitki Çayları",
+    "Ek Ürünler",
+    "Litrelik Ürünler",
+    "Yan Ürünler",
+    "Soft İçecek Ürünleri",
+    "Pastalar",
+    "Kutu Ve Plastik Ürünler"
+  ];
+
+  const sortStockCategories = (cats: string[]): string[] => {
+    return [...cats].sort((a, b) => {
+      const idxA = STOCK_CATEGORY_ORDER.indexOf(a);
+      const idxB = STOCK_CATEGORY_ORDER.indexOf(b);
+      if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+      if (idxA !== -1) return -1;
+      if (idxB !== -1) return 1;
+      return a.localeCompare(b, "tr");
+    });
+  };
+
   const displayedStockList = stockList.filter(item => {
     if (selectedRegion === "degirmen-kafe" && (item.category === "Soft İçecek Ürünleri" || item.category === "Pastalar")) {
       return false;
@@ -254,13 +280,24 @@ export default function SiparisPage() {
 
   const orderableStock = displayedStockList.filter(item => item.orderable !== false);
 
-  const categories = ["Tümü", ...Array.from(new Set(orderableStock.map(i => i.category))).sort((a, b) => a.localeCompare(b, "tr"))];
+  const categories = ["Tümü", ...sortStockCategories(Array.from(new Set(orderableStock.map(i => i.category))))];
 
-  const filteredStock = orderableStock.filter(item => {
-    const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === "Tümü" || item.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
+  const filteredStock = orderableStock
+    .filter(item => {
+      const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesCategory = selectedCategory === "Tümü" || item.category === selectedCategory;
+      return matchesSearch && matchesCategory;
+    })
+    .sort((a, b) => {
+      const idxA = STOCK_CATEGORY_ORDER.indexOf(a.category);
+      const idxB = STOCK_CATEGORY_ORDER.indexOf(b.category);
+      const orderA = idxA !== -1 ? idxA : 999;
+      const orderB = idxB !== -1 ? idxB : 999;
+      if (orderA !== orderB) {
+        return orderA - orderB;
+      }
+      return a.name.localeCompare(b.name, "tr");
+    });
 
   // Kritik Stoktaki Ürünler (Sipariş edilebilir olanlar arasından)
   const criticalItems = orderableStock.filter(item => item.quantity <= item.minLimit);

@@ -15,7 +15,11 @@ import {
   Package,
   Check,
   ArrowUpRight,
-  Share2
+  Share2,
+  Edit3,
+  X,
+  Save,
+  Loader2
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { StockItem, isProductAllowedForRegion } from "@/lib/stockStore";
@@ -41,6 +45,15 @@ export default function StokPage() {
   const [showNotifDropdown, setShowNotifDropdown] = useState(false);
   const [announcement, setAnnouncement] = useState<Announcement | null>(null);
   const [sktWarnings, setSktWarnings] = useState<{ id: string; name: string; category: string; daysLeft: number }[]>([]);
+
+  // Ürün Kategori & Gramaj Düzenleme State'leri (Yönetici)
+  const [editingItem, setEditingItem] = useState<StockItem | null>(null);
+  const [editCategory, setEditCategory] = useState<string>("");
+  const [editWeightInfo, setEditWeightInfo] = useState<string>("");
+  const [editName, setEditName] = useState<string>("");
+  const [editUnit, setEditUnit] = useState<string>("");
+  const [editMinLimit, setEditMinLimit] = useState<string>("0");
+  const [isUpdatingProduct, setIsUpdatingProduct] = useState(false);
 
   const handleSharePage = async () => {
     const shareData = {
@@ -286,6 +299,56 @@ export default function StokPage() {
     }
   };
 
+  // Ürünü Düzenlemeye Başla
+  const handleStartEdit = (item: StockItem) => {
+    setEditingItem(item);
+    setEditName(item.name);
+    setEditCategory(item.category);
+    setEditWeightInfo(item.weightInfo || "1.000 kg");
+    setEditUnit(item.unit || "Adet");
+    setEditMinLimit(String(item.minLimit || 0));
+  };
+
+  // Düzenlenen Ürünü Kaydet
+  const handleSaveEditedProduct = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingItem) return;
+    if (!editName.trim()) {
+      setToastMessage("⚠️ Ürün adı boş bırakılamaz!");
+      setTimeout(() => setToastMessage(null), 3000);
+      return;
+    }
+
+    setIsUpdatingProduct(true);
+    const updated: StockItem = {
+      ...editingItem,
+      name: editName.trim(),
+      category: editCategory as any,
+      weightInfo: editWeightInfo.trim() || "1.000 kg",
+      unit: editUnit,
+      minLimit: parseFloat(editMinLimit) || 0
+    };
+
+    try {
+      await saveStockItem(selectedRegion, updated);
+      setStockList(prev => prev.map(i => i.id === updated.id ? updated : i));
+      await logUserAction(
+        "Ürün Bilgisi Düzenlendi",
+        "STOK",
+        `"${updated.name}" ürününün kategorisi (${updated.category}) ve paket gramajı (${updated.weightInfo}) güncellendi.`
+      );
+      setToastMessage(`✅ "${updated.name}" başarıyla güncellendi!`);
+      setTimeout(() => setToastMessage(null), 3000);
+      setEditingItem(null);
+    } catch (err) {
+      console.error("Ürün güncelleme hatası:", err);
+      setToastMessage("⚠️ Ürün güncellenirken hata oluştu!");
+      setTimeout(() => setToastMessage(null), 3000);
+    } finally {
+      setIsUpdatingProduct(false);
+    }
+  };
+
   const displayedStockList = stockList.filter(item => {
     if (selectedRegion === "degirmen-kafe" && (item.category === "Soft İçecek Ürünleri" || item.category === "Pastalar")) {
       return false;
@@ -302,6 +365,22 @@ export default function StokPage() {
   const criticalCount = displayedStockList.filter(item => item.quantity <= item.minLimit).length;
 
   const categories = ["Tümü", ...Array.from(new Set(displayedStockList.map(i => i.category))).sort((a, b) => a.localeCompare(b, "tr"))];
+
+  const allAvailableCategories = Array.from(new Set([
+    "Çay Ve Bitki Çayları",
+    "Kahveler",
+    "Şuruplar",
+    "Soslar",
+    "Püreler",
+    "Toz Grubu",
+    "Ek Ürünler",
+    "Litrelik Ürünler",
+    "Yan Ürünler",
+    "Kutu Ve Plastik Ürünler",
+    "Soft İçecek Ürünleri",
+    "Pastalar",
+    ...stockList.map(i => i.category)
+  ])).sort((a, b) => a.localeCompare(b, "tr"));
 
   return (
     <div className="min-h-screen flex flex-col bg-[var(--background)] text-[var(--foreground)] transition-colors duration-300">
@@ -616,13 +695,25 @@ export default function StokPage() {
 
                       <div className="space-y-1">
                         <div className="flex items-center justify-between">
-                          <span className="text-[10px] uppercase font-semibold tracking-wider text-zinc-400">
-                            {item.category}
-                          </span>
-                          {item.weightInfo && (
-                            <span className="text-[9px] bg-zinc-500/10 text-zinc-400 px-2 py-0.5 rounded font-black border border-zinc-500/10">
-                              {item.weightInfo}
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="text-[10px] uppercase font-semibold tracking-wider text-zinc-400">
+                              {item.category}
                             </span>
+                            {item.weightInfo && (
+                              <span className="text-[9px] bg-zinc-500/10 text-zinc-400 px-2 py-0.5 rounded font-black border border-zinc-500/10">
+                                {item.weightInfo}
+                              </span>
+                            )}
+                          </div>
+                          {(userRole === "admin" || userRole === "yonetici" || isCorrectionMode) && (
+                            <button
+                              type="button"
+                              onClick={() => handleStartEdit(item)}
+                              className="p-1.5 rounded-xl hover:bg-orange-500/15 text-zinc-400 hover:text-orange-500 transition-all cursor-pointer border border-transparent hover:border-orange-500/30"
+                              title="Kategori ve Gramaj / Paket Hacmini Düzenle"
+                            >
+                              <Edit3 className="w-3.5 h-3.5" />
+                            </button>
                           )}
                         </div>
                         <h4 className="font-bold text-base tracking-tight pr-16">{item.name}</h4>
@@ -744,6 +835,151 @@ export default function StokPage() {
           <span>© 2026 Değirmen Cafe. Tüm hakları saklıdır.</span>
         </div>
       </footer>
+
+      {/* Ürün Kategori & Gramaj Düzenleme Modalı (Yönetici) */}
+      {editingItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
+          <div className="w-full max-w-lg bg-[var(--card)] border border-[var(--border)] rounded-[2.5rem] p-6 sm:p-8 shadow-2xl relative space-y-5 animate-slideUp">
+            
+            {/* Kapat Butonu */}
+            <button
+              onClick={() => setEditingItem(null)}
+              className="absolute top-5 right-5 p-2 rounded-full hover:bg-[var(--foreground)]/10 text-zinc-400 hover:text-[var(--foreground)] cursor-pointer transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-2.5 border-b border-[var(--border)]/60 pb-4">
+              <div className="w-9 h-9 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-orange-500">
+                <Edit3 className="w-5 h-5" />
+              </div>
+              <div>
+                <h2 className="text-base font-black tracking-tight text-[var(--foreground)]">Ürün Bilgilerini Düzenle</h2>
+                <p className="text-[11px] text-zinc-500">Kategori, paket hacmi / gramaj ve birim bilgilerini güncelleyin.</p>
+              </div>
+            </div>
+
+            <form onSubmit={handleSaveEditedProduct} className="space-y-4">
+              {/* Ürün Adı */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">Ürün Adı *</label>
+                <input 
+                  type="text"
+                  required
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  className="w-full bg-[var(--background)] border border-[var(--border)] rounded-xl px-4 py-2.5 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-orange-500/30 text-[var(--foreground)]"
+                />
+              </div>
+
+              {/* Kategori Seçimi */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">Kategori *</label>
+                <select
+                  value={editCategory}
+                  onChange={(e) => setEditCategory(e.target.value)}
+                  className="w-full bg-[var(--background)] border border-[var(--border)] rounded-xl px-4 py-2.5 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-orange-500/30 text-[var(--foreground)] cursor-pointer"
+                >
+                  {allAvailableCategories.map((cat) => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
+                <p className="text-[9px] text-zinc-500">Yanlış kategoride olan ürünü doğru kategoriye anında taşıyabilirsiniz.</p>
+              </div>
+
+              {/* Paket Hacmi / Gramajı */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">Paket Hacmi / Gramaj Bilgisi</label>
+                <input 
+                  type="text"
+                  placeholder="Örn: 0.970 kg, 1.000 kg, 2.500 kg, 1 Dilim..."
+                  value={editWeightInfo}
+                  onChange={(e) => setEditWeightInfo(e.target.value)}
+                  className="w-full bg-[var(--background)] border border-[var(--border)] rounded-xl px-4 py-2.5 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-orange-500/30 text-[var(--foreground)]"
+                />
+
+                {/* Hızlı Gramaj Seçim Butonları */}
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  <span className="text-[9px] font-bold text-zinc-500 self-center mr-1">Örnekler:</span>
+                  {[
+                    "0.970 kg", 
+                    "1.000 kg", 
+                    "2.500 kg", 
+                    "0.500 kg", 
+                    "0.250 kg", 
+                    "1 Dilim", 
+                    "1 Adet", 
+                    "0.200 Lt", 
+                    "0.330 Lt", 
+                    "Koli İçerisinde 1000 adet"
+                  ].map((preset) => (
+                    <button
+                      key={preset}
+                      type="button"
+                      onClick={() => setEditWeightInfo(preset)}
+                      className="px-2 py-1 rounded-lg text-[9px] font-bold bg-[var(--background)] border border-[var(--border)] hover:border-orange-500/40 text-zinc-400 hover:text-orange-400 transition-all cursor-pointer"
+                    >
+                      {preset}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 pt-1">
+                {/* Ölçü Birimi */}
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">Ölçü Birimi</label>
+                  <select
+                    value={editUnit}
+                    onChange={(e) => setEditUnit(e.target.value)}
+                    className="w-full bg-[var(--background)] border border-[var(--border)] rounded-xl px-3 py-2 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-orange-500/30 text-[var(--foreground)]"
+                  >
+                    <option value="Adet">Adet</option>
+                    <option value="Şişe">Şişe</option>
+                    <option value="Paket">Paket</option>
+                    <option value="Koli">Koli</option>
+                    <option value="kg">Kilogram (kg)</option>
+                    <option value="Litre">Litre</option>
+                    <option value="Kutu">Kutu</option>
+                    <option value="Kavanoz">Kavanoz</option>
+                  </select>
+                </div>
+
+                {/* Kritik Limit */}
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">Kritik Stok Sınırı</label>
+                  <input 
+                    type="number"
+                    min="0"
+                    value={editMinLimit}
+                    onChange={(e) => setEditMinLimit(e.target.value)}
+                    className="w-full bg-[var(--background)] border border-[var(--border)] rounded-xl px-3 py-2 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-orange-500/30 text-[var(--foreground)]"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4 border-t border-[var(--border)]/60">
+                <button
+                  type="button"
+                  onClick={() => setEditingItem(null)}
+                  className="px-4 py-2.5 rounded-xl text-xs font-bold border border-[var(--border)] hover:bg-[var(--foreground)]/5 text-zinc-400 cursor-pointer"
+                >
+                  İptal
+                </button>
+                <button
+                  type="submit"
+                  disabled={isUpdatingProduct}
+                  className="flex items-center gap-2 px-6 py-2.5 bg-orange-600 hover:bg-orange-700 text-white font-extrabold rounded-xl text-xs shadow-lg shadow-orange-600/20 cursor-pointer transition-all disabled:opacity-50"
+                >
+                  {isUpdatingProduct ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                  {isUpdatingProduct ? "Kaydediliyor..." : "Değişiklikleri Kaydet"}
+                </button>
+              </div>
+            </form>
+
+          </div>
+        </div>
+      )}
 
       {/* Toast Bildirim */}
       {toastMessage && (
