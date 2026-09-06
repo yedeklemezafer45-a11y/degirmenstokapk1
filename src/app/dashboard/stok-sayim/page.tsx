@@ -809,7 +809,11 @@ export default function StokSayimPage() {
             <ChevronLeft className="w-5 h-5" />
           </button>
           <div className="w-16 h-16 flex items-center justify-center">
-            <img src="/logo.png" alt="Değirmen Cafe Logo" className="w-full h-full object-contain" />
+            {selectedRegion.toLowerCase().includes("vargel") || selectedRegionName.toLowerCase().includes("vargel") ? (
+              <img src="/wargel-logo.png" alt="Wargel Kafe Logo" className="w-full h-full object-contain" />
+            ) : (
+              <img src="/logo.png" alt="Değirmen Cafe Logo" className="w-full h-full object-contain" />
+            )}
           </div>
           <div>
             <h1 className="font-bold text-lg tracking-tight">Fiziki Stok Sayımı & Gramaj / Litre Hesabı</h1>
