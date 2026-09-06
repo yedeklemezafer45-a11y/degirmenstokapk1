@@ -15,7 +15,9 @@ import {
   Music,
   ArrowUpRight,
   Share2,
-  ShoppingCart
+  ShoppingCart,
+  Boxes,
+  Users
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -131,239 +133,143 @@ export default function AyarlarPage() {
       </header>
 
       {/* Gövde - Ayarlar Kart Menüsü */}
-      <main className="flex-1 max-w-5xl w-full mx-auto p-6 flex flex-col justify-center items-center space-y-12">
+      <main className="flex-1 max-w-6xl w-full mx-auto p-6 sm:p-8 flex flex-col justify-center items-center space-y-8 animate-fadeIn">
         <div className="text-center space-y-2">
-          <h2 className="text-2xl font-bold">Ayarlar Modülleri</h2>
-          <p className="text-sm text-zinc-500">Yapılandırmak istediğiniz ayar grubunu seçin.</p>
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-500/10 border border-orange-500/20 text-orange-500 text-[10px] font-black uppercase tracking-widest">
+            <Boxes className="w-3.5 h-3.5" />
+            Yönetim & Yapılandırma
+          </div>
+          <h2 className="text-2xl sm:text-3xl font-black text-zinc-900 dark:text-white tracking-tight">
+            Sistem Ayarları Modülleri
+          </h2>
+          <p className="text-xs sm:text-sm text-zinc-500 max-w-md mx-auto">
+            Yapılandırmak istediğiniz ayar grubunu seçin. Tüm modüller anlık olarak canlı sistemle senkronizedir.
+          </p>
         </div>
 
-        {/* Ayarlar İçindeki Özel Modül Kartları */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 w-full justify-items-center py-6 max-w-4xl">
+        {/* İkon Tabanlı Modern UI/UX Kartlar Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-5xl justify-items-stretch">
           
-          {/* Kart 1: Stok Listesi Kontrolü */}
-          <div 
-            onClick={() => router.push("/dashboard/ayarlar/stok-kontrolu")}
-            className="custom-border-card"
-            style={{
-              boxShadow: "0 10px 30px -10px rgba(234, 88, 12, 0.3), inset 0 0 0 1px rgba(234, 88, 12, 0.2)"
-            }}
-          >
-            <svg className="custom-card-border-svg">
-              <rect style={{ stroke: "#ea580c", strokeDashoffset: "0" }} />
-            </svg>
+          {[
+            {
+              id: "stok-kontrolu",
+              title: "Stok Listesi Kontrolü",
+              description: "Hammadde tanımlama, kategori yönetimi, asgari stok ve birim ayarları.",
+              path: "/dashboard/ayarlar/stok-kontrolu",
+              icon: Boxes,
+              badge: "ENVANTER",
+              iconBg: "bg-orange-500/10 text-orange-500 border-orange-500/20",
+              glowColor: "rgba(249, 115, 22, 0.2)"
+            },
+            {
+              id: "recete-kontrolu",
+              title: "Reçeteler Listesi Kontrolü",
+              description: "Barista hazırlık rehberi, standart gramajlar ve yeni içecek reçete kataloğu.",
+              path: "/dashboard/ayarlar/recete-kontrolu",
+              icon: BookOpen,
+              badge: "REÇETE",
+              iconBg: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
+              glowColor: "rgba(16, 185, 129, 0.2)"
+            },
+            {
+              id: "skt-kontrolu",
+              title: "SKT Takip Kontrolü",
+              description: "Son tüketim tarihi kritik eşikleri, uyarı süreleri ve parti takibi.",
+              path: "/dashboard/ayarlar/skt-kontrolu",
+              icon: Calendar,
+              badge: "GIDA GÜVENLİĞİ",
+              iconBg: "bg-rose-500/10 text-rose-500 border-rose-500/20",
+              glowColor: "rgba(244, 63, 94, 0.2)"
+            },
+            {
+              id: "personel-yetkileri",
+              title: "Yetki & Personel Ayarları",
+              description: "Kullanıcı hesapları, şube erişimleri, şifreler ve rol bazlı menü izinleri.",
+              path: "/dashboard/ayarlar/personel-yetkileri",
+              icon: Users,
+              badge: "GÜVENLİK",
+              iconBg: "bg-purple-500/10 text-purple-500 border-purple-500/20",
+              glowColor: "rgba(168, 85, 247, 0.2)"
+            },
+            {
+              id: "islem-gecmisi",
+              title: "Kullanıcı İşlem Geçmişi",
+              description: "Sistemde yapılan sayım, sipariş ve stok devir hareketlerinin denetim kayıtları.",
+              path: "/dashboard/ayarlar/islem-gecmisi",
+              icon: History,
+              badge: "DENETİM LOGU",
+              iconBg: "bg-blue-500/10 text-blue-500 border-blue-500/20",
+              glowColor: "rgba(59, 130, 246, 0.2)"
+            },
+            {
+              id: "duyuru-yonetimi",
+              title: "Duyuru Yönetimi",
+              description: "Ana ekranda tüm personele gösterilen anlık sistem ve vardiya duyuruları.",
+              path: "/dashboard/ayarlar/duyuru-yonetimi",
+              icon: Megaphone,
+              badge: "İLETİŞİM",
+              iconBg: "bg-amber-500/10 text-amber-500 border-amber-500/20",
+              glowColor: "rgba(245, 158, 11, 0.2)"
+            },
+            {
+              id: "siparis-ayarlari",
+              title: "Sipariş Menüsü Ayarları",
+              description: "Sipariş verilebilir hammaddeler, koli/kutu birimleri ve WhatsApp şablonları.",
+              path: "/dashboard/ayarlar/siparis-ayarlari",
+              icon: ShoppingCart,
+              badge: "TEDARİK",
+              iconBg: "bg-teal-500/10 text-teal-500 border-teal-500/20",
+              glowColor: "rgba(20, 184, 166, 0.2)"
+            }
+          ].map((item) => {
+            const IconComp = item.icon;
+            return (
+              <div
+                key={item.id}
+                onClick={() => router.push(item.path)}
+                className="group relative p-6 bg-[var(--card)] hover:bg-[var(--card)]/90 border border-[var(--border)] hover:border-orange-500/40 rounded-[2rem] flex flex-col justify-between space-y-5 transition-all duration-300 shadow-md hover:shadow-2xl hover:-translate-y-1.5 cursor-pointer select-none overflow-hidden"
+                style={{
+                  boxShadow: `0 10px 30px -10px ${item.glowColor}`
+                }}
+              >
+                {/* Background Ambient Glow on Hover */}
+                <div 
+                  className="absolute -top-12 -right-12 w-32 h-32 rounded-full blur-3xl opacity-0 group-hover:opacity-40 transition-opacity duration-500 pointer-events-none"
+                  style={{ background: item.glowColor }}
+                />
 
-            <div className="card-logo flex flex-col items-center justify-center text-center px-6">
-              <span className="text-base font-extrabold tracking-wide text-zinc-300">
-                Stok Listesi Kontrolü
-              </span>
-            </div>
-
-            <div className="card-text flex flex-col items-center gap-3">
-              <span className="text-white text-sm font-black truncate max-w-[180px]">Stok Listesi Kontrolü</span>
-              <div className="flex items-center gap-2 bg-white text-zinc-950 pl-1.5 pr-4 py-1.5 rounded-2xl shadow-xl">
-                <div className="w-7 h-7 rounded-lg bg-zinc-950 flex items-center justify-center text-white shrink-0">
-                  <ArrowUpRight className="w-4 h-4" />
+                {/* Top Row: Prominent Icon + Tag Badge */}
+                <div className="flex items-center justify-between z-10">
+                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border shadow-sm transition-all duration-300 group-hover:scale-110 group-hover:rotate-3 ${item.iconBg}`}>
+                    <IconComp className="w-7 h-7" />
+                  </div>
+                  <span className="text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-xl bg-[var(--background)] text-zinc-400 border border-[var(--border)] shadow-xs">
+                    {item.badge}
+                  </span>
                 </div>
-                <span className="text-[10px] font-black uppercase tracking-wider text-zinc-800">
-                  Ayara Git
-                </span>
-              </div>
-            </div>
-          </div>
 
-          {/* Kart 2: Reçeteler Listesi Kontrolü */}
-          <div 
-            onClick={() => router.push("/dashboard/ayarlar/recete-kontrolu")}
-            className="custom-border-card"
-            style={{
-              boxShadow: "0 10px 30px -10px rgba(234, 88, 12, 0.3), inset 0 0 0 1px rgba(234, 88, 12, 0.2)"
-            }}
-          >
-            <svg className="custom-card-border-svg">
-              <rect style={{ stroke: "#ea580c", strokeDashoffset: "0" }} />
-            </svg>
-
-            <div className="card-logo flex flex-col items-center justify-center text-center px-6 gap-2">
-              <BookOpen className="w-5 h-5 text-orange-500" />
-              <span className="text-base font-extrabold tracking-wide text-zinc-300">
-                Reçeteler Listesi Kontrolü
-              </span>
-            </div>
-
-            <div className="card-text flex flex-col items-center gap-3">
-              <span className="text-white text-sm font-black truncate max-w-[180px]">Reçeteler Listesi Kontrolü</span>
-              <div className="flex items-center gap-2 bg-white text-zinc-950 pl-1.5 pr-4 py-1.5 rounded-2xl shadow-xl">
-                <div className="w-7 h-7 rounded-lg bg-zinc-950 flex items-center justify-center text-white shrink-0">
-                  <ArrowUpRight className="w-4 h-4" />
+                {/* Middle Content: Title & Description */}
+                <div className="space-y-2 z-10">
+                  <h3 className="text-base font-black tracking-tight text-zinc-900 dark:text-white group-hover:text-orange-500 transition-colors">
+                    {item.title}
+                  </h3>
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed font-medium line-clamp-2">
+                    {item.description}
+                  </p>
                 </div>
-                <span className="text-[10px] font-black uppercase tracking-wider text-zinc-800">
-                  Ayara Git
-                </span>
-              </div>
-            </div>
-          </div>
 
-          {/* Kart 3: SKT (Son Tüketim Tarihi) Kontrolü */}
-          <div 
-            onClick={() => router.push("/dashboard/ayarlar/skt-kontrolu")}
-            className="custom-border-card"
-            style={{
-              boxShadow: "0 10px 30px -10px rgba(234, 88, 12, 0.3), inset 0 0 0 1px rgba(234, 88, 12, 0.2)"
-            }}
-          >
-            <svg className="custom-card-border-svg">
-              <rect style={{ stroke: "#ea580c", strokeDashoffset: "0" }} />
-            </svg>
-
-            <div className="card-logo flex flex-col items-center justify-center text-center px-6 gap-2">
-              <Calendar className="w-5 h-5 text-orange-500" />
-              <span className="text-base font-extrabold tracking-wide text-zinc-300">
-                SKT Takip Kontrolü
-              </span>
-            </div>
-
-            <div className="card-text flex flex-col items-center gap-3">
-              <span className="text-white text-sm font-black truncate max-w-[180px]">SKT Takip Kontrolü</span>
-              <div className="flex items-center gap-2 bg-white text-zinc-950 pl-1.5 pr-4 py-1.5 rounded-2xl shadow-xl">
-                <div className="w-7 h-7 rounded-lg bg-zinc-950 flex items-center justify-center text-white shrink-0">
-                  <ArrowUpRight className="w-4 h-4" />
+                {/* Bottom Action Footer */}
+                <div className="pt-3 border-t border-[var(--border)]/60 flex items-center justify-between z-10">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-zinc-400 group-hover:text-zinc-200 transition-colors">
+                    Yapılandır
+                  </span>
+                  <div className="w-8 h-8 rounded-xl bg-[var(--background)] group-hover:bg-orange-500 group-hover:text-white border border-[var(--border)] flex items-center justify-center text-zinc-400 transition-all duration-300 group-hover:translate-x-1 shadow-sm">
+                    <ArrowUpRight className="w-4 h-4" />
+                  </div>
                 </div>
-                <span className="text-[10px] font-black uppercase tracking-wider text-zinc-800">
-                  Ayara Git
-                </span>
               </div>
-            </div>
-          </div>
-
-          {/* Kart 4: Yetki & Personel Ayarları */}
-          <div 
-            onClick={() => router.push("/dashboard/ayarlar/personel-yetkileri")}
-            className="custom-border-card"
-            style={{
-              boxShadow: "0 10px 30px -10px rgba(234, 88, 12, 0.3), inset 0 0 0 1px rgba(234, 88, 12, 0.2)"
-            }}
-          >
-            <svg className="custom-card-border-svg">
-              <rect style={{ stroke: "#ea580c", strokeDashoffset: "0" }} />
-            </svg>
-
-            <div className="card-logo flex flex-col items-center justify-center text-center px-6 gap-2">
-              <ShieldAlert className="w-5 h-5 text-orange-500" />
-              <span className="text-base font-extrabold tracking-wide text-zinc-300">
-                Yetki & Personel Ayarları
-              </span>
-            </div>
-
-            <div className="card-text flex flex-col items-center gap-3">
-              <span className="text-white text-sm font-black truncate max-w-[180px]">Yetki & Personel Ayarları</span>
-              <div className="flex items-center gap-2 bg-white text-zinc-950 pl-1.5 pr-4 py-1.5 rounded-2xl shadow-xl">
-                <div className="w-7 h-7 rounded-lg bg-zinc-950 flex items-center justify-center text-white shrink-0">
-                  <ArrowUpRight className="w-4 h-4" />
-                </div>
-                <span className="text-[10px] font-black uppercase tracking-wider text-zinc-800">
-                  Ayara Git
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Kart 5: İşlem Geçmişi & Loglar */}
-          <div 
-            onClick={() => router.push("/dashboard/ayarlar/islem-gecmisi")}
-            className="custom-border-card"
-            style={{
-              boxShadow: "0 10px 30px -10px rgba(234, 88, 12, 0.3), inset 0 0 0 1px rgba(234, 88, 12, 0.2)"
-            }}
-          >
-            <svg className="custom-card-border-svg">
-              <rect style={{ stroke: "#ea580c", strokeDashoffset: "0" }} />
-            </svg>
-
-            <div className="card-logo flex flex-col items-center justify-center text-center px-6 gap-2">
-              <History className="w-5 h-5 text-orange-500" />
-              <span className="text-base font-extrabold tracking-wide text-zinc-300">
-                Kullanıcı İşlem Geçmişi
-              </span>
-            </div>
-
-            <div className="card-text flex flex-col items-center gap-3">
-              <span className="text-white text-sm font-black truncate max-w-[180px]">Kullanıcı İşlem Geçmişi</span>
-              <div className="flex items-center gap-2 bg-white text-zinc-950 pl-1.5 pr-4 py-1.5 rounded-2xl shadow-xl">
-                <div className="w-7 h-7 rounded-lg bg-zinc-950 flex items-center justify-center text-white shrink-0">
-                  <ArrowUpRight className="w-4 h-4" />
-                </div>
-                <span className="text-[10px] font-black uppercase tracking-wider text-zinc-800">
-                  Ayara Git
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Kart 6: Duyuru Yönetimi */}
-          <div 
-            onClick={() => router.push("/dashboard/ayarlar/duyuru-yonetimi")}
-            className="custom-border-card"
-            style={{
-              boxShadow: "0 10px 30px -10px rgba(234, 88, 12, 0.3), inset 0 0 0 1px rgba(234, 88, 12, 0.2)"
-            }}
-          >
-            <svg className="custom-card-border-svg">
-              <rect style={{ stroke: "#ea580c", strokeDashoffset: "0" }} />
-            </svg>
-
-            <div className="card-logo flex flex-col items-center justify-center text-center px-6 gap-2">
-              <Megaphone className="w-5 h-5 text-orange-500" />
-              <span className="text-base font-extrabold tracking-wide text-zinc-300">
-                Duyuru Yönetimi
-              </span>
-            </div>
-
-            <div className="card-text flex flex-col items-center gap-3">
-              <span className="text-white text-sm font-black truncate max-w-[180px]">Duyuru Yönetimi</span>
-              <div className="flex items-center gap-2 bg-white text-zinc-950 pl-1.5 pr-4 py-1.5 rounded-2xl shadow-xl">
-                <div className="w-7 h-7 rounded-lg bg-zinc-950 flex items-center justify-center text-white shrink-0">
-                  <ArrowUpRight className="w-4 h-4" />
-                </div>
-                <span className="text-[10px] font-black uppercase tracking-wider text-zinc-800">
-                  Ayara Git
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Kart 7: Sipariş Listesi Ayarları */}
-          <div 
-            onClick={() => router.push("/dashboard/ayarlar/siparis-ayarlari")}
-            className="custom-border-card"
-            style={{
-              boxShadow: "0 10px 30px -10px rgba(234, 88, 12, 0.3), inset 0 0 0 1px rgba(234, 88, 12, 0.2)"
-            }}
-          >
-            <svg className="custom-card-border-svg">
-              <rect style={{ stroke: "#ea580c", strokeDashoffset: "0" }} />
-            </svg>
-
-            <div className="card-logo flex flex-col items-center justify-center text-center px-6 gap-2">
-              <ShoppingCart className="w-5 h-5 text-orange-500" />
-              <span className="text-base font-extrabold tracking-wide text-zinc-300">
-                Sipariş Menüsü Ayarları
-              </span>
-            </div>
-
-            <div className="card-text flex flex-col items-center gap-3">
-              <span className="text-white text-sm font-black truncate max-w-[180px]">Sipariş Menüsü Ayarları</span>
-              <div className="flex items-center gap-2 bg-white text-zinc-950 pl-1.5 pr-4 py-1.5 rounded-2xl shadow-xl">
-                <div className="w-7 h-7 rounded-lg bg-zinc-950 flex items-center justify-center text-white shrink-0">
-                  <ArrowUpRight className="w-4 h-4" />
-                </div>
-                <span className="text-[10px] font-black uppercase tracking-wider text-zinc-800">
-                  Ayara Git
-                </span>
-              </div>
-            </div>
-          </div>
-
-
+            );
+          })}
 
         </div>
       </main>
