@@ -18,7 +18,14 @@ import {
   X,
   Trash2
 } from "lucide-react";
-import { subscribeToStocks, saveAllStocks, saveStockItem, deleteStockItem } from "@/lib/stockService";
+import { 
+  subscribeToStocks, 
+  saveAllStocksAcrossVargel, 
+  saveStockItemAcrossVargel, 
+  deleteStockItemAcrossVargel,
+  getCustomCategoriesFromFirestore,
+  saveCustomCategoryToFirestore
+} from "@/lib/stockService";
 import { StockItem, StockCategory, isProductAllowedForRegion } from "@/lib/stockStore";
 import { useRouter } from "next/navigation";
 import { logUserAction } from "@/lib/auditLogService";
@@ -74,15 +81,6 @@ export default function SiparisAyarlariPage() {
       document.documentElement.className = savedTheme;
     }
 
-    const savedCustomCats = localStorage.getItem("degirmen_siparis_custom_categories");
-    if (savedCustomCats) {
-      try {
-        setCustomCategories(JSON.parse(savedCustomCats));
-      } catch (e) {
-        console.error("Custom categories load error:", e);
-      }
-    }
-
     const activeUser = sessionStorage.getItem("activeUser");
     let activeRegion = "degirmen-kafe";
     if (activeUser) {
@@ -100,6 +98,13 @@ export default function SiparisAyarlariPage() {
       window.location.href = "/";
       return;
     }
+
+    // Bulut tabanlı özel kategorileri yükleme
+    getCustomCategoriesFromFirestore(activeRegion).then(cats => {
+      if (cats && cats.length > 0) {
+        setCustomCategories(cats);
+      }
+    });
 
     setIsLoading(true);
     const unsubscribe = subscribeToStocks(
@@ -120,7 +125,7 @@ export default function SiparisAyarlariPage() {
   }, []);
 
   // Yeni Kategori Ekleme Fonksiyonu
-  const handleAddCustomCategory = (e: React.FormEvent) => {
+  const handleAddCustomCategory = async (e: React.FormEvent) => {
     e.preventDefault();
     const cleanName = newCategoryName.trim();
     if (!cleanName) {
@@ -149,13 +154,12 @@ export default function SiparisAyarlariPage() {
       return;
     }
 
-    const updated = [...customCategories, cleanName];
+    const updated = await saveCustomCategoryToFirestore(selectedRegion, cleanName);
     setCustomCategories(updated);
-    localStorage.setItem("degirmen_siparis_custom_categories", JSON.stringify(updated));
     setNewItemCategory(cleanName as StockCategory);
     setNewCategoryName("");
     setIsAddCategoryOpen(false);
-    triggerToast(`✅ "${cleanName}" kategorisi başarıyla eklendi!`);
+    triggerToast(`✅ "${cleanName}" kategorisi tüm bölgelere başarıyla eklendi!`);
   };
 
   // Kutu ve Plastik Ürünler seçilirse Paket Hacim / Gramaj değerini otomatik belirle
@@ -228,7 +232,7 @@ export default function SiparisAyarlariPage() {
 
     setIsSaving(true);
     try {
-      await saveStockItem(selectedRegion, newItem);
+      await saveStockItemAcrossVargel(selectedRegion, newItem);
       
       setStockList(prev => [newItem, ...prev]);
 
@@ -253,7 +257,7 @@ export default function SiparisAyarlariPage() {
   const handleSaveChanges = async () => {
     setIsSaving(true);
     try {
-      await saveAllStocks(selectedRegion, stockList);
+      await saveAllStocksAcrossVargel(selectedRegion, stockList);
       setIsDirty(false);
       triggerToast("✅ Sipariş ayarları bulut veritabanına kaydedildi!");
     } catch (err) {
@@ -598,7 +602,7 @@ export default function SiparisAyarlariPage() {
                           if (!window.confirm(`"${item.name}" ürününü tamamen silmek istediğinizden emin misiniz?`)) return;
                           try {
                             setIsSaving(true);
-                            await deleteStockItem(selectedRegion, item.id);
+                            await deleteStockItemAcrossVargel(selectedRegion, item.id);
                             
                             // Log the delete action
                             await logUserAction(

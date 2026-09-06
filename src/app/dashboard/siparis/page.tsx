@@ -19,44 +19,47 @@ import {
   Layers,
   CupSoda
 } from "lucide-react";
-import { subscribeToStocks } from "@/lib/stockService";
+import { subscribeToStocks, getCustomCategoriesFromFirestore } from "@/lib/stockService";
 import { StockItem, isProductAllowedForRegion } from "@/lib/stockStore";
 import { useRouter } from "next/navigation";
+import { logUserAction } from "@/lib/auditLogService";
 
 interface OrderItem {
   id: string;
   name: string;
   quantity: number;
-  unit: "Adet" | "Kg" | "Koli" | "Kutu";
+  unit: string;
   category?: string;
 }
+
+type OrderUnit = "Adet" | "Paket" | "Kg" | "Koli" | "Kutu";
 
 export default function SiparisPage() {
   const router = useRouter();
   const [theme, setTheme] = useState<"light" | "dark">("dark");
   const [stockList, setStockList] = useState<StockItem[]>([]);
+  const [customCategories, setCustomCategories] = useState<string[]>([]);
   const [userRole, setUserRole] = useState<string>("waiter");
   const [userFullName, setUserFullName] = useState<string>("Personel");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("Tümü");
   const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Bölge State'leri
   const [selectedRegion, setSelectedRegion] = useState("degirmen-kafe");
   const [selectedRegionName, setSelectedRegionName] = useState("Değirmen Kafe");
 
-  // Sipariş Draft State (ID -> { quantity, unit })
+  // Ürün bazlı sipariş miktarı ve paket türü state'i
   const [quantities, setQuantities] = useState<Record<string, number>>({});
-  const [units, setUnits] = useState<Record<string, "Adet" | "Kg" | "Koli" | "Kutu">>({});
+  const [units, setUnits] = useState<Record<string, OrderUnit>>({});
 
-  // Sepet Tab Seçimi ("general" = Genel Malzemeler, "soft" = Soft İçecekler)
+  // 1. GENEL SİPARİŞ SEPETİ (Şuruplar, Kahveler, Toz, vb.)
   const [activeCartTab, setActiveCartTab] = useState<"general" | "soft">("general");
-
-  // 1. Genel Malzemeler Sepeti
   const [generalOrderItems, setGeneralOrderItems] = useState<OrderItem[]>([]);
   const [generalOrderNote, setGeneralOrderNote] = useState("");
 
-  // 2. Soft İçecekler Sepeti (Ayrı Sepet)
+  // 2. SOFT İÇECEK SİPARİŞ SEPETİ (Su, Kola, Fanta, vb.)
   const [softDrinkOrderItems, setSoftDrinkOrderItems] = useState<OrderItem[]>([]);
   const [softDrinkOrderNote, setSoftDrinkOrderNote] = useState("");
 
@@ -68,6 +71,17 @@ export default function SiparisPage() {
     setToastMessage(msg);
     setShowToast(true);
     setTimeout(() => setShowToast(false), 3000);
+  };
+
+  const getDefaultUnit = (item: StockItem): OrderUnit => {
+    const uLower = (item.unit || "").toLowerCase();
+    if (uLower === "paket") return "Paket";
+    if (uLower === "kg") return "Kg";
+    if (uLower === "koli") return "Koli";
+    if (uLower === "kutu") return "Kutu";
+    if (item.category === "Kahveler") return "Paket";
+    if (item.category === "Soft İçecek Ürünleri") return "Koli";
+    return "Adet";
   };
 
   useEffect(() => {
@@ -91,6 +105,12 @@ export default function SiparisPage() {
       window.location.href = "/";
       return;
     }
+
+    getCustomCategoriesFromFirestore(activeRegion).then(cats => {
+      if (cats && cats.length > 0) {
+        setCustomCategories(cats);
+      }
+    });
 
     setIsLoading(true);
     const unsubscribe = subscribeToStocks(
@@ -123,8 +143,7 @@ export default function SiparisPage() {
   // Sepete ürün ekle (Soft İçecekler otomatik olarak Soft Sepetine, diğerleri Genel Sepete gider)
   const handleAddToOrder = (item: StockItem) => {
     const qty = quantities[item.id] || 1;
-    const defaultUnit: "Adet" | "Kg" | "Koli" | "Kutu" = item.unit === "kg" ? "Kg" : (item.unit === "Koli" ? "Koli" : (item.unit === "Kutu" ? "Kutu" : "Adet"));
-    const unit = units[item.id] || defaultUnit;
+    const unit = units[item.id] || getDefaultUnit(item);
 
     if (qty <= 0) {
       triggerToast("Lütfen geçerli bir miktar girin!");
@@ -280,7 +299,7 @@ export default function SiparisPage() {
 
   const orderableStock = displayedStockList.filter(item => item.orderable !== false);
 
-  const categories = ["Tümü", ...sortStockCategories(Array.from(new Set(orderableStock.map(i => i.category))))];
+  const categories = ["Tümü", ...sortStockCategories(Array.from(new Set([...orderableStock.map(i => i.category), ...customCategories])))];
 
   const filteredStock = orderableStock
     .filter(item => {
@@ -358,8 +377,8 @@ export default function SiparisPage() {
                     key={item.id}
                     onClick={() => {
                       setQuantities(prev => ({ ...prev, [item.id]: 1 }));
-                      const defaultUnit: "Adet" | "Kg" | "Koli" | "Kutu" = item.unit === "kg" ? "Kg" : (item.unit === "Koli" ? "Koli" : (item.unit === "Kutu" ? "Kutu" : "Adet"));
-                      setUnits(prev => ({ ...prev, [item.id]: defaultUnit }));
+                      const defUnit = getDefaultUnit(item);
+                      setUnits(prev => ({ ...prev, [item.id]: defUnit }));
                       handleAddToOrder(item);
                     }}
                     className={`flex items-center gap-2 px-3 py-1.5 border text-[10px] font-bold rounded-xl cursor-pointer hover:scale-105 active:scale-95 transition-all select-none ${
@@ -435,8 +454,7 @@ export default function SiparisPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {filteredStock.map((item) => {
                     const activeQty = quantities[item.id] || 1;
-                    const defaultUnit: "Adet" | "Kg" | "Koli" | "Kutu" = item.unit === "kg" ? "Kg" : (item.unit === "Koli" ? "Koli" : (item.unit === "Kutu" ? "Kutu" : "Adet"));
-                    const activeUnit = units[item.id] || defaultUnit;
+                    const activeUnit = units[item.id] || getDefaultUnit(item);
                     const isCritical = item.quantity <= item.minLimit;
                     const isSoft = item.category === "Soft İçecek Ürünleri";
 
@@ -475,11 +493,12 @@ export default function SiparisPage() {
                         {/* Miktar ve Birim Belirleme Arayüzü */}
                         <div className="space-y-3 pt-2">
                           
-                          {/* Paket Türü Seçiciler (Adet / Kg / Koli / Kutu) */}
-                          <div className="grid grid-cols-4 gap-1.5">
-                            {(["Adet", "Kg", "Koli", "Kutu"] as const).map((u) => (
+                          {/* Paket Türü Seçiciler (Adet / Paket / Kg / Koli / Kutu) */}
+                          <div className="grid grid-cols-5 gap-1">
+                            {(["Adet", "Paket", "Kg", "Koli", "Kutu"] as const).map((u) => (
                               <button
                                 key={u}
+                                type="button"
                                 onClick={() => setUnits(prev => ({ ...prev, [item.id]: u }))}
                                 className={`py-1.5 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all cursor-pointer border ${
                                   activeUnit === u

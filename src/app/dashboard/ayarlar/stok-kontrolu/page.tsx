@@ -18,7 +18,15 @@ import {
   Package
 } from "lucide-react";
 import { StockItem, StockCategory, isProductAllowedForRegion } from "@/lib/stockStore";
-import { subscribeToStocks, saveAllStocks, saveStockItem, deleteStockItem } from "@/lib/stockService";
+import { 
+  subscribeToStocks, 
+  saveAllStocksAcrossVargel, 
+  saveStockItem, 
+  saveStockItemAcrossVargel, 
+  deleteStockItemAcrossVargel,
+  getCustomCategoriesFromFirestore,
+  saveCustomCategoryToFirestore
+} from "@/lib/stockService";
 import { logUserAction } from "@/lib/auditLogService";
 import { useRouter } from "next/navigation";
 
@@ -44,6 +52,11 @@ export default function StokKontroluPage() {
   const [newItemLimit, setNewItemLimit] = useState("5");
   const [newItemPrice, setNewItemPrice] = useState("100");
   const [newItemWeight, setNewItemWeight] = useState("1.000 kg");
+
+  // Yeni Kategori Ekleme State'leri
+  const [customCategories, setCustomCategories] = useState<string[]>([]);
+  const [isAddCategoryOpen, setIsAddCategoryOpen] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("Tümü");
@@ -82,6 +95,13 @@ export default function StokKontroluPage() {
       window.location.href = "/";
       return;
     }
+
+    // Bulut tabanlı özel kategorileri yükleme
+    getCustomCategoriesFromFirestore(activeRegion).then(cats => {
+      if (cats && cats.length > 0) {
+        setCustomCategories(cats);
+      }
+    });
 
     // Onay kutularını localStorage'dan yüklme
     const savedChecked = localStorage.getItem("degirmen_kontrol_checked_ids");
@@ -134,6 +154,44 @@ export default function StokKontroluPage() {
     });
   };
 
+  // Yeni Kategori Ekleme
+  const handleAddCustomCategory = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const cleanName = newCategoryName.trim();
+    if (!cleanName) {
+      triggerToast("Lütfen bir kategori adı giriniz!");
+      return;
+    }
+
+    const standardCats = [
+      "Çay Ve Bitki Çayları",
+      "Kahveler",
+      "Şuruplar",
+      "Soslar",
+      "Püreler",
+      "Toz Grubu",
+      "Ek Ürünler",
+      "Litrelik Ürünler",
+      "Yan Ürünler",
+      "Kutu Ve Plastik Ürünler",
+      "Soft İçecek Ürünleri",
+      "Pastalar"
+    ];
+
+    if (standardCats.some(c => c.toLowerCase() === cleanName.toLowerCase()) || 
+        customCategories.some(c => c.toLowerCase() === cleanName.toLowerCase())) {
+      triggerToast("Bu kategori adı zaten sistemde mevcut!");
+      return;
+    }
+
+    const updated = await saveCustomCategoryToFirestore(selectedRegion, cleanName);
+    setCustomCategories(updated);
+    setNewItemCategory(cleanName as StockCategory);
+    setNewCategoryName("");
+    setIsAddCategoryOpen(false);
+    triggerToast(`✅ "${cleanName}" kategorisi tüm bölgelere başarıyla eklendi!`);
+  };
+
   // Yeni Ürün Ekle
   const handleAddItem = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -161,7 +219,7 @@ export default function StokKontroluPage() {
 
     setIsSaving(true);
     try {
-      await saveStockItem(selectedRegion, newItem);
+      await saveStockItemAcrossVargel(selectedRegion, newItem);
       setStockList(prev => [newItem, ...prev]);
 
       // Eklenen ürünü onaylı işaretle
@@ -247,8 +305,7 @@ export default function StokKontroluPage() {
 
     setIsSaving(true);
     try {
-      await deleteStockItem(selectedRegion, id);
-      // local list update will be handled automatically by onSnapshot real-time sync, but let's filter it just in case
+      await deleteStockItemAcrossVargel(selectedRegion, id);
       setStockList(prev => prev.filter(item => item.id !== id));
 
       setCheckedItemIds(prev => {
@@ -276,7 +333,7 @@ export default function StokKontroluPage() {
   const handleSaveChanges = async () => {
     setIsSaving(true);
     try {
-      await saveAllStocks(selectedRegion, stockList);
+      await saveAllStocksAcrossVargel(selectedRegion, stockList);
       setIsDirty(false);
 
       await logUserAction(

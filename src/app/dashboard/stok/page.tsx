@@ -23,7 +23,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { StockItem, isProductAllowedForRegion } from "@/lib/stockStore";
-import { subscribeToStocks, saveStockItem } from "@/lib/stockService";
+import { subscribeToStocks, saveStockItem, saveStockItemAcrossVargel } from "@/lib/stockService";
 import { logUserAction } from "@/lib/auditLogService";
 import { updateActiveShiftDataEntry } from "@/lib/shiftService";
 import { getAnnouncement, Announcement } from "@/lib/announcementService";
@@ -330,7 +330,7 @@ export default function StokPage() {
     };
 
     try {
-      await saveStockItem(selectedRegion, updated);
+      await saveStockItemAcrossVargel(selectedRegion, updated);
       setStockList(prev => prev.map(i => i.id === updated.id ? updated : i));
       await logUserAction(
         "Ürün Bilgisi Düzenlendi",

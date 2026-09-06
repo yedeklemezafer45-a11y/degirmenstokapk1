@@ -2,6 +2,7 @@ import { db } from "./firebase";
 import {
   collection,
   doc,
+  getDoc,
   getDocs,
   setDoc,
   writeBatch,
@@ -10,6 +11,7 @@ import {
   deleteDoc
 } from "firebase/firestore";
 import { StockItem, mockStockItems } from "./stockStore";
+import { getDynamicRegions } from "./userService";
 
 // Get collection path based on region
 export function getStocksCollectionPath(regionId: string): string {
@@ -19,10 +21,51 @@ export function getStocksCollectionPath(regionId: string): string {
   return `regions/${regionId}/stocks`;
 }
 
+export function isVargelRegion(regionId: string): boolean {
+  if (!regionId) return false;
+  const lower = regionId.toLowerCase();
+  return lower !== "degirmen-kafe" && (
+    lower.includes("vargel") || 
+    lower.includes("karavan") || 
+    lower.includes("eylul") || 
+    lower.includes("millet")
+  );
+}
+
+export async function getVargelRegionIds(): Promise<string[]> {
+  try {
+    const dynamic = await getDynamicRegions();
+    const vargels = dynamic.filter(r => isVargelRegion(r.id)).map(r => r.id);
+    if (vargels.length > 0) return Array.from(new Set(vargels));
+  } catch (e) {
+    console.error("getVargelRegionIds error:", e);
+  }
+  return ["13-eylul-vargel-kafe", "millet-bahcesi-vargel-kafe", "vargel-karavan", "vargel-kitap-kafe"];
+}
+
 // Tekli Stok Sil
 export async function deleteStockItem(regionId: string, id: string): Promise<void> {
   const path = getStocksCollectionPath(regionId);
   await deleteDoc(doc(db, path, id));
+}
+
+// Tekli Stok Sil (Vargel ise tüm Vargellerden siler)
+export async function deleteStockItemAcrossVargel(regionId: string, id: string): Promise<void> {
+  await deleteStockItem(regionId, id);
+
+  if (isVargelRegion(regionId)) {
+    const vargelIds = await getVargelRegionIds();
+    const otherVargels = vargelIds.filter(v => v !== regionId);
+    await Promise.all(
+      otherVargels.map(async (vId) => {
+        try {
+          await deleteStockItem(vId, id);
+        } catch (err) {
+          console.error(`Vargel delete sync error for ${vId}:`, err);
+        }
+      })
+    );
+  }
 }
 
 // Varsayılan stokları belirli bir bölge için Firestore'a yükle (Seeding)
@@ -114,11 +157,35 @@ export async function ensureAllDefaultStocksExist(regionId: string, currentItems
   await batch.commit();
 }
 
-function sanitizeStockItem(item: StockItem): StockItem {
-  if (!item.name) return item;
-  const cleanedName = item.name.replace(/\s+MONTE\s+CR[İI]STO/gi, "").trim();
-  if (cleanedName !== item.name) {
-    return { ...item, name: cleanedName };
+export function sanitizeStockItem(item: StockItem): StockItem {
+  if (!item) return item;
+  let updatedName = item.name ? item.name.replace(/\s+MONTE\s+CR[İI]STO/gi, "").trim() : item.name;
+  let updatedUnit = item.unit;
+  let updatedWeight = item.weightInfo;
+
+  // Soft içecekler Koli birimi
+  if (item.category === "Soft İçecek Ürünleri" && (!updatedUnit || updatedUnit === "Adet")) {
+    updatedUnit = "Koli";
+    if (!updatedWeight || updatedWeight.includes("Lt")) {
+      updatedWeight = "1 Koli (24 Adet)";
+    }
+  }
+
+  // Pastalar Adet birimi
+  if (item.category === "Pastalar") {
+    updatedUnit = "Adet";
+    if (updatedWeight && updatedWeight.includes("Dilim")) {
+      updatedWeight = "1 Adet";
+    }
+  }
+
+  if (updatedName !== item.name || updatedUnit !== item.unit || updatedWeight !== item.weightInfo) {
+    return {
+      ...item,
+      name: updatedName,
+      unit: updatedUnit,
+      weightInfo: updatedWeight
+    };
   }
   return item;
 }
@@ -186,17 +253,160 @@ export function subscribeToStocks(
 
 // Tekli Stok Güncelle/Ekle
 export async function saveStockItem(regionId: string, item: StockItem): Promise<void> {
+  const sanitized = sanitizeStockItem(item);
   const path = getStocksCollectionPath(regionId);
-  await setDoc(doc(db, path, item.id), item);
+  await setDoc(doc(db, path, sanitized.id), sanitized);
+}
+
+// Tekli Stok Güncelle/Ekle (Vargel ise tüm Vargellere senkronize eder)
+export async function saveStockItemAcrossVargel(regionId: string, item: StockItem): Promise<void> {
+  const sanitized = sanitizeStockItem(item);
+  await saveStockItem(regionId, sanitized);
+
+  if (isVargelRegion(regionId)) {
+    const vargelIds = await getVargelRegionIds();
+    const otherVargels = vargelIds.filter(v => v !== regionId);
+    
+    await Promise.all(
+      otherVargels.map(async (vId) => {
+        try {
+          const path = getStocksCollectionPath(vId);
+          const targetDocRef = doc(db, path, sanitized.id);
+          const targetSnap = await getDoc(targetDocRef);
+          if (targetSnap.exists()) {
+            const existing = targetSnap.data() as StockItem;
+            const mergedItem: StockItem = {
+              ...existing,
+              name: sanitized.name,
+              category: sanitized.category,
+              unit: sanitized.unit,
+              weightInfo: sanitized.weightInfo,
+              price: sanitized.price,
+              minLimit: sanitized.minLimit,
+              orderable: sanitized.orderable
+            };
+            await setDoc(targetDocRef, mergedItem);
+          } else {
+            const newItem: StockItem = {
+              ...sanitized,
+              depodaBulunan: 0,
+              depodanAlinan: 0,
+              quantity: 0
+            };
+            await setDoc(targetDocRef, newItem);
+          }
+        } catch (err) {
+          console.error(`Vargel sync error for ${vId}:`, err);
+        }
+      })
+    );
+  }
 }
 
 // Tüm Stok Listesini Toplu Kaydet
 export async function saveAllStocks(regionId: string, items: StockItem[]): Promise<void> {
+  const sanitizedItems = items.map(sanitizeStockItem);
   const batch = writeBatch(db);
   const path = getStocksCollectionPath(regionId);
-  for (const item of items) {
+  for (const item of sanitizedItems) {
     const itemRef = doc(db, path, item.id);
     batch.set(itemRef, item);
   }
   await batch.commit();
+}
+
+// Tüm Stok Listesini Toplu Kaydet (Vargel ise tüm Vargellere senkronize eder)
+export async function saveAllStocksAcrossVargel(regionId: string, items: StockItem[]): Promise<void> {
+  const sanitizedItems = items.map(sanitizeStockItem);
+  await saveAllStocks(regionId, sanitizedItems);
+
+  if (isVargelRegion(regionId)) {
+    const vargelIds = await getVargelRegionIds();
+    const otherVargels = vargelIds.filter(v => v !== regionId);
+    
+    await Promise.all(
+      otherVargels.map(async (vId) => {
+        try {
+          const currentTargetStocks = await getAllStocks(vId);
+          const targetMap = new Map(currentTargetStocks.map(i => [i.id, i]));
+          
+          const updatedTargetStocks: StockItem[] = [];
+          for (const sItem of sanitizedItems) {
+            const existing = targetMap.get(sItem.id);
+            if (existing) {
+              updatedTargetStocks.push({
+                ...existing,
+                name: sItem.name,
+                category: sItem.category,
+                unit: sItem.unit,
+                weightInfo: sItem.weightInfo,
+                price: sItem.price,
+                minLimit: sItem.minLimit,
+                orderable: sItem.orderable
+              });
+              targetMap.delete(sItem.id);
+            } else {
+              updatedTargetStocks.push({
+                ...sItem,
+                depodaBulunan: 0,
+                depodanAlinan: 0,
+                quantity: 0
+              });
+            }
+          }
+          await saveAllStocks(vId, updatedTargetStocks);
+        } catch (err) {
+          console.error(`Vargel batch sync error for ${vId}:`, err);
+        }
+      })
+    );
+  }
+}
+
+// Özel Kategorileri Getir ve Kaydet (Vargel ve Değirmen için Firestore tabanlı)
+export async function getCustomCategoriesFromFirestore(regionId: string): Promise<string[]> {
+  const isVargel = isVargelRegion(regionId);
+  const docId = isVargel ? "vargel_custom_categories" : "degirmen_custom_categories";
+  try {
+    const snap = await getDoc(doc(db, "settings", docId));
+    if (snap.exists()) {
+      const data = snap.data();
+      if (data && Array.isArray(data.categories)) {
+        return data.categories as string[];
+      }
+    }
+  } catch (err) {
+    console.error("getCustomCategoriesFromFirestore error:", err);
+  }
+  const localKey = isVargel ? "vargel_siparis_custom_categories" : "degirmen_siparis_custom_categories";
+  const local = typeof window !== "undefined" ? (localStorage.getItem(localKey) || localStorage.getItem("degirmen_siparis_custom_categories")) : null;
+  if (local) {
+    try {
+      return JSON.parse(local);
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
+export async function saveCustomCategoryToFirestore(regionId: string, categoryName: string): Promise<string[]> {
+  const isVargel = isVargelRegion(regionId);
+  const docId = isVargel ? "vargel_custom_categories" : "degirmen_custom_categories";
+  const current = await getCustomCategoriesFromFirestore(regionId);
+  if (!current.includes(categoryName)) {
+    const updated = [...current, categoryName];
+    try {
+      await setDoc(doc(db, "settings", docId), { categories: updated });
+    } catch (err) {
+      console.error("saveCustomCategoryToFirestore error:", err);
+    }
+    if (typeof window !== "undefined") {
+      const localKey = isVargel ? "vargel_siparis_custom_categories" : "degirmen_siparis_custom_categories";
+      localStorage.setItem(localKey, JSON.stringify(updated));
+      localStorage.setItem("degirmen_siparis_custom_categories", JSON.stringify(updated));
+    }
+    return updated;
+  }
+  return current;
 }
