@@ -157,7 +157,7 @@ export const mockRecipes: Recipe[] = [
     category: "SICAK KAHVELER",
     ingredients: [
       { product: "HM-ESPRESSO ÇEKİRDEĞİ (ORTA KAVRULMUŞ)", amount: 9, unit: "gr" },
-      { product: "HM-BİTTER ÇİKOLATALI BAR SOS MONTE CRİSTO", amount: 25, unit: "gr" },
+      { product: "HM-BİTTER ÇİKOLATALI BAR SOS", amount: 25, unit: "gr" },
       { product: "HM-SÜT", amount: 180, unit: "ml" }
     ],
     instructions: "Bitter çikolata sosu, espresso ve sıcak süt karışımı.",
@@ -168,7 +168,7 @@ export const mockRecipes: Recipe[] = [
     category: "SICAK KAHVELER",
     ingredients: [
       { product: "HM-ESPRESSO ÇEKİRDEĞİ (ORTA KAVRULMUŞ)", amount: 9, unit: "gr" },
-      { product: "HM-BEYAZ ÇİKOLATALI BAR SOS MONTE CRİSTO", amount: 25, unit: "gr" },
+      { product: "HM-BEYAZ ÇİKOLATALI BAR SOS", amount: 25, unit: "gr" },
       { product: "HM-SÜT", amount: 180, unit: "ml" }
     ],
     instructions: "Beyaz çikolata sosu, espresso ve sıcak süt karışımı.",
@@ -276,7 +276,7 @@ export const mockRecipes: Recipe[] = [
     category: "SOĞUK KAHVELER",
     ingredients: [
       { product: "HM-ESPRESSO ÇEKİRDEĞİ (ORTA KAVRULMUŞ)", amount: 9, unit: "gr" },
-      { product: "HM-BİTTER ÇİKOLATALI BAR SOS MONTE CRİSTO", amount: 25, unit: "gr" },
+      { product: "HM-BİTTER ÇİKOLATALI BAR SOS", amount: 25, unit: "gr" },
       { product: "HM-SÜT", amount: 150, unit: "ml" }
     ],
     instructions: "-ESPRESSO : 9 GRAM\n-CIKOLATA BAR SOS : 25 ML\n-SUT : 150 GRAM\n-BUZ : BARDAK HACMI KADAR",
@@ -287,7 +287,7 @@ export const mockRecipes: Recipe[] = [
     category: "SOĞUK KAHVELER",
     ingredients: [
       { product: "HM-ESPRESSO ÇEKİRDEĞİ (ORTA KAVRULMUŞ)", amount: 9, unit: "gr" },
-      { product: "HM-BEYAZ ÇİKOLATALI BAR SOS MONTE CRİSTO", amount: 25, unit: "gr" },
+      { product: "HM-BEYAZ ÇİKOLATALI BAR SOS", amount: 25, unit: "gr" },
       { product: "HM-SÜT", amount: 150, unit: "ml" }
     ],
     instructions: "-ESPRESSO : 9 GRAM\n-WHITE MOCHA SOS : 25 ML\n-SUT : 150 GRAM\n-BUZ : BARDAK HACMI KADAR",
@@ -481,7 +481,7 @@ export const mockRecipes: Recipe[] = [
     name: "Mocha Nut Frappe",
     category: "FRAPPE ÇEŞİTLERİ",
     ingredients: [
-      { product: "HM-BİTTER ÇİKOLATALI BAR SOS MONTE CRİSTO", amount: 20, unit: "ml" },
+      { product: "HM-BİTTER ÇİKOLATALI BAR SOS", amount: 20, unit: "ml" },
       { product: "HM-FINDIK AROMALI KOKTEYL ŞURUBU", amount: 10, unit: "ml" },
       { product: "HM-SÜT", amount: 50, unit: "ml" },
       { product: "HM-ESPRESSO ÇEKİRDEĞİ (ORTA KAVRULMUŞ)", amount: 9, unit: "gr" }
@@ -493,7 +493,7 @@ export const mockRecipes: Recipe[] = [
     name: "Almond Caramel Frappe",
     category: "FRAPPE ÇEŞİTLERİ",
     ingredients: [
-      { product: "HM-BEYAZ ÇİKOLATALI BAR SOS MONTE CRİSTO", amount: 30, unit: "ml" },
+      { product: "HM-BEYAZ ÇİKOLATALI BAR SOS", amount: 30, unit: "ml" },
       { product: "HM-KAVRULMUŞ BADEM AROMALI KOKTEYL ŞURUP", amount: 10, unit: "ml" },
       { product: "HM-SÜT", amount: 50, unit: "ml" },
       { product: "HM-ESPRESSO ÇEKİRDEĞİ (ORTA KAVRULMUŞ)", amount: 9, unit: "gr" }

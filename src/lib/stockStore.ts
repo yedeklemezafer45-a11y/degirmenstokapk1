@@ -66,9 +66,9 @@ export const mockStockItems: StockItem[] = [
   { id: "cf7", name: "HM-TÜRK KAHVESİ (ORTA KAVRULMUŞ)", category: "Kahveler", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Paket", minLimit: 5, price: 250, weightInfo: "0.500 kg" },
 
   // SOSLAR
-  { id: "sc1", name: "HM-BEYAZ ÇİKOLATALI BAR SOS MONTE CRİSTO", category: "Soslar", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Şişe", minLimit: 2, price: 310, weightInfo: "2.500 kg" },
-  { id: "sc2", name: "HM-BİTTER ÇİKOLATALI BAR SOS MONTE CRİSTO", category: "Soslar", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Şişe", minLimit: 2, price: 310, weightInfo: "2.500 kg" },
-  { id: "sc3", name: "HM-KARAMEL AROMALI BAR SOS MONTE CRİSTO", category: "Soslar", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Şişe", minLimit: 2, price: 310, weightInfo: "2.500 kg" },
+  { id: "sc1", name: "HM-BEYAZ ÇİKOLATALI BAR SOS", category: "Soslar", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Şişe", minLimit: 2, price: 310, weightInfo: "2.500 kg" },
+  { id: "sc2", name: "HM-BİTTER ÇİKOLATALI BAR SOS", category: "Soslar", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Şişe", minLimit: 2, price: 310, weightInfo: "2.500 kg" },
+  { id: "sc3", name: "HM-KARAMEL AROMALI BAR SOS", category: "Soslar", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Şişe", minLimit: 2, price: 310, weightInfo: "2.500 kg" },
   { id: "sc4", name: "HM-ANTEP FISTIK SOS", category: "Soslar", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Şişe", minLimit: 1, price: 450, weightInfo: "1.000 kg" },
   { id: "sc5", name: "HM-MADAGASKAR SOS", category: "Soslar", depodaBulunan: 0, depodanAlinan: 0, quantity: 0, unit: "Şişe", minLimit: 1, price: 450, weightInfo: "1.000 kg" },
 

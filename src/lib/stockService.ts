@@ -114,6 +114,15 @@ export async function ensureAllDefaultStocksExist(regionId: string, currentItems
   await batch.commit();
 }
 
+function sanitizeStockItem(item: StockItem): StockItem {
+  if (!item.name) return item;
+  const cleanedName = item.name.replace(/\s+MONTE\s+CR[İI]STO/gi, "").trim();
+  if (cleanedName !== item.name) {
+    return { ...item, name: cleanedName };
+  }
+  return item;
+}
+
 // Tüm Stokları Getir (tek seferlik)
 export async function getAllStocks(regionId: string): Promise<StockItem[]> {
   const path = getStocksCollectionPath(regionId);
@@ -123,16 +132,20 @@ export async function getAllStocks(regionId: string): Promise<StockItem[]> {
       await seedDefaultStocksForRegion(regionId);
       const freshSnap = await getDocs(collection(db, path));
       const rawItems = freshSnap.docs.map(d => d.data() as StockItem);
-      const items = rawItems.filter(item => item.id !== "_migration_v3" && item.id !== "_migration_v2");
+      const items = rawItems
+        .filter(item => item.id !== "_migration_v3" && item.id !== "_migration_v2")
+        .map(sanitizeStockItem);
       return [...items].sort((a, b) => a.name.localeCompare(b.name, "tr"));
     }
     const rawItems = snapshot.docs.map(d => d.data() as StockItem);
     await ensureAllDefaultStocksExist(regionId, rawItems);
-    const items = rawItems.filter(item => item.id !== "_migration_v3" && item.id !== "_migration_v2");
+    const items = rawItems
+      .filter(item => item.id !== "_migration_v3" && item.id !== "_migration_v2")
+      .map(sanitizeStockItem);
     return [...items].sort((a, b) => a.name.localeCompare(b.name, "tr"));
   } catch (err) {
     console.error(`getAllStocks (${regionId}) hatası:`, err);
-    return [...mockStockItems].sort((a, b) => a.name.localeCompare(b.name, "tr"));
+    return [...mockStockItems].map(sanitizeStockItem).sort((a, b) => a.name.localeCompare(b.name, "tr"));
   }
 }
 
@@ -157,7 +170,9 @@ export function subscribeToStocks(
       const rawItems = snapshot.docs.map(d => d.data() as StockItem);
       // Arka planda eksik olanları ekle
       ensureAllDefaultStocksExist(regionId, rawItems).then(() => {
-        const items = rawItems.filter(item => item.id !== "_migration_v3" && item.id !== "_migration_v2");
+        const items = rawItems
+          .filter(item => item.id !== "_migration_v3" && item.id !== "_migration_v2")
+          .map(sanitizeStockItem);
         const sorted = [...items].sort((a, b) => a.name.localeCompare(b.name, "tr"));
         callback(sorted);
       });

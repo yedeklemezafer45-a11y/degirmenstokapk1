@@ -199,8 +199,15 @@ export default function StokSayimPage() {
       }
     }
   };
+  const isPieceItem = (item: StockItem) => {
+    return item.category === "Pastalar" || item.category === "Soft İçecek Ürünleri";
+  };
+
   // Ürünün Litrelik veya Sıvı Olup Olmadığını Kontrol Etme
   const isLiquidItem = (item: StockItem) => {
+    if (isPieceItem(item)) {
+      return false;
+    }
     return (
       item.category === "Litrelik Ürünler" || 
       item.unit?.toLowerCase() === "litre" || 
@@ -211,6 +218,9 @@ export default function StokSayimPage() {
   };
 
   const extractWeightAndUnit = (item: StockItem) => {
+    if (isPieceItem(item)) {
+      return { parsedWeight: 1.0, displayWeight: item.weightInfo || "1 Adet" };
+    }
     if (item.name.includes("LOTUS BİSCOFF")) {
       return { parsedWeight: 1.0, displayWeight: "1.000 kg" };
     }
@@ -310,6 +320,11 @@ export default function StokSayimPage() {
   };
 
   const calculateTotalQuantityInUnit = (item: StockItem, countedQty: number, openUnits: number) => {
+    if (isPieceItem(item)) {
+      // Pastalar ve Soft İçecekler: Kapalı Adet + Açık Adet doğrudan Adet olarak toplanır
+      return Number((countedQty + openUnits).toFixed(0));
+    }
+
     const { parsedWeight } = extractWeightAndUnit(item);
     const unitLower = item.unit.toLowerCase();
     const hasWeight = !!item.weightInfo;
@@ -330,6 +345,11 @@ export default function StokSayimPage() {
   };
 
   const formatTotalDisplay = (item: StockItem, countedQty: number, openUnits: number) => {
+    if (isPieceItem(item)) {
+      const total = countedQty + openUnits;
+      return `${total} Adet`;
+    }
+
     // Litrelik Ürünler: 24 adet gibi noktalama olmadan net adet gösterimi
     if (item.category === "Litrelik Ürünler") {
       if (openUnits > 0) {
@@ -568,10 +588,11 @@ export default function StokSayimPage() {
           const openVal = parseInputValue(aciktaVal) || 0;
           const totalValText = formatTotalDisplay(item, countedVal, openVal);
 
+          const isPiece = isPieceItem(item);
           const isLiquid = isLiquidItem(item);
           const isKatlaBal = item.name.includes("KATLA BALLA");
-          const packageUnit = isKatlaBal ? "Kutu" : (item.unit === "Şişe" ? "Şişe" : "Adet");
-          const openUnitLabel = isKatlaBal ? "Stick" : (isLiquid ? "ml" : "gr");
+          const packageUnit = isPiece ? "Adet" : (isKatlaBal ? "Kutu" : (item.unit === "Şişe" ? "Şişe" : "Adet"));
+          const openUnitLabel = isPiece ? "Adet" : (isKatlaBal ? "Stick" : (isLiquid ? "ml" : "gr"));
 
           let adetKgDetail = "";
           if (countedVal > 0 && openVal > 0) {
@@ -653,12 +674,13 @@ export default function StokSayimPage() {
         const openGrams = parseInputValue(aciktaVal) || 0;
         const totalQty = calculateTotalQuantityInUnit(item, countedQty, openGrams);
 
+        const isPiece = isPieceItem(item);
         const unitLower = item.unit.toLowerCase();
-        const isMassOrVolume = unitLower === "kg" || unitLower === "litre" || unitLower === "lt";
-        const totalCountedGram = isMassOrVolume ? totalQty : Number((totalQty * parsedWeight).toFixed(3));
-        totalGramsAcc += totalCountedGram * 1000;
+        const isMassOrVolume = !isPiece && (unitLower === "kg" || unitLower === "litre" || unitLower === "lt");
+        const totalCountedGram = isPiece ? totalQty : (isMassOrVolume ? totalQty : Number((totalQty * parsedWeight).toFixed(3)));
+        totalGramsAcc += isPiece ? 0 : (totalCountedGram * 1000);
 
-        const sysKalanKg = isMassOrVolume ? item.quantity : Number((item.quantity * parsedWeight).toFixed(3));
+        const sysKalanKg = isPiece ? item.quantity : (isMassOrVolume ? item.quantity : Number((item.quantity * parsedWeight).toFixed(3)));
 
         return {
           productId: item.id,
@@ -754,12 +776,13 @@ export default function StokSayimPage() {
         const openGrams = parseInputValue(aciktaVal) || 0;
         const totalQty = calculateTotalQuantityInUnit(item, countedQty, openGrams);
 
+        const isPiece = isPieceItem(item);
         const unitLower = item.unit.toLowerCase();
-        const isMassOrVolume = unitLower === "kg" || unitLower === "litre" || unitLower === "lt";
-        const totalCountedGram = isMassOrVolume ? totalQty : Number((totalQty * parsedWeight).toFixed(3));
-        totalGramsAcc += totalCountedGram * 1000;
+        const isMassOrVolume = !isPiece && (unitLower === "kg" || unitLower === "litre" || unitLower === "lt");
+        const totalCountedGram = isPiece ? totalQty : (isMassOrVolume ? totalQty : Number((totalQty * parsedWeight).toFixed(3)));
+        totalGramsAcc += isPiece ? 0 : (totalCountedGram * 1000);
 
-        const sysKalanKg = isMassOrVolume ? item.quantity : Number((item.quantity * parsedWeight).toFixed(3));
+        const sysKalanKg = isPiece ? item.quantity : (isMassOrVolume ? item.quantity : Number((item.quantity * parsedWeight).toFixed(3)));
 
         return {
           productId: item.id,
@@ -887,7 +910,7 @@ export default function StokSayimPage() {
             { id: 2, label: "Kahveler", categories: ["Kahveler"] },
             { id: 3, label: "Şurup & Sos & Püre", categories: ["Şuruplar", "Soslar", "Püreler"] },
             { id: 4, label: "Litrelik Ürünler", categories: ["Litrelik Ürünler"] },
-            { id: 5, label: "Diğer Grubu", categories: ["Toz Grubu", "Ek Ürünler", "Yan Ürünler"] }
+            { id: 5, label: "Diğer Grubu", categories: ["Toz Grubu", "Ek Ürünler", "Yan Ürünler", "Soft İçecek Ürünleri", "Pastalar"] }
           ];
 
           const isProductCounted = (item: StockItem) => {
@@ -1097,13 +1120,16 @@ export default function StokSayimPage() {
                     const isFirstOfCategory = selectedCategory === "Tümü" && (idx === 0 || filteredStocks[idx - 1].category !== item.category);
                     const { displayWeight } = extractWeightAndUnit(item);
                     const isLiquid = isLiquidItem(item);
-                    const unitLabel = isLiquid 
-                      ? "lt" 
-                      : (item.unit === "kg" || item.unit === "Adet" 
-                          ? "kg" 
-                          : (item.unit === "Şişe" ? "Adet" : item.unit));
+                    const isPiece = isPieceItem(item);
+                    const unitLabel = isPiece 
+                      ? "Adet"
+                      : (isLiquid 
+                          ? "lt" 
+                          : (item.unit === "kg" || item.unit === "Adet" 
+                              ? "kg" 
+                              : (item.unit === "Şişe" ? "Adet" : item.unit)));
                     const isKatlaBal = item.name.includes("KATLA BALLA");
-                    const openLabel = isKatlaBal ? "Adet (7g)" : (isLiquid ? "ml" : "gr");
+                    const openLabel = isPiece ? "Adet" : (isKatlaBal ? "Adet (7g)" : (isLiquid ? "ml" : "gr"));
 
                     const isChecked = !!checkedItemIds[item.id];
                     const sayilanVal = sayilanValues[item.id] !== undefined ? sayilanValues[item.id] : getInitialSayilan(item);
@@ -1172,7 +1198,9 @@ export default function StokSayimPage() {
                             <span className={`px-2.5 py-1 rounded-xl text-[10px] font-bold border ${
                               isLiquid 
                                 ? "bg-blue-500/10 text-blue-400 border-blue-500/20" 
-                                : "bg-[var(--background)] border-[var(--border)] text-zinc-400"
+                                : isPiece
+                                  ? "bg-purple-500/10 text-purple-400 border-purple-500/20"
+                                  : "bg-[var(--background)] border-[var(--border)] text-zinc-400"
                             }`}>
                               {item.category}
                             </span>
